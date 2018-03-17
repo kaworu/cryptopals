@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 2.6.0)
 project(cryptopals)
 
+add_definitions(-std=c11 -Wall)
 set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS} -g -O0 -Wpacked")
 
 # µnit Testing Framework
