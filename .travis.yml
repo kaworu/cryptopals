@@ -1,0 +1,15 @@
+language: c
+
+compiler:
+    - clang
+    - gcc
+
+script: make && make test
+
+addons:
+    apt:
+        packages:
+            - cmake
+
+sudo: required
+dist: trusty
