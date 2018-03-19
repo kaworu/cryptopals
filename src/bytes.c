@@ -12,7 +12,7 @@
 
 
 struct bytes *
-bytes_from_raw(const char *s)
+bytes_from_str(const char *s)
 {
 	size_t len;
 	struct bytes *ret = NULL;
@@ -132,7 +132,7 @@ bytes_xor(struct bytes *bytes, const struct bytes *mask)
 
 
 char *
-bytes_to_raw(const struct bytes *bytes)
+bytes_to_str(const struct bytes *bytes)
 {
 	size_t len;
 	char *ret = NULL;

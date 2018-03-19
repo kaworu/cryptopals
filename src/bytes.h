@@ -23,7 +23,7 @@ struct bytes {
  * Returns a pointer to a newly allocated bytes struct that should passed to
  * free(3). Returns NULL if the given pointer is NULL, or malloc(3) failed.
  */
-struct bytes	*bytes_from_raw(const char *s);
+struct bytes	*bytes_from_str(const char *s);
 
 /*
  * Create a bytes struct from a hex-encoded NUL-terminated string.
@@ -55,13 +55,12 @@ struct bytes	*bytes_copy(const struct bytes *src);
 int	bytes_xor(struct bytes *bytes, const struct bytes *mask);
 
 /*
- * Returns the raw NUL-terminated string representation of the given bytes
- * struct.
+ * Returns the NUL-terminated string representation of the given bytes struct.
  *
  * Returns a pointer to a newly allocated bytes struct that should passed to
  * free(3). Returns NULL if the given pointer is NULL, or malloc(3) failed.
  */
-char	*bytes_to_raw(const struct bytes *bytes);
+char	*bytes_to_str(const struct bytes *bytes);
 
 /*
  * Returns the hex representation of the given bytes struct, using uppercase

@@ -8,7 +8,7 @@
 
 
 static MunitResult
-test_bytes_from_raw(const MunitParameter *params, void *data)
+test_bytes_from_str(const MunitParameter *params, void *data)
 {
 	const struct {
 		char *input;
@@ -27,7 +27,7 @@ test_bytes_from_raw(const MunitParameter *params, void *data)
 		const char *input = vectors[i].input;
 		const size_t expected = vectors[i].expected;
 
-		struct bytes *buf = bytes_from_raw(input);
+		struct bytes *buf = bytes_from_str(input);
 		if (buf == NULL)
 			return (MUNIT_ERROR);
 
@@ -38,7 +38,7 @@ test_bytes_from_raw(const MunitParameter *params, void *data)
 	}
 
 	/* when NULL is given */
-	munit_assert_null(bytes_from_raw(NULL));
+	munit_assert_null(bytes_from_str(NULL));
 
 	return (MUNIT_OK);
 }
@@ -105,7 +105,7 @@ test_bytes_copy(const MunitParameter *params, void *data)
 	for (int i = 0; i < (sizeof(vectors) / sizeof(*vectors)); i++) {
 		const char *input = vectors[i].input;
 
-		struct bytes *buf = bytes_from_raw(input);
+		struct bytes *buf = bytes_from_str(input);
 		if (buf == NULL)
 			return (MUNIT_ERROR);
 
@@ -152,7 +152,7 @@ test_bytes_xor(const MunitParameter *params, void *data)
 
 	munit_assert_string_equal(result, expected);
 
-	struct bytes *empty = bytes_from_raw("");
+	struct bytes *empty = bytes_from_str("");
 	if (empty == NULL)
 		return (MUNIT_ERROR);
 
@@ -203,7 +203,7 @@ test_bytes_to_hex(const MunitParameter *params, void *data)
 		const char *input = vectors[i].input;
 		const char *expected = vectors[i].expected;
 
-		struct bytes *buf = bytes_from_raw(input);
+		struct bytes *buf = bytes_from_str(input);
 		if (buf == NULL)
 			return (MUNIT_ERROR);
 
@@ -225,7 +225,7 @@ test_bytes_to_hex(const MunitParameter *params, void *data)
 
 
 static MunitResult
-test_bytes_to_raw(const MunitParameter *params, void *data)
+test_bytes_to_str(const MunitParameter *params, void *data)
 {
 	const struct {
 		char *input;
@@ -244,11 +244,11 @@ test_bytes_to_raw(const MunitParameter *params, void *data)
 		const char *input = vectors[i].input;
 		const char *expected = vectors[i].expected;
 
-		struct bytes *buf = bytes_from_raw(input);
+		struct bytes *buf = bytes_from_str(input);
 		if (buf == NULL)
 			return (MUNIT_ERROR);
 
-		char *result = bytes_to_raw(buf);
+		char *result = bytes_to_str(buf);
 		if (result == NULL)
 			return (MUNIT_ERROR);
 
@@ -259,7 +259,7 @@ test_bytes_to_raw(const MunitParameter *params, void *data)
 	}
 
 	/* when NULL is given */
-	munit_assert_null(bytes_to_raw(NULL));
+	munit_assert_null(bytes_to_str(NULL));
 
 	return (MUNIT_OK);
 }
@@ -286,7 +286,7 @@ test_bytes_to_base64(const MunitParameter *params, void *data)
 		const char *input = vectors[i].input;
 		const char *expected = vectors[i].expected;
 
-		struct bytes *buf = bytes_from_raw(input);
+		struct bytes *buf = bytes_from_str(input);
 		if (buf == NULL)
 			return (MUNIT_ERROR);
 
@@ -332,11 +332,11 @@ test_bytes_hex_to_base64(const MunitParameter *params, void *data)
 
 /* The test suite. */
 MunitTest test_bytes_suite_tests[] = {
-	{ "bytes_from_raw",      test_bytes_from_raw,      NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "bytes_from_str",      test_bytes_from_str,      NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bytes_from_hex",      test_bytes_from_hex,      NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bytes_copy",          test_bytes_copy,          NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bytes_xor",           test_bytes_xor,           NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
-	{ "bytes_to_raw",        test_bytes_to_raw,        NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "bytes_to_str",        test_bytes_to_str,        NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bytes_to_hex",        test_bytes_to_hex,        NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bytes_to_base64",     test_bytes_to_base64,     NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bytes_hex_to_base64", test_bytes_hex_to_base64, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
