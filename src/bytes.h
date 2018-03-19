@@ -47,6 +47,13 @@ struct bytes	*bytes_from_hex(const char *hex);
 struct bytes	*bytes_copy(const struct bytes *src);
 
 /*
+ * Compute the Hamming distance between the two given bytes struct.
+ *
+ * Returns -1 if either argument is NULL or their length doesn't match.
+ */
+int	bytes_hamming_distance(const struct bytes *a, const struct bytes *b);
+
+/*
  * Returns the NUL-terminated string representation of the given bytes struct.
  *
  * Returns a pointer to a newly allocated bytes struct that should passed to

@@ -13,6 +13,19 @@
 #include "bytes.h"
 
 
+/* see https://lemire.me/blog/2016/05/23/the-surprising-cleverness-of-modern-compilers/ */
+static inline int
+popcnt(uint64_t x)
+{
+	int v = 0;
+	while(x != 0) {
+		x &= x - 1;
+		v++;
+	}
+	return v;
+}
+
+
 struct bytes *
 bytes_from_str(const char *s)
 {
@@ -115,6 +128,22 @@ bytes_copy(const struct bytes *src)
 	(void)memcpy(ret->data, src->data, len);
 
 	return (ret);
+}
+
+
+int
+bytes_hamming_distance(const struct bytes *a, const struct bytes *b)
+{
+	if (a == NULL || b == NULL)
+		return (-1);
+	if (a->len != b->len)
+		return (-1);
+
+	int d = 0;
+	for (size_t i = 0; i < a->len; i++)
+		d += popcnt(a->data[i] ^ b->data[i]);
+
+	return (d);
 }
 
 

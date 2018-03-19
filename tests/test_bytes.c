@@ -274,6 +274,27 @@ test_bytes_hex_to_base64(const MunitParameter *params, void *data)
 }
 
 
+/* first part of Set 1 / Challenge 6 */
+static MunitResult
+test_bytes_hamming_distance(const MunitParameter *params, void *data)
+{
+	const char *a = "this is a test";
+	const char *b = "wokka wokka!!!";
+
+	struct bytes *abuf = bytes_from_str(a);
+	struct bytes *bbuf = bytes_from_str(b);
+	if (abuf == NULL || bbuf == NULL)
+		munit_error("bytes_from_str");
+
+	int retval = bytes_hamming_distance(abuf, bbuf);
+	munit_assert_int(retval, ==, 37);
+
+	bytes_free(bbuf);
+	bytes_free(abuf);
+	return (MUNIT_OK);
+}
+
+
 /* The test suite. */
 MunitTest test_bytes_suite_tests[] = {
 	{ "bytes_from_str",      test_bytes_from_str,      NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
@@ -283,6 +304,7 @@ MunitTest test_bytes_suite_tests[] = {
 	{ "bytes_to_hex",        test_bytes_to_hex,        NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bytes_to_base64",     test_bytes_to_base64,     NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bytes_hex_to_base64", test_bytes_hex_to_base64, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "bytes_hamming_distance", test_bytes_hamming_distance, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{
 		.name       = NULL,
 		.test       = NULL,
