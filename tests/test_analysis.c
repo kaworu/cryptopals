@@ -6,6 +6,7 @@
 
 #include "munit.h"
 #include "analysis.h"
+#include "test_analysis.h"
 
 
 /* text taken from http://norvig.com/mayzner.html */
@@ -31,9 +32,9 @@ test_analysis_looks_like_english(const MunitParameter *params, void *data)
 	struct bytes *buf = bytes_from_str(text);
 	if (buf == NULL)
 		return (MUNIT_ERROR);
-
 	const double prob = analysis_looks_like_english(buf);
-	munit_assert_double(prob, >, 0.66);
+
+	munit_assert_double(prob, >, 0.80);
 
 	free(buf);
 	return (MUNIT_OK);
@@ -56,7 +57,7 @@ test_analysis_single_byte_xor(const MunitParameter *params, void *data)
 		return (MUNIT_ERROR);
 
 	munit_assert_string_equal(plaintext, expected);
-	munit_assert_double(prob, >, 0.66);
+	munit_assert_double(prob, >, 0.80);
 
 	free(plaintext);
 	free(decrypted);
@@ -65,10 +66,47 @@ test_analysis_single_byte_xor(const MunitParameter *params, void *data)
 }
 
 
+/* Set 1 / Challenge 4 */
+static MunitResult
+test_analysis_single_byte_xor2(const MunitParameter *params, void *data)
+{
+	const char *expected = "Now that the party is jumping\n";
+	struct bytes *found = NULL;
+	double fprob = 0;
+
+	for (size_t i = 0; i < (sizeof(s1c4data) / sizeof(*s1c4data)); i++) {
+		const char *ciphertext = s1c4data[i];
+		struct bytes *buf = bytes_from_hex(ciphertext);
+		double prob = 0;
+		struct bytes *decrypted = analysis_single_byte_xor(buf, &prob);
+
+		if (prob > fprob) {
+			free(found);
+			found = decrypted;
+			fprob = prob;
+		} else {
+			free(decrypted);
+		}
+		free(buf);
+	}
+	char *plaintext = bytes_to_str(found);
+	if (plaintext == NULL)
+		return (MUNIT_ERROR);
+
+	munit_assert_string_equal(plaintext, expected);
+	munit_assert_double(fprob, >, 0.80);
+
+	free(plaintext);
+	free(found);
+	return (MUNIT_OK);
+}
+
+
 /* The test suite. */
 MunitTest test_analysis_suite_tests[] = {
 	{ "analysis_looks_like_english", test_analysis_looks_like_english, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "analysis_single_byte_xor",    test_analysis_single_byte_xor,    NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "analysis_single_byte_xor2",   test_analysis_single_byte_xor2,   NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{
 		.name       = NULL,
 		.test       = NULL,

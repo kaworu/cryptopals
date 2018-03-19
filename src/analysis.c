@@ -3,40 +3,40 @@
  *
  * Plain text analysis stuff for cryptopals.com challenges.
  */
-#include <ctype.h>
 #include <math.h>
 
 #include "analysis.h"
 
 
-/* english character frequency, taken from http://norvig.com/mayzner.html */
-static const double english_freq[26] = {
-	/* 'a' */  8.04,
-	/* 'b' */  1.48,
-	/* 'c' */  3.34,
-	/* 'd' */  3.82,
-	/* 'e' */ 12.49,
-	/* 'f' */  2.40,
-	/* 'g' */  1.87,
-	/* 'h' */  5.05,
-	/* 'i' */  7.57,
-	/* 'j' */  0.16,
-	/* 'k' */  0.54,
-	/* 'l' */  4.07,
-	/* 'm' */  2.51,
-	/* 'n' */  7.23,
-	/* 'o' */  7.64,
-	/* 'p' */  2.14,
-	/* 'q' */  0.12,
-	/* 'r' */  6.28,
-	/* 's' */  6.51,
-	/* 't' */  9.28,
-	/* 'u' */  2.73,
-	/* 'v' */  1.05,
-	/* 'w' */  1.68,
-	/* 'x' */  0.23,
-	/* 'y' */  1.66,
-	/* 'z' */  0.09,
+/* Some english character frequency, taken from http://www.fitaly.com/board/domper3/posts/136.html */
+static const double english_freq[27] = {
+	/* A */  0.3132 + /* a */  5.1880,
+	/* B */  0.2163 + /* b */  1.0195,
+	/* C */  0.3906 + /* c */  2.1129,
+	/* D */  0.3151 + /* d */  2.5071,
+	/* E */  0.2673 + /* e */  8.5771,
+	/* F */  0.1416 + /* f */  1.3725,
+	/* G */  0.1876 + /* g */  1.5597,
+	/* H */  0.2321 + /* h */  2.7444,
+	/* I */  0.3211 + /* i */  4.9019,
+	/* J */  0.1726 + /* j */  0.0867,
+	/* K */  0.0687 + /* k */  0.6753,
+	/* L */  0.1884 + /* l */  3.1750,
+	/* M */  0.3529 + /* m */  1.6437,
+	/* N */  0.2085 + /* n */  4.9701,
+	/* O */  0.1842 + /* o */  5.7701,
+	/* P */  0.2614 + /* p */  1.5482,
+	/* Q */  0.0316 + /* q */  0.0747,
+	/* R */  0.2519 + /* r */  4.2586,
+	/* S */  0.4003 + /* s */  4.3686,
+	/* T */  0.3322 + /* t */  6.3700,
+	/* U */  0.0814 + /* u */  2.0999,
+	/* V */  0.0892 + /* v */  0.8462,
+	/* W */  0.2527 + /* w */  1.3034,
+	/* X */  0.0343 + /* x */  0.1950,
+	/* Y */  0.0304 + /* y */  1.1330,
+	/* Z */  0.0076 + /* z */  0.0596,
+	/* space */ 17.1662,
 };
 
 
@@ -123,7 +123,7 @@ double
 analysis_char_freq(const struct bytes *buf, const double *freq_ref)
 {
 	double prob = 0;
-	double freqs[26] = { 0 };
+	double freqs[27] = { 0 };
 
 	/* sanity check */
 	if (buf == NULL || freq_ref == NULL)
@@ -131,25 +131,27 @@ analysis_char_freq(const struct bytes *buf, const double *freq_ref)
 	if (buf->len == 0)
 		return (0);
 
-	/* the increment when a character is seen */
-	const double inc = 1.0 / buf->len;
-
 	/* populate freqs by inspecting the buffer */
 	for (size_t i = 0; i < buf->len; i++) {
 		uint8_t byte = buf->data[i];
-		if (byte >= 'a' && byte <= 'z' || byte >= 'A' && byte <= 'Z')
-			freqs[tolower(byte) - 'a'] += inc;
+		if (byte >= 'a' && byte <= 'z')
+			freqs[byte - 'a'] += 1.0 / buf->len;
+		else if (byte >= 'A' && byte <= 'Z')
+			freqs[byte - 'A'] += 1.0 / buf->len;
+		else if (byte == ' ')
+			freqs[26] += 1.0 / buf->len;
 	}
 
 	/*
 	 * compute the difference between the reference frequencies and the
 	 * aggregated ones.
 	 */
-	for (size_t i = 0; i < 26; i++) {
+	for (int i = 0; i < 27; i++) {
 		double ref = freq_ref[i];
 		double actual = freqs[i];
 		double delta = fabs(ref - actual);
-		prob += (ref - delta);
+		if (delta < ref)
+			prob += (ref - delta);
 	}
 
 	return (prob);
