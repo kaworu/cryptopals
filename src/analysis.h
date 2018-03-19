@@ -22,7 +22,8 @@ double	analysis_looks_like_english(const struct bytes *buf);
  * "decrypted" version of the buffer. If `s' is not NULL it will be set to the
  * score of the result on success (see analysis_looks_like_english()).
  *
- * Returns NULL if bytes_copy() failed.
+ * Returns NULL if bytes_copy() failed, a valid bytes struct pointer otherwise
+ * that should be passed to bytes_free().
  */
 struct bytes	*analysis_single_byte_xor(const struct bytes *buf, double *s);
 

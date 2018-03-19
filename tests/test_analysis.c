@@ -31,12 +31,12 @@ test_analysis_looks_like_english(const MunitParameter *params, void *data)
 
 	struct bytes *buf = bytes_from_str(text);
 	if (buf == NULL)
-		return (MUNIT_ERROR);
+		munit_error("bytes_from_str");
 	const double prob = analysis_looks_like_english(buf);
 
 	munit_assert_double(prob, >, 0.80);
 
-	free(buf);
+	bytes_free(buf);
 	return (MUNIT_OK);
 }
 
@@ -51,17 +51,22 @@ test_analysis_single_byte_xor(const MunitParameter *params, void *data)
 	double prob = 0;
 
 	struct bytes *buf = bytes_from_hex(ciphertext);
+	if (buf == NULL)
+		munit_error("bytes_from_hex");
+
 	struct bytes *decrypted = analysis_single_byte_xor(buf, &prob);
+	munit_assert_not_null(decrypted);
+
 	char *plaintext = bytes_to_str(decrypted);
 	if (plaintext == NULL)
-		return (MUNIT_ERROR);
+		munit_error("bytes_to_str");
 
 	munit_assert_string_equal(plaintext, expected);
 	munit_assert_double(prob, >, 0.80);
 
 	free(plaintext);
-	free(decrypted);
-	free(buf);
+	bytes_free(decrypted);
+	bytes_free(buf);
 	return (MUNIT_OK);
 }
 
@@ -77,27 +82,32 @@ test_analysis_single_byte_xor2(const MunitParameter *params, void *data)
 	for (size_t i = 0; i < (sizeof(s1c4data) / sizeof(*s1c4data)); i++) {
 		const char *ciphertext = s1c4data[i];
 		struct bytes *buf = bytes_from_hex(ciphertext);
+		if (buf == NULL)
+			munit_error("bytes_from_hex");
+
 		double prob = 0;
 		struct bytes *decrypted = analysis_single_byte_xor(buf, &prob);
+		if (decrypted == NULL)
+			munit_error("analysis_single_byte_xor");
 
 		if (prob > fprob) {
-			free(found);
+			bytes_free(found);
 			found = decrypted;
 			fprob = prob;
 		} else {
-			free(decrypted);
+			bytes_free(decrypted);
 		}
-		free(buf);
+		bytes_free(buf);
 	}
 	char *plaintext = bytes_to_str(found);
 	if (plaintext == NULL)
-		return (MUNIT_ERROR);
+		munit_error("bytes_to_str");
 
 	munit_assert_string_equal(plaintext, expected);
 	munit_assert_double(fprob, >, 0.80);
 
 	free(plaintext);
-	free(found);
+	bytes_free(found);
 	return (MUNIT_OK);
 }
 

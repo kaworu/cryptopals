@@ -17,28 +17,28 @@ test_bytes_xor(const MunitParameter *params, void *data)
 
 	struct bytes *buf = bytes_from_hex(lhs);
 	if (buf == NULL)
-		return (MUNIT_ERROR);
+		munit_error("bytes_from_hex");
 
 	struct bytes *mask = bytes_from_hex(rhs);
 	if (buf == NULL)
-		return (MUNIT_ERROR);
+		munit_error("bytes_from_hex");
 
 	int retval = bytes_xor(buf, mask);
 	munit_assert_int(retval, ==, 0);
 
 	char *result = bytes_to_hex(buf);
 	if (result == NULL)
-		return (MUNIT_ERROR);
+		munit_error("bytes_to_hex");
 
 	munit_assert_string_equal(result, expected);
 
 	struct bytes *empty = bytes_from_str("");
 	if (empty == NULL)
-		return (MUNIT_ERROR);
+		munit_error("bytes_from_str");
 
 	struct bytes *cpy = bytes_copy(buf);
 	if (cpy == NULL)
-		return (MUNIT_ERROR);
+		munit_error("bytes_copy");
 
 	/* when NULL is given */
 	munit_assert_int(bytes_xor(NULL, mask), ==, -1);
@@ -54,18 +54,50 @@ test_bytes_xor(const MunitParameter *params, void *data)
 	munit_assert_size(buf->len, ==, cpy->len);
 	munit_assert_memory_equal(buf->len, buf->data, cpy->data);
 
-	free(cpy);
-	free(empty);
+	bytes_free(cpy);
+	bytes_free(empty);
 	free(result);
-	free(mask);
-	free(buf);
+	bytes_free(mask);
+	bytes_free(buf);
+	return (MUNIT_OK);
+}
+
+
+/* Set 1 / Challenge 5 */
+static MunitResult
+test_repeating_key_xor(const MunitParameter *params, void *data)
+{
+	const char *plaintext = "Burning 'em, if you ain't quick and nimble\n"
+	    "I go crazy when I hear a cymbal";
+	const char *key = "ICE";
+	const char *expected =
+		"0B3637272A2B2E63622C2E69692A23693A2A3C6324202D623D63343C2A26226324272765272"
+		"A282B2F20430A652E2C652A3124333A653E2B2027630C692B20283165286326302E27282F";
+
+	struct bytes *buf  = bytes_from_str(plaintext);
+	struct bytes *kbuf = bytes_from_str(key);
+
+	int retval = repeating_key_xor(buf, kbuf);
+	munit_assert_int(retval, ==, 0);
+
+	char *ciphertext = bytes_to_hex(buf);
+	if (ciphertext == NULL)
+		munit_error("bytes_to_hex");
+
+	munit_assert_string_equal(ciphertext, expected);
+
+
+	free(ciphertext);
+	bytes_free(kbuf);
+	bytes_free(buf);
 	return (MUNIT_OK);
 }
 
 
 /* The test suite. */
 MunitTest test_xor_suite_tests[] = {
-	{ "bytes_xor", test_bytes_xor, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "bytes_xor",         test_bytes_xor,         NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "repeating_key_xor", test_repeating_key_xor, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{
 		.name       = NULL,
 		.test       = NULL,

@@ -29,12 +29,12 @@ test_bytes_from_str(const MunitParameter *params, void *data)
 
 		struct bytes *buf = bytes_from_str(input);
 		if (buf == NULL)
-			return (MUNIT_ERROR);
+			munit_error("bytes_from_str");
 
 		munit_assert_size(buf->len, ==, expected);
 		munit_assert_memory_equal(buf->len, buf->data, input);
 
-		free(buf);
+		bytes_free(buf);
 	}
 
 	/* when NULL is given */
@@ -69,12 +69,12 @@ test_bytes_from_hex(const MunitParameter *params, void *data)
 
 		struct bytes *buf = bytes_from_hex(input);
 		if (buf == NULL)
-			return (MUNIT_ERROR);
+			munit_error("bytes_from_hex");
 
 		munit_assert_size(buf->len, ==, strlen(expected));
 		munit_assert_memory_equal(buf->len, buf->data, expected);
 
-		free(buf);
+		bytes_free(buf);
 	}
 
 	/* when NULL is given */
@@ -107,17 +107,17 @@ test_bytes_copy(const MunitParameter *params, void *data)
 
 		struct bytes *buf = bytes_from_str(input);
 		if (buf == NULL)
-			return (MUNIT_ERROR);
+			munit_error("bytes_from_str");
 
 		struct bytes *cpy = bytes_copy(buf);
 		if (cpy == NULL)
-			return (MUNIT_ERROR);
+			munit_error("bytes_copy");
 
 		munit_assert_size(buf->len, ==, cpy->len);
 		munit_assert_memory_equal(buf->len, buf->data, cpy->data);
 
-		free(cpy);
-		free(buf);
+		bytes_free(cpy);
+		bytes_free(buf);
 	}
 
 	/* when NULL is given */
@@ -149,16 +149,16 @@ test_bytes_to_hex(const MunitParameter *params, void *data)
 
 		struct bytes *buf = bytes_from_str(input);
 		if (buf == NULL)
-			return (MUNIT_ERROR);
+			munit_error("bytes_from_str");
 
 		char *result = bytes_to_hex(buf);
 		if (result == NULL)
-			return (MUNIT_ERROR);
+			munit_error("bytes_to_hex");
 
 		munit_assert_string_equal(result, expected);
 
 		free(result);
-		free(buf);
+		bytes_free(buf);
 	}
 
 	/* when NULL is given */
@@ -190,16 +190,16 @@ test_bytes_to_str(const MunitParameter *params, void *data)
 
 		struct bytes *buf = bytes_from_str(input);
 		if (buf == NULL)
-			return (MUNIT_ERROR);
+			munit_error("bytes_from_str");
 
 		char *result = bytes_to_str(buf);
 		if (result == NULL)
-			return (MUNIT_ERROR);
+			munit_error("bytes_to_str");
 
 		munit_assert_string_equal(result, expected);
 
 		free(result);
-		free(buf);
+		bytes_free(buf);
 	}
 
 	/* when NULL is given */
@@ -232,16 +232,16 @@ test_bytes_to_base64(const MunitParameter *params, void *data)
 
 		struct bytes *buf = bytes_from_str(input);
 		if (buf == NULL)
-			return (MUNIT_ERROR);
+			munit_error("bytes_from_str");
 
 		char *result = bytes_to_base64(buf);
 		if (result == NULL)
-			return (MUNIT_ERROR);
+			munit_error("bytes_to_base64");
 
 		munit_assert_string_equal(result, expected);
 
 		free(result);
-		free(buf);
+		bytes_free(buf);
 	}
 
 	/* when NULL is given */
@@ -260,16 +260,16 @@ test_bytes_hex_to_base64(const MunitParameter *params, void *data)
 
 	struct bytes *buf = bytes_from_hex(hex);
 	if (buf == NULL)
-		return (MUNIT_ERROR);
+		munit_error("bytes_from_hex");
 
 	char *result = bytes_to_base64(buf);
 	if (result == NULL)
-		return (MUNIT_ERROR);
+		munit_error("bytes_to_base64");
 
 	munit_assert_string_equal(result, expected);
 
 	free(result);
-	free(buf);
+	bytes_free(buf);
 	return (MUNIT_OK);
 }
 

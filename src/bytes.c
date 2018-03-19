@@ -7,7 +7,9 @@
  */
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
 
+#include "compat.h"
 #include "bytes.h"
 
 
@@ -256,4 +258,18 @@ bytes_to_base64(const struct bytes *bytes)
 	/* NUL-terminated the result string */
 	ret[b64len] = '\0';
 	return (ret);
+}
+
+
+void
+bytes_free(struct bytes *victim)
+{
+	size_t len;
+
+	if (victim == NULL)
+		return;
+
+	len = (sizeof(struct bytes) + victim->len * sizeof(uint8_t));
+	explicit_bzero(victim, len);
+	free(victim);
 }

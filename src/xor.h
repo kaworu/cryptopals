@@ -16,4 +16,12 @@
  */
 int	bytes_xor(struct bytes *buf, const struct bytes *mask);
 
+/*
+ * Implement a repeating-key XOR cipher.
+ *
+ * Returns 0 on success, -1 if any of the argument is NULL or the key length is
+ * zero.
+ */
+int	repeating_key_xor(struct bytes *buf, const struct bytes *key);
+
 #endif /* ndef XOR_H */
