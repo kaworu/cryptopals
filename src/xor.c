@@ -11,6 +11,7 @@
 int
 bytes_xor(struct bytes *buf, const struct bytes *mask)
 {
+	/* sanity checks */
 	if (buf == NULL || mask == NULL)
 		return (-1);
 	if (buf->len != mask->len)
@@ -26,6 +27,7 @@ bytes_xor(struct bytes *buf, const struct bytes *mask)
 int
 repeating_key_xor(struct bytes *buf, const struct bytes *key)
 {
+	/* sanity checks */
 	if (buf == NULL || key == NULL)
 		return (-1);
 	if (key->len == 0)

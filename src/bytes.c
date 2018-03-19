@@ -3,7 +3,7 @@
  *
  * Bytes manipulation stuff for cryptopals.com challenges.
  *
- * About base16 (hex) and base64 encoding see RFC 4648.
+ * About base16 (aka hex) and base64 encoding see RFC 4648.
  */
 #include <stdlib.h>
 #include <string.h>
@@ -26,55 +26,80 @@ popcnt(uint64_t x)
 }
 
 
-struct bytes *
-bytes_from_str(const char *s)
+/*
+ * Decode a single base64 character into a byte. Note that only the trailing
+ * 6-bit are relevant. Returns UINT8_MAX if the given character is out not in
+ * the base64 alphabet.
+ */
+static inline uint8_t
+b64decode(char c)
 {
-	size_t len;
-	struct bytes *ret = NULL;
+	if (c >= 'A' && c <= 'Z')
+		return (c - 'A');
+	if (c >= 'a' && c <= 'z')
+		return (26 + c - 'a');
+	if (c >= '0' && c <= '9')
+		return (52 + c - '0');
+	if (c == '+')
+		return (62);
+	if (c == '/')
+		return (63);
 
-	if (s == NULL)
-		return (NULL);
-
-	len = strlen(s);
-	ret = malloc(sizeof(struct bytes) + len * sizeof(uint8_t));
-	if (ret == NULL)
-		return (NULL);
-
-	ret->len = len;
-	(void)memcpy(ret->data, s, len);
-
-	return (ret);
+	/* meh */
+	return (UINT8_MAX);
 }
 
 
 struct bytes *
-bytes_from_hex(const char *hex)
+bytes_from_str(const char *s)
+{
+	struct bytes *buf = NULL;
+
+	/* sanity check */
+	if (s == NULL)
+		return (NULL);
+
+	const size_t len = strlen(s);
+	buf = malloc(sizeof(struct bytes) + len * sizeof(uint8_t));
+	if (buf == NULL)
+		return (NULL);
+
+	buf->len = len;
+	(void)memcpy(buf->data, s, len);
+
+	return (buf);
+}
+
+
+struct bytes *
+bytes_from_hex(const char *s)
 {
 	size_t hexlen, nbytes;
-	struct bytes *ret = NULL;
+	struct bytes *buf = NULL;
 	int success = 0;
 
-	if (hex == NULL)
+	/* sanity check */
+	if (s == NULL)
 		goto out;
 
 	/* each byte is encoded as a pair of hex characters, thus if we have an
 	   odd count of character we can't decode successfully the string. */
-	hexlen = strlen(hex);
+	hexlen = strlen(s);
 	nbytes = hexlen / 2;
 	if (nbytes * 2 != hexlen)
 		goto out;
 
-	ret = malloc(sizeof(struct bytes) + nbytes * sizeof(uint8_t));
-	if (ret == NULL)
+	buf = malloc(sizeof(struct bytes) + nbytes * sizeof(uint8_t));
+	if (buf == NULL)
 		goto out;
-	ret->len = nbytes;
+	buf->len = nbytes;
 
 	/* decoding loop */
 	for (size_t i = 0; i < nbytes; i++) {
 		uint8_t msb, lsb; /* 4-bit groups */
 
 		/* first group */
-		char c = hex[i * 2];
+		char c = s[i * 2];
 		if (c >= '0' && c <= '9')
 			msb = c - '0';
 		else if (c >= 'a' && c <= 'f')
@@ -85,7 +110,7 @@ bytes_from_hex(const char *hex)
 			goto out;
 
 		/* second group */
-		c = hex[i * 2 + 1];
+		c = s[i * 2 + 1];
 		if (c >= '0' && c <= '9')
 			lsb = c - '0';
 		else if (c >= 'a' && c <= 'f')
@@ -96,17 +121,104 @@ bytes_from_hex(const char *hex)
 			goto out;
 
 		/* construct the current byte using msb and lsb */
-		ret->data[i] = (msb << 4) | lsb;
+		buf->data[i] = (msb << 4) | lsb;
 	}
 
 	success = 1;
 	/* FALLTHROUGH */
 out:
 	if (!success) {
-		free(ret);
-		ret = NULL;
+		free(buf);
+		buf = NULL;
 	}
-	return (ret);
+	return (buf);
+}
+
+
+struct bytes *
+bytes_from_base64(const char *s)
+{
+	size_t i;
+	struct bytes *buf = NULL;
+	int success = 0;
+
+	/* sanity check */
+	if (s == NULL)
+		goto out;
+
+	/*
+	 * base64 encode 6 bits per character. A "unit" is three bytes (i.e. 24
+	 * bits) that are represented as four characters in base64. A valid
+	 * base64-encoded string with padding has a character count that is a
+	 * multiple of four.
+	 */
+	const size_t b64len = strlen(s);
+	const size_t nunit = b64len / 4;
+	if (nunit * 4 != b64len)
+		goto out;
+
+	/*
+	 * the resulting buffer length is three bytes per unit. If the last unit
+	 * is "incomplete" then we can subtract one byte per padding character
+	 * `=', up to two.
+	 */
+	size_t nbytes = nunit * 3;
+	size_t rbytes = 0;
+	if (nunit > 0 && s[b64len - 1] == '=') {
+		if (s[b64len - 2] == '=') {
+			rbytes  = 1;
+			nbytes -= 2;
+		} else {
+			rbytes  = 2;
+			nbytes -= 1;
+		}
+	}
+
+	buf = malloc(sizeof(struct bytes) + nbytes * sizeof(uint8_t));
+	if (buf == NULL)
+		goto out;
+	buf->len = nbytes;
+
+	/* decoding loop */
+	for (i = 0; i < nunit; i++) {
+		int last = (i == (nunit - 1));
+		/* the four characters of the current unit */
+		const uint8_t c0 = b64decode(s[i * 4]);
+		const uint8_t c1 = b64decode(s[i * 4 + 1]);
+		const uint8_t c2 = (last && rbytes == 1 ?
+		    0x0 : b64decode(s[i * 4 + 2]));
+		const uint8_t c3 = (last && rbytes > 0 ?
+		    0x0 : b64decode(s[i * 4 + 3]));
+		/* sanity check */
+		if (c0 == UINT8_MAX || c1 == UINT8_MAX || c2 == UINT8_MAX ||
+		    c3 == UINT8_MAX) {
+			goto out;
+		}
+		/* pointer to the first byte of the current unit */
+		uint8_t * const p = buf->data + (i * 3);
+		/* first byte: all six bits from the first character followed by
+		   the leading two bits from the second character */
+		p[0] = (c0 << 2) | (c1 >> 4);
+		if (last && rbytes == 1)
+			continue;
+		/* second byte: trailing four bits from the second character
+		   followed by the first four bits from the third character */
+		p[1] = (c1 << 4) | (c2 >> 2);
+		if (last && rbytes == 2)
+			continue;
+		/* third byte: trailing two bits of the third character followed
+		   by all six bits from the fourth character */
+		p[2] = (c2 << 6) | c3;
+	}
+
+	success = 1;
+	/* FALLTHROUGH */
+out:
+	if (!success) {
+		free(buf);
+		buf = NULL;
+	}
+	return (buf);
 }
 
 
@@ -114,26 +226,27 @@ struct bytes *
 bytes_copy(const struct bytes *src)
 {
 	size_t len;
-	struct bytes *ret = NULL;
+	struct bytes *cpy = NULL;
 
 	if (src == NULL)
 		return (NULL);
 
 	len = src->len;
-	ret = malloc(sizeof(struct bytes) + len * sizeof(uint8_t));
-	if (ret == NULL)
+	cpy = malloc(sizeof(struct bytes) + len * sizeof(uint8_t));
+	if (cpy == NULL)
 		return (NULL);
 
-	ret->len = len;
-	(void)memcpy(ret->data, src->data, len);
+	cpy->len = len;
+	(void)memcpy(cpy->data, src->data, len);
 
-	return (ret);
+	return (cpy);
 }
 
 
 int
 bytes_hamming_distance(const struct bytes *a, const struct bytes *b)
 {
+	/* sanity checks */
 	if (a == NULL || b == NULL)
 		return (-1);
 	if (a->len != b->len)
@@ -150,23 +263,23 @@ bytes_hamming_distance(const struct bytes *a, const struct bytes *b)
 char *
 bytes_to_str(const struct bytes *bytes)
 {
-	size_t len;
-	char *ret = NULL;
+	char *str = NULL;
 
+	/* sanity check */
 	if (bytes == NULL)
 		return (NULL);
 
-	len = bytes->len;
+	const size_t len = bytes->len;
 	/* one additional character for the terminating NUL. */
-	ret = malloc(len + 1);
-	if (ret == NULL)
+	str = malloc(len + 1);
+	if (str == NULL)
 		return (NULL);
 
-	(void)memcpy(ret, bytes->data, len);
+	(void)memcpy(str, bytes->data, len);
 	/* NUL-terminated the result string */
-	ret[len] = '\0';
+	str[len] = '\0';
 
-	return (ret);
+	return (str);
 }
 
 
@@ -175,30 +288,29 @@ bytes_to_hex(const struct bytes *bytes)
 {
 	/* table of base16 index to character as per § 8 */
 	static const char b16table[16] = "0123456789ABCDEF";
+	char *str = NULL;
 
-	size_t b16len;
-	char *ret = NULL;
-
+	/* sanity check */
 	if (bytes == NULL)
 		return (NULL);
 
-	b16len = bytes->len * 2;
+	const size_t b16len = bytes->len * 2;
 	/* one additional character for the terminating NUL. */
-	ret = malloc(b16len + 1);
-	if (ret == NULL)
+	str = malloc(b16len + 1);
+	if (str == NULL)
 		return (NULL);
 
 	for (size_t i = 0; i < bytes->len; i++) {
-		uint8_t byte = bytes->data[i];
+		const uint8_t byte = bytes->data[i];
 		/* pointer to the first character of the current unit */
-		char *p = ret + (i * 2);
+		char * const p = str + (i * 2);
 		p[0] = b16table[byte >> 4];  /* "higher" 4-bit group */
 		p[1] = b16table[byte & 0xf]; /* "lower" 4-bit group */
 	}
 
 	/* NUL-terminated the result string */
-	ret[b16len] = '\0';
-	return (ret);
+	str[b16len] = '\0';
+	return (str);
 }
 
 
@@ -211,10 +323,10 @@ bytes_to_base64(const struct bytes *bytes)
 	/* the base64 padding character */
 	static const char b64pad = '=';
 
-	size_t nunit, rbytes, b64len;
-	char *ret = NULL;
 	size_t i;
+	char *str = NULL;
 
+	/* sanity check */
 	if (bytes == NULL)
 		return (NULL);
 
@@ -227,30 +339,30 @@ bytes_to_base64(const struct bytes *bytes)
 	 * reminding bytes of the last "incomplete" unit (either zero, one or
 	 * two).
 	 */
-	nunit = bytes->len / 3;
-	rbytes = bytes->len % 3;
-	b64len = 4 * (nunit + (rbytes ? 1 : 0));
+	const size_t nunit = bytes->len / 3;
+	const size_t rbytes = bytes->len % 3;
+	const size_t b64len = 4 * (nunit + (rbytes ? 1 : 0));
 
 	/* one additional character for the terminating NUL. */
-	ret = malloc(b64len + 1);
-	if (ret == NULL)
+	str = malloc(b64len + 1);
+	if (str == NULL)
 		return (NULL);
 
 	/* encoding loop */
 	for (i = 0; i < nunit; i++) {
 		/* the three bytes of the current unit */
-		uint8_t b0 = bytes->data[i * 3];
-		uint8_t b1 = bytes->data[i * 3 + 1];
-		uint8_t b2 = bytes->data[i * 3 + 2];
+		const uint8_t b0 = bytes->data[i * 3];
+		const uint8_t b1 = bytes->data[i * 3 + 1];
+		const uint8_t b2 = bytes->data[i * 3 + 2];
 		/* pointer to the first character of the current unit */
-		char *p = ret + (i * 4);
+		char * const p = str + (i * 4);
 		/* first character: leading six bits of the first byte */
 		p[0] = b64table[b0 >> 2];
 		/* second character: trailing two bits of the first byte
 		   followed by the leading four bits of the second byte. */
 		p[1] = b64table[((b0 & 0x03) << 4) | (b1 >> 4)];
-		/* third character: trailing four bits of the second byte follow
-		   by the leading two bits of the third byte. */
+		/* third character: trailing four bits of the second byte
+		   followed by the leading two bits of the third byte. */
 		p[2] = b64table[((b1 & 0x0f) << 2) | (b2 >> 6)];
 		/* fourth character: trailing six bits of the third byte */
 		p[3] = b64table[b2 & 0x3f];
@@ -259,14 +371,14 @@ bytes_to_base64(const struct bytes *bytes)
 	/* check if we have a final unit to encode with padding */
 	if (rbytes > 0) {
 		/* pointer to the first character of the final unit */
-		char *p = ret + (i * 4);
+		char * const p = str + (i * 4);
 		if (rbytes == 2) {
 			/* this unit is short of exactly one byte. In other
 			   words, there are two bytes available for this unit,
 			   thus we'll need one padding character. */
-			uint8_t b0 = bytes->data[i * 3];
-			uint8_t b1 = bytes->data[i * 3 + 1];
-			uint8_t b2 = 0;
+			const uint8_t b0 = bytes->data[i * 3];
+			const uint8_t b1 = bytes->data[i * 3 + 1];
+			const uint8_t b2 = 0;
 			p[0] = b64table[b0 >> 2];
 			p[1] = b64table[((b0 & 0x03) << 4) | (b1 >> 4)];
 			p[2] = b64table[((b1 & 0x0f) << 2) | (b2 >> 6)];
@@ -275,8 +387,8 @@ bytes_to_base64(const struct bytes *bytes)
 			/* this unit is short of two bytes. In other
 			   words, there are only one byte available for this
 			   unit, thus we'll need two padding characters. */
-			uint8_t b0 = bytes->data[i * 3];
-			uint8_t b1 = 0;
+			const uint8_t b0 = bytes->data[i * 3];
+			const uint8_t b1 = 0;
 			p[0] = b64table[b0 >> 2];
 			p[1] = b64table[((b0 & 0x03) << 4) | (b1 >> 4)];
 			p[2] = b64pad;
@@ -285,8 +397,8 @@ bytes_to_base64(const struct bytes *bytes)
 	}
 
 	/* NUL-terminated the result string */
-	ret[b64len] = '\0';
-	return (ret);
+	str[b64len] = '\0';
+	return (str);
 }
 
 

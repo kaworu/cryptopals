@@ -87,6 +87,47 @@ test_bytes_from_hex(const MunitParameter *params, void *data)
 }
 
 
+/* Test Vectors from RFC 4648 */
+static MunitResult
+test_bytes_from_base64(const MunitParameter *params, void *data)
+{
+	const struct {
+		char *input;
+		char *expected;
+	} vectors[] = {
+		{ .input = "",         .expected = "" },
+		{ .input = "Zg==",     .expected = "f" },
+		{ .input = "Zm8=",     .expected = "fo" },
+		{ .input = "Zm9v",     .expected = "foo" },
+		{ .input = "Zm9vYg==", .expected = "foob" },
+		{ .input = "Zm9vYmE=", .expected = "fooba" },
+		{ .input = "Zm9vYmFy", .expected = "foobar" },
+	};
+
+	for (int i = 0; i < (sizeof(vectors) / sizeof(*vectors)); i++) {
+		const char *input = vectors[i].input;
+		const char *expected = vectors[i].expected;
+
+		struct bytes *buf = bytes_from_base64(input);
+		if (buf == NULL)
+			munit_error("bytes_from_base64");
+
+		munit_assert_size(buf->len, ==, strlen(expected));
+		munit_assert_memory_equal(buf->len, buf->data, expected);
+
+		bytes_free(buf);
+	}
+
+	/* when NULL is given */
+	munit_assert_null(bytes_from_base64(NULL));
+
+	/* test with a string not base64-encoded */
+	munit_assert_null(bytes_from_base64("!base64"));
+
+	return (MUNIT_OK);
+}
+
+
 static MunitResult
 test_bytes_copy(const MunitParameter *params, void *data)
 {
@@ -122,6 +163,68 @@ test_bytes_copy(const MunitParameter *params, void *data)
 
 	/* when NULL is given */
 	munit_assert_null(bytes_copy(NULL));
+
+	return (MUNIT_OK);
+}
+
+
+/* first part of Set 1 / Challenge 6 */
+static MunitResult
+test_bytes_hamming_distance(const MunitParameter *params, void *data)
+{
+	const char *a = "this is a test";
+	const char *b = "wokka wokka!!!";
+
+	struct bytes *abuf = bytes_from_str(a);
+	struct bytes *bbuf = bytes_from_str(b);
+	if (abuf == NULL || bbuf == NULL)
+		munit_error("bytes_from_str");
+
+	int retval = bytes_hamming_distance(abuf, bbuf);
+	munit_assert_int(retval, ==, 37);
+
+	bytes_free(bbuf);
+	bytes_free(abuf);
+	return (MUNIT_OK);
+}
+
+
+static MunitResult
+test_bytes_to_str(const MunitParameter *params, void *data)
+{
+	const struct {
+		char *input;
+		char *expected;
+	} vectors[] = {
+		{ .input = "",       .expected = "" },
+		{ .input = "f",      .expected = "f" },
+		{ .input = "fo",     .expected = "fo" },
+		{ .input = "foo",    .expected = "foo" },
+		{ .input = "foob",   .expected = "foob" },
+		{ .input = "fooba",  .expected = "fooba" },
+		{ .input = "foobar", .expected = "foobar" },
+	};
+
+	for (int i = 0; i < (sizeof(vectors) / sizeof(*vectors)); i++) {
+		const char *input = vectors[i].input;
+		const char *expected = vectors[i].expected;
+
+		struct bytes *buf = bytes_from_str(input);
+		if (buf == NULL)
+			munit_error("bytes_from_str");
+
+		char *result = bytes_to_str(buf);
+		if (result == NULL)
+			munit_error("bytes_to_str");
+
+		munit_assert_string_equal(result, expected);
+
+		free(result);
+		bytes_free(buf);
+	}
+
+	/* when NULL is given */
+	munit_assert_null(bytes_to_str(NULL));
 
 	return (MUNIT_OK);
 }
@@ -163,47 +266,6 @@ test_bytes_to_hex(const MunitParameter *params, void *data)
 
 	/* when NULL is given */
 	munit_assert_null(bytes_to_hex(NULL));
-
-	return (MUNIT_OK);
-}
-
-
-static MunitResult
-test_bytes_to_str(const MunitParameter *params, void *data)
-{
-	const struct {
-		char *input;
-		char *expected;
-	} vectors[] = {
-		{ .input = "",       .expected = "" },
-		{ .input = "f",      .expected = "f" },
-		{ .input = "fo",     .expected = "fo" },
-		{ .input = "foo",    .expected = "foo" },
-		{ .input = "foob",   .expected = "foob" },
-		{ .input = "fooba",  .expected = "fooba" },
-		{ .input = "foobar", .expected = "foobar" },
-	};
-
-	for (int i = 0; i < (sizeof(vectors) / sizeof(*vectors)); i++) {
-		const char *input = vectors[i].input;
-		const char *expected = vectors[i].expected;
-
-		struct bytes *buf = bytes_from_str(input);
-		if (buf == NULL)
-			munit_error("bytes_from_str");
-
-		char *result = bytes_to_str(buf);
-		if (result == NULL)
-			munit_error("bytes_to_str");
-
-		munit_assert_string_equal(result, expected);
-
-		free(result);
-		bytes_free(buf);
-	}
-
-	/* when NULL is given */
-	munit_assert_null(bytes_to_str(NULL));
 
 	return (MUNIT_OK);
 }
@@ -274,37 +336,17 @@ test_bytes_hex_to_base64(const MunitParameter *params, void *data)
 }
 
 
-/* first part of Set 1 / Challenge 6 */
-static MunitResult
-test_bytes_hamming_distance(const MunitParameter *params, void *data)
-{
-	const char *a = "this is a test";
-	const char *b = "wokka wokka!!!";
-
-	struct bytes *abuf = bytes_from_str(a);
-	struct bytes *bbuf = bytes_from_str(b);
-	if (abuf == NULL || bbuf == NULL)
-		munit_error("bytes_from_str");
-
-	int retval = bytes_hamming_distance(abuf, bbuf);
-	munit_assert_int(retval, ==, 37);
-
-	bytes_free(bbuf);
-	bytes_free(abuf);
-	return (MUNIT_OK);
-}
-
-
 /* The test suite. */
 MunitTest test_bytes_suite_tests[] = {
-	{ "bytes_from_str",      test_bytes_from_str,      NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
-	{ "bytes_from_hex",      test_bytes_from_hex,      NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
-	{ "bytes_copy",          test_bytes_copy,          NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
-	{ "bytes_to_str",        test_bytes_to_str,        NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
-	{ "bytes_to_hex",        test_bytes_to_hex,        NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
-	{ "bytes_to_base64",     test_bytes_to_base64,     NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
-	{ "bytes_hex_to_base64", test_bytes_hex_to_base64, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "bytes_from_str",         test_bytes_from_str,         NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "bytes_from_hex",         test_bytes_from_hex,         NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "bytes_from_base64",      test_bytes_from_base64,      NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "bytes_copy",             test_bytes_copy,             NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bytes_hamming_distance", test_bytes_hamming_distance, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "bytes_to_str",           test_bytes_to_str,           NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "bytes_to_hex",           test_bytes_to_hex,           NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "bytes_to_base64",        test_bytes_to_base64,        NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "bytes_hex_to_base64",    test_bytes_hex_to_base64,    NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{
 		.name       = NULL,
 		.test       = NULL,

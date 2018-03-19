@@ -36,7 +36,16 @@ struct bytes	*bytes_from_str(const char *s);
  * NOTE: This implementation will reject the encoded data if it contains
  * characters outside the base16 alphabet as per RFC 4648 § 3.3.
  */
-struct bytes	*bytes_from_hex(const char *hex);
+struct bytes	*bytes_from_hex(const char *s);
+
+/*
+ * Create a bytes struct from a base64-encoded NUL-terminated string.
+ *
+ * Returns a pointer to a newly allocated bytes struct that should passed to
+ * bytes_free(). Returns NULL if the given pointer is NULL, decoding failed, or
+ * malloc(3) failed.
+ */
+struct bytes	*bytes_from_base64(const char *s);
 
 /*
  * Create a bytes struct from another bytes struct by copying it.

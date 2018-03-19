@@ -125,7 +125,7 @@ analysis_char_freq(const struct bytes *buf, const double *freq_ref)
 	double prob = 0;
 	double freqs[27] = { 0 };
 
-	/* sanity check */
+	/* sanity checks */
 	if (buf == NULL || freq_ref == NULL)
 		return (-1);
 	if (buf->len == 0)
@@ -133,7 +133,7 @@ analysis_char_freq(const struct bytes *buf, const double *freq_ref)
 
 	/* populate freqs by inspecting the buffer */
 	for (size_t i = 0; i < buf->len; i++) {
-		uint8_t byte = buf->data[i];
+		const uint8_t byte = buf->data[i];
 		if (byte >= 'a' && byte <= 'z')
 			freqs[byte - 'a'] += 1.0 / buf->len;
 		else if (byte >= 'A' && byte <= 'Z')
@@ -147,9 +147,9 @@ analysis_char_freq(const struct bytes *buf, const double *freq_ref)
 	 * aggregated ones.
 	 */
 	for (int i = 0; i < 27; i++) {
-		double ref = freq_ref[i];
-		double actual = freqs[i];
-		double delta = fabs(ref - actual);
+		const double ref = freq_ref[i];
+		const double actual = freqs[i];
+		const double delta = fabs(ref - actual);
 		if (delta < ref)
 			prob += (ref - delta);
 	}
