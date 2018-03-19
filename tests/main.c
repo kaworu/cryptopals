@@ -8,9 +8,13 @@
 
 /* stuff from other test files */
 extern MunitTest test_bytes_suite_tests[];
+extern MunitTest test_xor_suite_tests[];
+extern MunitTest test_analysis_suite_tests[];
 
 static MunitSuite all_test_suites[] = {
-	{ "bytes.", test_bytes_suite_tests, NULL, 1, MUNIT_SUITE_OPTION_NONE },
+	{ "bytes/",    test_bytes_suite_tests,    NULL, 1, MUNIT_SUITE_OPTION_NONE },
+	{ "xor/",      test_xor_suite_tests,      NULL, 1, MUNIT_SUITE_OPTION_NONE },
+	{ "analysis/", test_analysis_suite_tests, NULL, 1, MUNIT_SUITE_OPTION_NONE },
 	{
 		.prefix     = NULL,
 		.tests      = NULL,

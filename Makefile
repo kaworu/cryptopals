@@ -1,11 +1,11 @@
 # Just a wrapper around CMake to build, run and clean.
 
-all: build/testrun
+all: testrun
 
-test: build/testrun
+test: testrun
 	./build/testrun
 
-build/testrun: build
+testrun: build
 	cd build && cmake -DCMAKE_BUILD_TYPE=DEBUG -DCMAKE_VERBOSE_MAKEFILE=YES .. && make
 
 build:
@@ -14,4 +14,4 @@ build:
 clean:
 	rm -rf build
 
-.PHONY: all test clean
+.PHONY: all test testrun clean

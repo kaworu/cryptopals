@@ -1,0 +1,19 @@
+#ifndef XOR_H
+#define XOR_H
+/*
+ * xor.h
+ *
+ * XOR "cipher" stuff for cryptopals.com challenges.
+ */
+#include "bytes.h"
+
+/*
+ * Perform a binary XOR of two bytes struct of the same length. After this
+ * function returns, the first bytes struct argument holds the result.
+ *
+ * Returns 0 on success, -1 if any of the argument is NULL or if their length
+ * doesn't match.
+ */
+int	bytes_xor(struct bytes *buf, const struct bytes *mask);
+
+#endif /* ndef XOR_H */

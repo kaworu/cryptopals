@@ -116,21 +116,6 @@ bytes_copy(const struct bytes *src)
 }
 
 
-int
-bytes_xor(struct bytes *bytes, const struct bytes *mask)
-{
-	if (bytes == NULL || mask == NULL)
-		return (-1);
-	if (bytes->len != mask->len)
-		return (-1);
-
-	for (size_t i = 0; i < bytes->len; i++)
-		bytes->data[i] ^= mask->data[i];
-
-	return (0);
-}
-
-
 char *
 bytes_to_str(const struct bytes *bytes)
 {

@@ -5,6 +5,7 @@
  *
  * Bytes manipulation stuff for cryptopals.com challenges.
  */
+#include <stdlib.h>
 #include <stdint.h>
 
 
@@ -44,15 +45,6 @@ struct bytes	*bytes_from_hex(const char *hex);
  * free(3). Returns NULL if the given pointer is NULL, or malloc(3) failed.
  */
 struct bytes	*bytes_copy(const struct bytes *src);
-
-/*
- * Perform a binary XOR of two bytes struct of the same length. After this
- * function returns, the first bytes struct argument holds the result.
- *
- * Returns 0 on success, -1 if any of the argument is NULL or if their length
- * doesn't match.
- */
-int	bytes_xor(struct bytes *bytes, const struct bytes *mask);
 
 /*
  * Returns the NUL-terminated string representation of the given bytes struct.
