@@ -65,12 +65,12 @@ struct bytes	*bytes_from_hex(const char *s);
 struct bytes	*bytes_from_base64(const char *s);
 
 /*
- * Create a bytes struct from another bytes struct by copying it.
+ * Create a bytes struct from another bytes struct by duplicating it.
  *
  * Returns a pointer to a newly allocated bytes struct that should passed to
  * bytes_free(). Returns NULL if the given pointer is NULL, or malloc(3) failed.
  */
-struct bytes	*bytes_copy(const struct bytes *src);
+struct bytes	*bytes_dup(const struct bytes *src);
 
 /*
  * Create a bytes struct from a slice of another bytes struct.

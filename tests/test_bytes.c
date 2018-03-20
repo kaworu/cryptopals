@@ -166,7 +166,7 @@ test_bytes_from_base64(const MunitParameter *params, void *data)
 
 
 static MunitResult
-test_bytes_copy(const MunitParameter *params, void *data)
+test_bytes_dup(const MunitParameter *params, void *data)
 {
 	const struct {
 		char *input;
@@ -186,7 +186,7 @@ test_bytes_copy(const MunitParameter *params, void *data)
 		if (buf == NULL)
 			munit_error("bytes_from_str");
 
-		struct bytes *cpy = bytes_copy(buf);
+		struct bytes *cpy = bytes_dup(buf);
 		munit_assert_not_null(cpy);
 		munit_assert_size(buf->len, ==, cpy->len);
 		munit_assert_memory_equal(buf->len, buf->data, cpy->data);
@@ -196,7 +196,7 @@ test_bytes_copy(const MunitParameter *params, void *data)
 	}
 
 	/* when NULL is given */
-	munit_assert_null(bytes_copy(NULL));
+	munit_assert_null(bytes_dup(NULL));
 
 	return (MUNIT_OK);
 }
@@ -392,7 +392,7 @@ MunitTest test_bytes_suite_tests[] = {
 	{ "bytes_from_str",         test_bytes_from_str,         NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bytes_from_hex",         test_bytes_from_hex,         NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bytes_from_base64",      test_bytes_from_base64,      NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
-	{ "bytes_copy",             test_bytes_copy,             NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "bytes_dup",              test_bytes_dup,              NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bytes_slice",            test_bytes_slice,            NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bytes_hamming_distance", test_bytes_hamming_distance, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bytes_to_str",           test_bytes_to_str,           NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },

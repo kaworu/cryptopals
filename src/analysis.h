@@ -26,7 +26,7 @@ double	analysis_looks_like_english(const struct bytes *buf);
  * If `score' is not NULL it will be set to the score of the result on success
  * (see analysis_looks_like_english()).
  *
- * Returns NULL if bytes_copy() failed, a valid bytes struct pointer otherwise
+ * Returns NULL if bytes_dup() failed, a valid bytes struct pointer otherwise
  * that should be passed to bytes_free().
  */
 struct bytes	*analysis_single_byte_xor(const struct bytes *buf,

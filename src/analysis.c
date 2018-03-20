@@ -71,7 +71,7 @@ analysis_single_byte_xor(const struct bytes *buf, uint8_t *key, double *score)
 	int success = 0;
 
 	/* create a working copy of the buffer to analyze */
-	xored = bytes_copy(buf);
+	xored = bytes_dup(buf);
 	if (xored == NULL)
 		goto out;
 

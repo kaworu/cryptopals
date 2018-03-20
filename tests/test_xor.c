@@ -30,9 +30,9 @@ test_bytes_xor(const MunitParameter *params, void *data)
 	struct bytes *empty = bytes_from_str("");
 	if (empty == NULL)
 		munit_error("bytes_from_str");
-	struct bytes *cpy = bytes_copy(buf);
+	struct bytes *cpy = bytes_dup(buf);
 	if (cpy == NULL)
-		munit_error("bytes_copy");
+		munit_error("bytes_dup");
 	/* when NULL is given */
 	munit_assert_int(bytes_xor(NULL, mask), ==, -1);
 	munit_assert_int(bytes_xor(buf,  NULL), ==, -1);

@@ -240,7 +240,7 @@ out:
 
 
 struct bytes *
-bytes_copy(const struct bytes *src)
+bytes_dup(const struct bytes *src)
 {
 	size_t len;
 	struct bytes *cpy = NULL;
