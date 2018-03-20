@@ -73,6 +73,15 @@ struct bytes	*bytes_from_base64(const char *s);
 struct bytes	*bytes_copy(const struct bytes *src);
 
 /*
+ * Create a bytes struct from a slice of another bytes struct.
+ *
+ * Returns a pointer to a newly allocated bytes struct that should passed to
+ * bytes_free(). Returns NULL if the given pointer is NULL, or malloc(3) failed,
+ * or if the requested slice is out of bounds.
+ */
+struct bytes	*bytes_slice(const struct bytes *src, size_t offset, size_t len);
+
+/*
  * Compute the Hamming distance between the two given bytes struct.
  *
  * Returns -1 if either argument is NULL or their length doesn't match.

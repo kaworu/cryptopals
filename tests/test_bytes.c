@@ -202,6 +202,37 @@ test_bytes_copy(const MunitParameter *params, void *data)
 }
 
 
+static MunitResult
+test_bytes_slice(const MunitParameter *params, void *data)
+{
+	struct bytes *buf = bytes_from_str("foobar");
+	if (buf == NULL)
+		munit_error("bytes_from_str");
+
+	for (size_t offset = 0; offset <= buf->len; offset++) {
+		const size_t maxlen = buf->len - offset;
+		for (size_t len = 0; len <= maxlen; len++) {
+			struct bytes *slice = bytes_slice(buf, offset, len);
+			munit_assert_not_null(slice);
+			munit_assert_size(slice->len, ==, len);
+			munit_assert_memory_equal(slice->len,
+			    buf->data + offset, slice->data);
+			bytes_free(slice);
+		}
+	}
+
+	/* when NULL is given */
+	munit_assert_null(bytes_slice(NULL, 0, 0));
+	/* invalid offset */
+	munit_assert_null(bytes_slice(buf, buf->len + 1, 0));
+	/* invalid length */
+	munit_assert_null(bytes_slice(buf, 1, buf->len));
+
+	bytes_free(buf);
+	return (MUNIT_OK);
+}
+
+
 /* first part of Set 1 / Challenge 6 */
 static MunitResult
 test_bytes_hamming_distance(const MunitParameter *params, void *data)
@@ -362,6 +393,7 @@ MunitTest test_bytes_suite_tests[] = {
 	{ "bytes_from_hex",         test_bytes_from_hex,         NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bytes_from_base64",      test_bytes_from_base64,      NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bytes_copy",             test_bytes_copy,             NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "bytes_slice",            test_bytes_slice,            NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bytes_hamming_distance", test_bytes_hamming_distance, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bytes_to_str",           test_bytes_to_str,           NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bytes_to_hex",           test_bytes_to_hex,           NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },

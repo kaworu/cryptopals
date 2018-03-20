@@ -261,6 +261,19 @@ bytes_copy(const struct bytes *src)
 }
 
 
+struct bytes *
+bytes_slice(const struct bytes *src, size_t offset, size_t len)
+{
+	/* sanity checks */
+	if (src == NULL)
+		return (NULL);
+	if (offset + len > src->len)
+		return (NULL);
+
+	return (bytes_from_raw(src->data + offset, len));
+}
+
+
 int
 bytes_hamming_distance(const struct bytes *a, const struct bytes *b)
 {
