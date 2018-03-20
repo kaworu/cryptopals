@@ -8,6 +8,29 @@
 
 
 static MunitResult
+test_bytes_from_raw(const MunitParameter *params, void *data)
+{
+	const char *input = "foobar";
+
+	for (size_t i = 0; i <= sizeof(input); i++) {
+		struct bytes *buf = bytes_from_raw(input, i);
+		if (buf == NULL)
+			munit_error("bytes_from_raw");
+
+		munit_assert_size(buf->len, ==, i);
+		munit_assert_memory_equal(buf->len, buf->data, input);
+
+		bytes_free(buf);
+	}
+
+	/* when NULL is given */
+	munit_assert_null(bytes_from_raw(NULL, 1));
+
+	return (MUNIT_OK);
+}
+
+
+static MunitResult
 test_bytes_from_str(const MunitParameter *params, void *data)
 {
 	const struct {
@@ -338,6 +361,7 @@ test_bytes_hex_to_base64(const MunitParameter *params, void *data)
 
 /* The test suite. */
 MunitTest test_bytes_suite_tests[] = {
+	{ "bytes_from_raw",         test_bytes_from_raw,         NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bytes_from_str",         test_bytes_from_str,         NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bytes_from_hex",         test_bytes_from_hex,         NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bytes_from_base64",      test_bytes_from_base64,      NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },

@@ -19,6 +19,15 @@ struct bytes {
 
 
 /*
+ * Create a bytes struct from a given buffer and its length.
+ *
+ * Returns a pointer to a newly allocated bytes struct that should passed to
+ * bytes_free(). Returns NULL if the given buffer pointer is NULL, or malloc(3)
+ * failed.
+ */
+struct bytes	*bytes_from_raw(const void *p, size_t len);
+
+/*
  * Create a bytes struct from a NUL-terminated string.
  *
  * Returns a pointer to a newly allocated bytes struct that should passed to

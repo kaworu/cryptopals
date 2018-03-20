@@ -51,23 +51,33 @@ b64decode(char c)
 
 
 struct bytes *
-bytes_from_str(const char *s)
+bytes_from_raw(const void *p, size_t len)
 {
 	struct bytes *buf = NULL;
 
 	/* sanity check */
-	if (s == NULL)
+	if (p == NULL)
 		return (NULL);
 
-	const size_t len = strlen(s);
 	buf = malloc(sizeof(struct bytes) + len * sizeof(uint8_t));
 	if (buf == NULL)
 		return (NULL);
 
 	buf->len = len;
-	(void)memcpy(buf->data, s, len);
+	(void)memcpy(buf->data, p, len);
 
 	return (buf);
+}
+
+
+struct bytes *
+bytes_from_str(const char *s)
+{
+	/* sanity check */
+	if (s == NULL)
+		return (NULL);
+
+	return (bytes_from_raw(s, strlen(s)));
 }
 
 
