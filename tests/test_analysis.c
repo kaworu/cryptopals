@@ -107,8 +107,8 @@ test_analysis_single_byte_xor2(const MunitParameter *params, void *data)
 /* The test suite. */
 MunitTest test_analysis_suite_tests[] = {
 	{ "analysis_looks_like_english", test_analysis_looks_like_english, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
-	{ "analysis_single_byte_xor",    test_analysis_single_byte_xor,    NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
-	{ "analysis_single_byte_xor2",   test_analysis_single_byte_xor2,   NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "analysis_single_byte_xor-1",  test_analysis_single_byte_xor,    NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "analysis_single_byte_xor-2",  test_analysis_single_byte_xor2,   NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{
 		.name       = NULL,
 		.test       = NULL,
