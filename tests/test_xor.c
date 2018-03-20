@@ -52,9 +52,38 @@ test_bytes_xor(const MunitParameter *params, void *data)
 }
 
 
+/* Set 1 / Challenge 3 */
+static MunitResult
+test_repeating_key_xor_1(const MunitParameter *params, void *data)
+{
+	const char *plaintext = "Cooking MC's like a pound of bacon";
+	const char *key = "X";
+	const char *expected =
+	    "1B37373331363F78151B7F2B783431333D78397828372D363C78373E783A393B3736";
+
+	struct bytes *buf  = bytes_from_str(plaintext);
+	struct bytes *kbuf = bytes_from_str(key);
+	if (buf == NULL || kbuf == NULL)
+		munit_error("bytes_from_str");
+
+	int retval = repeating_key_xor(buf, kbuf);
+	munit_assert_int(retval, ==, 0);
+
+	char *ciphertext = bytes_to_hex(buf);
+	if (ciphertext == NULL)
+		munit_error("bytes_to_hex");
+	munit_assert_string_equal(ciphertext, expected);
+
+	free(ciphertext);
+	bytes_free(kbuf);
+	bytes_free(buf);
+	return (MUNIT_OK);
+}
+
+
 /* Set 1 / Challenge 5 */
 static MunitResult
-test_repeating_key_xor(const MunitParameter *params, void *data)
+test_repeating_key_xor_2(const MunitParameter *params, void *data)
 {
 	const char *plaintext = "Burning 'em, if you ain't quick and nimble\n"
 	    "I go crazy when I hear a cymbal";
@@ -85,8 +114,9 @@ test_repeating_key_xor(const MunitParameter *params, void *data)
 
 /* The test suite. */
 MunitTest test_xor_suite_tests[] = {
-	{ "bytes_xor",         test_bytes_xor,         NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
-	{ "repeating_key_xor", test_repeating_key_xor, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "bytes_xor",           test_bytes_xor,           NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "repeating_key_xor-1", test_repeating_key_xor_1, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "repeating_key_xor-2", test_repeating_key_xor_2, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{
 		.name       = NULL,
 		.test       = NULL,
