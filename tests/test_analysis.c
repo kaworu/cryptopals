@@ -32,8 +32,8 @@ test_analysis_looks_like_english(const MunitParameter *params, void *data)
 	struct bytes *buf = bytes_from_str(text);
 	if (buf == NULL)
 		munit_error("bytes_from_str");
-	const double prob = analysis_looks_like_english(buf);
 
+	const double prob = analysis_looks_like_english(buf);
 	munit_assert_double(prob, >, 0.80);
 
 	bytes_free(buf);
@@ -56,15 +56,10 @@ test_analysis_single_byte_xor(const MunitParameter *params, void *data)
 
 	struct bytes *decrypted = analysis_single_byte_xor(buf, &prob);
 	munit_assert_not_null(decrypted);
-
-	char *plaintext = bytes_to_str(decrypted);
-	if (plaintext == NULL)
-		munit_error("bytes_to_str");
-
-	munit_assert_string_equal(plaintext, expected);
+	munit_assert_size(decrypted->len, ==, strlen(expected));
+	munit_assert_memory_equal(decrypted->len, decrypted->data, expected);
 	munit_assert_double(prob, >, 0.80);
 
-	free(plaintext);
 	bytes_free(decrypted);
 	bytes_free(buf);
 	return (MUNIT_OK);
@@ -87,8 +82,7 @@ test_analysis_single_byte_xor2(const MunitParameter *params, void *data)
 
 		double prob = 0;
 		struct bytes *decrypted = analysis_single_byte_xor(buf, &prob);
-		if (decrypted == NULL)
-			munit_error("analysis_single_byte_xor");
+		munit_assert_not_null(decrypted);
 
 		if (prob > fprob) {
 			bytes_free(found);
@@ -99,14 +93,12 @@ test_analysis_single_byte_xor2(const MunitParameter *params, void *data)
 		}
 		bytes_free(buf);
 	}
-	char *plaintext = bytes_to_str(found);
-	if (plaintext == NULL)
-		munit_error("bytes_to_str");
 
-	munit_assert_string_equal(plaintext, expected);
+	munit_assert_not_null(found);
+	munit_assert_size(found->len, ==, strlen(expected));
+	munit_assert_memory_equal(found->len, found->data, expected);
 	munit_assert_double(fprob, >, 0.80);
 
-	free(plaintext);
 	bytes_free(found);
 	return (MUNIT_OK);
 }

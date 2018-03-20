@@ -14,9 +14,7 @@ test_bytes_from_raw(const MunitParameter *params, void *data)
 
 	for (size_t i = 0; i <= sizeof(input); i++) {
 		struct bytes *buf = bytes_from_raw(input, i);
-		if (buf == NULL)
-			munit_error("bytes_from_raw");
-
+		munit_assert_not_null(buf);
 		munit_assert_size(buf->len, ==, i);
 		munit_assert_memory_equal(buf->len, buf->data, input);
 
@@ -39,10 +37,9 @@ test_bytes_from_single(const MunitParameter *params, void *data)
 
 	for (size_t i = 0; i <= sizeof(vectors) / sizeof(*vectors); i++) {
 		const uint8_t byte = vectors[i];
-		struct bytes *buf = bytes_from_single(byte);
-		if (buf == NULL)
-			munit_error("bytes_from_single");
 
+		struct bytes *buf = bytes_from_single(byte);
+		munit_assert_not_null(buf);
 		munit_assert_size(buf->len, ==, 1);
 		munit_assert_memory_equal(1, buf->data, &byte);
 
@@ -74,9 +71,7 @@ test_bytes_from_str(const MunitParameter *params, void *data)
 		const size_t expected = vectors[i].expected;
 
 		struct bytes *buf = bytes_from_str(input);
-		if (buf == NULL)
-			munit_error("bytes_from_str");
-
+		munit_assert_not_null(buf);
 		munit_assert_size(buf->len, ==, expected);
 		munit_assert_memory_equal(buf->len, buf->data, input);
 
@@ -114,9 +109,7 @@ test_bytes_from_hex(const MunitParameter *params, void *data)
 		const char *expected = vectors[i].expected;
 
 		struct bytes *buf = bytes_from_hex(input);
-		if (buf == NULL)
-			munit_error("bytes_from_hex");
-
+		munit_assert_not_null(buf);
 		munit_assert_size(buf->len, ==, strlen(expected));
 		munit_assert_memory_equal(buf->len, buf->data, expected);
 
@@ -155,9 +148,7 @@ test_bytes_from_base64(const MunitParameter *params, void *data)
 		const char *expected = vectors[i].expected;
 
 		struct bytes *buf = bytes_from_base64(input);
-		if (buf == NULL)
-			munit_error("bytes_from_base64");
-
+		munit_assert_not_null(buf);
 		munit_assert_size(buf->len, ==, strlen(expected));
 		munit_assert_memory_equal(buf->len, buf->data, expected);
 
@@ -191,15 +182,12 @@ test_bytes_copy(const MunitParameter *params, void *data)
 
 	for (int i = 0; i < (sizeof(vectors) / sizeof(*vectors)); i++) {
 		const char *input = vectors[i].input;
-
 		struct bytes *buf = bytes_from_str(input);
 		if (buf == NULL)
 			munit_error("bytes_from_str");
 
 		struct bytes *cpy = bytes_copy(buf);
-		if (cpy == NULL)
-			munit_error("bytes_copy");
-
+		munit_assert_not_null(cpy);
 		munit_assert_size(buf->len, ==, cpy->len);
 		munit_assert_memory_equal(buf->len, buf->data, cpy->data);
 
@@ -218,19 +206,16 @@ test_bytes_copy(const MunitParameter *params, void *data)
 static MunitResult
 test_bytes_hamming_distance(const MunitParameter *params, void *data)
 {
-	const char *a = "this is a test";
-	const char *b = "wokka wokka!!!";
-
-	struct bytes *abuf = bytes_from_str(a);
-	struct bytes *bbuf = bytes_from_str(b);
-	if (abuf == NULL || bbuf == NULL)
+	struct bytes *a = bytes_from_str("this is a test");
+	struct bytes *b = bytes_from_str("wokka wokka!!!");
+	if (a == NULL || b == NULL)
 		munit_error("bytes_from_str");
 
-	int retval = bytes_hamming_distance(abuf, bbuf);
+	int retval = bytes_hamming_distance(a, b);
 	munit_assert_int(retval, ==, 37);
 
-	bytes_free(bbuf);
-	bytes_free(abuf);
+	bytes_free(b);
+	bytes_free(a);
 	return (MUNIT_OK);
 }
 
@@ -254,15 +239,12 @@ test_bytes_to_str(const MunitParameter *params, void *data)
 	for (int i = 0; i < (sizeof(vectors) / sizeof(*vectors)); i++) {
 		const char *input = vectors[i].input;
 		const char *expected = vectors[i].expected;
-
 		struct bytes *buf = bytes_from_str(input);
 		if (buf == NULL)
 			munit_error("bytes_from_str");
 
 		char *result = bytes_to_str(buf);
-		if (result == NULL)
-			munit_error("bytes_to_str");
-
+		munit_assert_not_null(result);
 		munit_assert_string_equal(result, expected);
 
 		free(result);
@@ -295,15 +277,12 @@ test_bytes_to_hex(const MunitParameter *params, void *data)
 	for (int i = 0; i < (sizeof(vectors) / sizeof(*vectors)); i++) {
 		const char *input = vectors[i].input;
 		const char *expected = vectors[i].expected;
-
 		struct bytes *buf = bytes_from_str(input);
 		if (buf == NULL)
 			munit_error("bytes_from_str");
 
 		char *result = bytes_to_hex(buf);
-		if (result == NULL)
-			munit_error("bytes_to_hex");
-
+		munit_assert_not_null(result);
 		munit_assert_string_equal(result, expected);
 
 		free(result);
@@ -337,15 +316,12 @@ test_bytes_to_base64(const MunitParameter *params, void *data)
 	for (int i = 0; i < (sizeof(vectors) / sizeof(*vectors)); i++) {
 		const char *input = vectors[i].input;
 		const char *expected = vectors[i].expected;
-
 		struct bytes *buf = bytes_from_str(input);
 		if (buf == NULL)
 			munit_error("bytes_from_str");
 
 		char *result = bytes_to_base64(buf);
-		if (result == NULL)
-			munit_error("bytes_to_base64");
-
+		munit_assert_not_null(result);
 		munit_assert_string_equal(result, expected);
 
 		free(result);
@@ -367,13 +343,9 @@ test_bytes_hex_to_base64(const MunitParameter *params, void *data)
 	const char *expected = "SSdtIGtpbGxpbmcgeW91ciBicmFpbiBsaWtlIGEgcG9pc29ub3VzIG11c2hyb29t";
 
 	struct bytes *buf = bytes_from_hex(hex);
-	if (buf == NULL)
-		munit_error("bytes_from_hex");
-
 	char *result = bytes_to_base64(buf);
-	if (result == NULL)
-		munit_error("bytes_to_base64");
-
+	munit_assert_not_null(buf);
+	munit_assert_not_null(result);
 	munit_assert_string_equal(result, expected);
 
 	free(result);

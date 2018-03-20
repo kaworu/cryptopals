@@ -245,6 +245,7 @@ bytes_copy(const struct bytes *src)
 	size_t len;
 	struct bytes *cpy = NULL;
 
+	/* sanity check */
 	if (src == NULL)
 		return (NULL);
 
