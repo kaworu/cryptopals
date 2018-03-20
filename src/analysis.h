@@ -15,17 +15,22 @@
 double	analysis_looks_like_english(const struct bytes *buf);
 
 /*
- * Single-byte XOR cipher brute-force.
+ * Single-byte XOR "cipher" brute-force.
  *
  * Brute force the given bytes struct assuming that it is "encrypted" with a
  * single-byte XOR cipher and that the plaintext is english. Returns the
- * "decrypted" version of the buffer. If `s' is not NULL it will be set to the
- * score of the result on success (see analysis_looks_like_english()).
+ * "decrypted" version of the buffer.
+ *
+ * If `key' is not NULL it will be set to the key guessed on success.
+ *
+ * If `score' is not NULL it will be set to the score of the result on success
+ * (see analysis_looks_like_english()).
  *
  * Returns NULL if bytes_copy() failed, a valid bytes struct pointer otherwise
  * that should be passed to bytes_free().
  */
-struct bytes	*analysis_single_byte_xor(const struct bytes *buf, double *s);
+struct bytes	*analysis_single_byte_xor(const struct bytes *buf,
+		    uint8_t *key, double *score);
 
 #endif /* ndef SRC_ANALYSIS_H */
 

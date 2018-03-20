@@ -63,11 +63,10 @@ analysis_looks_like_english(const struct bytes *buf)
    implementation test each byte which is 255 times slower (!) but OTHO doesn't
    depend on the analysis_looks_like_english implementation. */
 struct bytes *
-analysis_single_byte_xor(const struct bytes *buf, double *p)
+analysis_single_byte_xor(const struct bytes *buf, uint8_t *key, double *score)
 {
 	struct bytes *xored = NULL;
 	uint8_t guess = 0;
-	uint8_t k, pk;
 	double gprob = 0;
 	int success = 0;
 
@@ -77,10 +76,10 @@ analysis_single_byte_xor(const struct bytes *buf, double *p)
 		goto out;
 
 	/* previous key used */
-	pk = 0;
+	uint8_t pk = 0;
 	/* go through each possible byte and find the one most likely to yield
 	   english text */
-	for (k = 0; k < UINT8_MAX; k++) {
+	for (uint8_t k = 0; k < UINT8_MAX; k++) {
 		/* XOR the working buffer with the previous key and the current
 		   key, so that we undo the last encrypt iteration and encrypt
 		   for the current iteration at once.  */
@@ -103,18 +102,19 @@ analysis_single_byte_xor(const struct bytes *buf, double *p)
 	   the last loop iteration */
 	for (size_t i = 0; i < xored->len; i++)
 		xored->data[i] ^= (guess ^ pk);
+	/* set `key' and `score' if needed */
+	if (key != NULL)
+		*key = guess;
+	if (score != NULL)
+		*score = gprob;
 
 	success = 1;
 	/* FALLTHROUGH */
 out:
-	if (success) {
-		if (p != NULL)
-			*p = gprob;
-	} else {
+	if (!success) {
 		free(xored);
 		xored = NULL;
 	}
-
 	return (xored);
 }
 
