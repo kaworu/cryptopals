@@ -28,6 +28,14 @@ struct bytes {
 struct bytes	*bytes_from_raw(const void *p, size_t len);
 
 /*
+ * Create a bytes struct from a single given byte.
+ *
+ * Returns a pointer to a newly allocated bytes struct that should passed to
+ * bytes_free(). Returns NULL if malloc(3) failed.
+ */
+struct bytes	*bytes_from_single(uint8_t byte);
+
+/*
  * Create a bytes struct from a NUL-terminated string.
  *
  * Returns a pointer to a newly allocated bytes struct that should passed to

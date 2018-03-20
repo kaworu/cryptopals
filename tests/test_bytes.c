@@ -31,6 +31,29 @@ test_bytes_from_raw(const MunitParameter *params, void *data)
 
 
 static MunitResult
+test_bytes_from_single(const MunitParameter *params, void *data)
+{
+	const uint8_t vectors[] = {
+		0x0, 0x1, 0xa0, 0xef, 0xfe, 0xff
+	};
+
+	for (size_t i = 0; i <= sizeof(vectors) / sizeof(*vectors); i++) {
+		const uint8_t byte = vectors[i];
+		struct bytes *buf = bytes_from_single(byte);
+		if (buf == NULL)
+			munit_error("bytes_from_single");
+
+		munit_assert_size(buf->len, ==, 1);
+		munit_assert_memory_equal(1, buf->data, &byte);
+
+		bytes_free(buf);
+	}
+
+	return (MUNIT_OK);
+}
+
+
+static MunitResult
 test_bytes_from_str(const MunitParameter *params, void *data)
 {
 	const struct {
@@ -362,6 +385,7 @@ test_bytes_hex_to_base64(const MunitParameter *params, void *data)
 /* The test suite. */
 MunitTest test_bytes_suite_tests[] = {
 	{ "bytes_from_raw",         test_bytes_from_raw,         NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "bytes_from_single",      test_bytes_from_single,      NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bytes_from_str",         test_bytes_from_str,         NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bytes_from_hex",         test_bytes_from_hex,         NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bytes_from_base64",      test_bytes_from_base64,      NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },

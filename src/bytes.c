@@ -71,6 +71,13 @@ bytes_from_raw(const void *p, size_t len)
 
 
 struct bytes *
+bytes_from_single(uint8_t byte)
+{
+	return (bytes_from_raw(&byte, 1));
+}
+
+
+struct bytes *
 bytes_from_str(const char *s)
 {
 	/* sanity check */
