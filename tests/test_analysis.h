@@ -1,7 +1,7 @@
-#ifndef TESTS_TEST_ANALYSIS_H
-#define TESTS_TEST_ANALYSIS_H
+#ifndef TEST_ANALYSIS_H
+#define TEST_ANALYSIS_H
 /*
- * tests/test_analysis.h
+ * test_analysis.h
  */
 
 /* see challenge-data/4.txt */
@@ -335,4 +335,4 @@ static const char *s1c4data[] = {
 	"32042f46431d2c44607934ed180c1028136a5f2b26092e3b2c4e2930585a",
 };
 
-#endif /* ndef TESTS_TEST_ANALYSIS_H */
+#endif /* ndef TEST_ANALYSIS_H */

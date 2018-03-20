@@ -1,11 +1,11 @@
-#ifndef EXPLICIT_BZERO_H
-#define EXPLICIT_BZERO_H
+#ifndef COMPAT_EXPLICIT_BZERO_H
+#define COMPAT_EXPLICIT_BZERO_H
 /*
- * explicit_bzero.h
+ * compat/explicit_bzero.h
  *
  * à-la OpenBSD explicit_bzero(3).
  */
 
 void	explicit_bzero(void *buf, size_t len);
 
-#endif /* ndef EXPLICIT_BZERO_H */
+#endif /* ndef COMPAT_EXPLICIT_BZERO_H */

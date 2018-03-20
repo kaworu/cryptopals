@@ -1,7 +1,7 @@
-#ifndef SRC_ANALYSIS_H
-#define SRC_ANALYSIS_H
+#ifndef ANALYSIS_H
+#define ANALYSIS_H
 /*
- * src/analysis.h
+ * analysis.h
  *
  * Plain text analysis stuff for cryptopals.com challenges.
  */
@@ -34,3 +34,4 @@ struct bytes	*analysis_single_byte_xor(const struct bytes *buf,
 
 #endif /* ndef SRC_ANALYSIS_H */
 
+#endif /* ndef ANALYSIS_H */
