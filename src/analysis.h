@@ -32,6 +32,4 @@ double	analysis_looks_like_english(const struct bytes *buf);
 struct bytes	*analysis_single_byte_xor(const struct bytes *buf,
 		    uint8_t *key, double *score);
 
-#endif /* ndef SRC_ANALYSIS_H */
-
 #endif /* ndef ANALYSIS_H */
