@@ -65,15 +65,15 @@ analysis_looks_like_english(const struct bytes *buf)
 struct bytes *
 analysis_single_byte_xor(const struct bytes *buf, double *p)
 {
-	struct bytes *ret = NULL;
+	struct bytes *xored = NULL;
 	uint8_t guess = 0;
 	uint8_t k, pk;
 	double gprob = 0;
 	int success = 0;
 
 	/* create a working copy of the buffer to analyze */
-	ret = bytes_copy(buf);
-	if (ret == NULL)
+	xored = bytes_copy(buf);
+	if (xored == NULL)
 		goto out;
 
 	/* previous key used */
@@ -84,10 +84,10 @@ analysis_single_byte_xor(const struct bytes *buf, double *p)
 		/* XOR the working buffer with the previous key and the current
 		   key, so that we undo the last encrypt iteration and encrypt
 		   for the current iteration at once.  */
-		for (size_t i = 0; i < ret->len; i++)
-			ret->data[i] ^= (k ^ pk);
+		for (size_t i = 0; i < xored->len; i++)
+			xored->data[i] ^= (k ^ pk);
 		/* run the analysis on the "decrypted" buffer */
-		double p = analysis_looks_like_english(ret);
+		double p = analysis_looks_like_english(xored);
 		/* save the current analysis if it looks like the best one */
 		if (p > gprob) {
 			guess = k;
@@ -99,10 +99,10 @@ analysis_single_byte_xor(const struct bytes *buf, double *p)
 	}
 
 	/* here `guess' is our guessed key and `gprob' the probability that is
-	   this the correct one. The working buffer is encrypted with `k' from
+	   this the correct one. The working buffer is encrypted with `pk' from
 	   the last loop iteration */
-	for (size_t i = 0; i < ret->len; i++)
-		ret->data[i] ^= (guess ^ pk);
+	for (size_t i = 0; i < xored->len; i++)
+		xored->data[i] ^= (guess ^ pk);
 
 	success = 1;
 	/* FALLTHROUGH */
@@ -111,11 +111,11 @@ out:
 		if (p != NULL)
 			*p = gprob;
 	} else {
-		free(ret);
-		ret = NULL;
+		free(xored);
+		xored = NULL;
 	}
 
-	return (ret);
+	return (xored);
 }
 
 
