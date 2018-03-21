@@ -29,8 +29,8 @@ test_looks_like_english(const MunitParameter *params, void *data)
 	if (buf == NULL)
 		munit_error("bytes_from_str");
 
-	const double prob = looks_like_english(buf);
-	munit_assert_double(prob, >, 0.80);
+	const double score = looks_like_english(buf);
+	munit_assert_double(score, >, 0.80);
 
 	bytes_free(buf);
 	return (MUNIT_OK);

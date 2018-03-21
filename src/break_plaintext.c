@@ -61,7 +61,7 @@ looks_like_english(const struct bytes *buf)
 static double
 char_freq(const struct bytes *buf, const double *freq_ref)
 {
-	double prob = 0;
+	double score = 0;
 	double freqs[27] = { 0 };
 
 	/* sanity checks */
@@ -90,8 +90,8 @@ char_freq(const struct bytes *buf, const double *freq_ref)
 		const double actual = freqs[i];
 		const double delta = fabs(ref - actual);
 		if (delta < ref)
-			prob += (ref - delta);
+			score += (ref - delta);
 	}
 
-	return (prob);
+	return (score);
 }
