@@ -3,7 +3,7 @@ include(CheckLibraryExists)
 cmake_minimum_required(VERSION 2.6.0)
 project(cryptopals)
 
-add_definitions(-std=c11 -Wall)
+add_definitions(-std=c11 -Wall -Werror)
 set(CMAKE_C_FLAGS_DEBUG   "${CMAKE_C_FLAGS} -O0 -g")
 set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS} -O3 -march=native")
 
