@@ -274,7 +274,7 @@ bytes_slice(const struct bytes *src, size_t offset, size_t len)
 }
 
 
-int
+intmax_t
 bytes_hamming_distance(const struct bytes *a, const struct bytes *b)
 {
 	/* sanity checks */
@@ -283,7 +283,7 @@ bytes_hamming_distance(const struct bytes *a, const struct bytes *b)
 	if (a->len != b->len)
 		return (-1);
 
-	int d = 0;
+	intmax_t d = 0;
 	for (size_t i = 0; i < a->len; i++)
 		d += popcnt(a->data[i] ^ b->data[i]);
 

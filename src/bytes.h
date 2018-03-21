@@ -5,8 +5,8 @@
  *
  * Bytes manipulation stuff for cryptopals.com challenges.
  */
-#include <stdlib.h>
 #include <stdint.h>
+#include <stdlib.h>
 
 
 /*
@@ -86,7 +86,7 @@ struct bytes	*bytes_slice(const struct bytes *src, size_t offset, size_t len);
  *
  * Returns -1 if either argument is NULL or their length doesn't match.
  */
-int	bytes_hamming_distance(const struct bytes *a, const struct bytes *b);
+intmax_t	bytes_hamming_distance(const struct bytes *, const struct bytes *);
 
 /*
  * Returns the NUL-terminated string representation of the given bytes struct.

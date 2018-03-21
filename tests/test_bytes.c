@@ -240,8 +240,8 @@ test_bytes_hamming_distance(const MunitParameter *params, void *data)
 	if (a == NULL || b == NULL)
 		munit_error("bytes_from_str");
 
-	int retval = bytes_hamming_distance(a, b);
-	munit_assert_int(retval, ==, 37);
+	intmax_t retval = bytes_hamming_distance(a, b);
+	munit_assert_int64((int64_t)retval, ==, 37);
 
 	bytes_free(b);
 	bytes_free(a);
