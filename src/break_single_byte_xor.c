@@ -22,12 +22,12 @@ break_single_byte_xor(const struct bytes *ciphertext,
 
 	/* sanity check */
 	if (ciphertext == NULL || ciphertext->len == 0)
-		goto out;
+		goto cleanup;
 
 	/* create a working copy of the buffer to analyze */
 	decrypted = bytes_dup(ciphertext);
 	if (decrypted == NULL)
-		goto out;
+		goto cleanup;
 
 	/* previous key used */
 	uint8_t pk = 0;
@@ -61,7 +61,7 @@ break_single_byte_xor(const struct bytes *ciphertext,
 	if (key_p != NULL) {
 		struct bytes *key = bytes_from_single(guess);
 		if (key == NULL)
-			goto out;
+			goto cleanup;
 		*key_p = key;
 	}
 	if (score_p != NULL)
@@ -69,7 +69,7 @@ break_single_byte_xor(const struct bytes *ciphertext,
 
 	success = 1;
 	/* FALLTHROUGH */
-out:
+cleanup:
 	if (!success) {
 		bytes_free(decrypted);
 		decrypted = NULL;

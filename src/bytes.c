@@ -97,18 +97,18 @@ bytes_from_hex(const char *s)
 
 	/* sanity check */
 	if (s == NULL)
-		goto out;
+		goto cleanup;
 
 	/* each byte is encoded as a pair of hex characters, thus if we have an
 	   odd count of character we can't decode successfully the string. */
 	hexlen = strlen(s);
 	nbytes = hexlen / 2;
 	if (nbytes * 2 != hexlen)
-		goto out;
+		goto cleanup;
 
 	buf = malloc(sizeof(struct bytes) + nbytes * sizeof(uint8_t));
 	if (buf == NULL)
-		goto out;
+		goto cleanup;
 	buf->len = nbytes;
 
 	/* decoding loop */
@@ -124,7 +124,7 @@ bytes_from_hex(const char *s)
 		else if (c >= 'A' && c <= 'F')
 			msb = 10 + c - 'A';
 		else
-			goto out;
+			goto cleanup;
 
 		/* second group */
 		c = s[i * 2 + 1];
@@ -135,7 +135,7 @@ bytes_from_hex(const char *s)
 		else if (c >= 'A' && c <= 'F')
 			lsb = 10 + c - 'A';
 		else
-			goto out;
+			goto cleanup;
 
 		/* construct the current byte using msb and lsb */
 		buf->data[i] = (msb << 4) | lsb;
@@ -143,7 +143,7 @@ bytes_from_hex(const char *s)
 
 	success = 1;
 	/* FALLTHROUGH */
-out:
+cleanup:
 	if (!success) {
 		bytes_free(buf);
 		buf = NULL;
@@ -161,7 +161,7 @@ bytes_from_base64(const char *s)
 
 	/* sanity check */
 	if (s == NULL)
-		goto out;
+		goto cleanup;
 
 	/*
 	 * base64 encode 6 bits per character. A "unit" is three bytes (i.e. 24
@@ -172,7 +172,7 @@ bytes_from_base64(const char *s)
 	const size_t b64len = strlen(s);
 	const size_t nunit = b64len / 4;
 	if (nunit * 4 != b64len)
-		goto out;
+		goto cleanup;
 
 	/*
 	 * the resulting buffer length is three bytes per unit. If the last unit
@@ -193,7 +193,7 @@ bytes_from_base64(const char *s)
 
 	buf = malloc(sizeof(struct bytes) + nbytes * sizeof(uint8_t));
 	if (buf == NULL)
-		goto out;
+		goto cleanup;
 	buf->len = nbytes;
 
 	/* decoding loop */
@@ -209,7 +209,7 @@ bytes_from_base64(const char *s)
 		/* sanity check */
 		if (c0 == UINT8_MAX || c1 == UINT8_MAX || c2 == UINT8_MAX ||
 		    c3 == UINT8_MAX) {
-			goto out;
+			goto cleanup;
 		}
 		/* pointer to the first byte of the current unit */
 		uint8_t * const p = buf->data + (i * 3);
@@ -230,7 +230,7 @@ bytes_from_base64(const char *s)
 
 	success = 1;
 	/* FALLTHROUGH */
-out:
+cleanup:
 	if (!success) {
 		bytes_free(buf);
 		buf = NULL;
