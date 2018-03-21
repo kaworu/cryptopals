@@ -20,6 +20,10 @@ break_single_byte_xor(const struct bytes *ciphertext,
 	double gprob = 0;
 	int success = 0;
 
+	/* sanity check */
+	if (ciphertext == NULL)
+		goto out;
+
 	/* create a working copy of the buffer to analyze */
 	xored = bytes_dup(ciphertext);
 	if (xored == NULL)
