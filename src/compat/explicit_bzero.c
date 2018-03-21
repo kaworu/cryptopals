@@ -10,6 +10,8 @@ void
 explicit_bzero(void *buf, size_t len)
 {
 	volatile unsigned char *p = buf;
-	while (len--)
+	while (len > 0) {
 		*p++ = 0;
+		len--;
+	}
 }
