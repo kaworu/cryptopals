@@ -19,6 +19,10 @@ check_library_exists(c explicit_bzero "strings.h" HAVE_EXPLICIT_BZERO)
 if(NOT HAVE_EXPLICIT_BZERO)
     set(SRCS ${SRCS} "${PROJECT_SOURCE_DIR}/src/compat/explicit_bzero.c")
 endif()
+check_library_exists(c freezero "stdlib.h" HAVE_FREEZERO)
+if(NOT HAVE_FREEZERO)
+    set(SRCS ${SRCS} "${PROJECT_SOURCE_DIR}/src/compat/freezero.c")
+endif()
 
 # µnit Testing Framework
 include_directories("${PROJECT_SOURCE_DIR}/munit")

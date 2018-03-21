@@ -7,7 +7,6 @@
  */
 #include <stdlib.h>
 #include <string.h>
-#include <strings.h>
 
 #include "compat.h"
 #include "bytes.h"
@@ -442,6 +441,5 @@ bytes_free(struct bytes *victim)
 		return;
 
 	len = (sizeof(struct bytes) + victim->len * sizeof(uint8_t));
-	explicit_bzero(victim, len);
-	free(victim);
+	freezero(victim, len);
 }
