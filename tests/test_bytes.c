@@ -1,8 +1,6 @@
 /*
  * test_bytes.c
  */
-#include <stdlib.h>
-
 #include "munit.h"
 #include "bytes.h"
 

@@ -1,18 +1,12 @@
-#ifndef ANALYSIS_H
-#define ANALYSIS_H
+#ifndef BREAK_SINGLE_BYTE_XOR_H
+#define BREAK_SINGLE_BYTE_XOR_H
 /*
- * analysis.h
+ * break_single_byte_xor.h
  *
- * Plain text analysis stuff for cryptopals.com challenges.
+ * Breaking Single-byte XOR "cipher".
  */
 #include "bytes.h"
 
-
-/*
- * Returns the score of the given buffer as plaintext english, -1.0 if the
- * provided bytes struct argument is NULL.
- */
-double	analysis_looks_like_english(const struct bytes *buf);
 
 /*
  * Single-byte XOR "cipher" brute-force.
@@ -24,12 +18,12 @@ double	analysis_looks_like_english(const struct bytes *buf);
  * If `key' is not NULL it will be set to the key guessed on success.
  *
  * If `score' is not NULL it will be set to the score of the result on success
- * (see analysis_looks_like_english()).
+ * (see looks_like_english()).
  *
  * Returns NULL if bytes_dup() failed, a valid bytes struct pointer otherwise
  * that should be passed to bytes_free().
  */
-struct bytes	*analysis_single_byte_xor(const struct bytes *buf,
+struct bytes	*break_single_byte_xor(const struct bytes *ciphertext,
 		    uint8_t *key, double *score);
 
-#endif /* ndef ANALYSIS_H */
+#endif /* ndef BREAK_SINGLE_BYTE_XOR_H */

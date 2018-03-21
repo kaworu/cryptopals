@@ -1,8 +1,6 @@
 /*
  * test_xor.c
  */
-#include <stdlib.h>
-
 #include "munit.h"
 #include "xor.h"
 

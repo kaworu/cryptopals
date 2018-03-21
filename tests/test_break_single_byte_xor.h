@@ -1,8 +1,9 @@
-#ifndef TEST_ANALYSIS_H
-#define TEST_ANALYSIS_H
+#ifndef TEST_BREAK_SINGLE_BYTE_XOR_H
+#define TEST_BREAK_SINGLE_BYTE_XOR_H
 /*
- * test_analysis.h
+ * test_break_single_byte_xor.h
  */
+
 
 /* see challenge-data/4.txt */
 static const char *s1c4data[] = {
@@ -335,4 +336,4 @@ static const char *s1c4data[] = {
 	"32042f46431d2c44607934ed180c1028136a5f2b26092e3b2c4e2930585a",
 };
 
-#endif /* ndef TEST_ANALYSIS_H */
+#endif /* ndef TEST_BREAK_SINGLE_BYTE_XOR_H */

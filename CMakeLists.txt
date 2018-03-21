@@ -10,7 +10,8 @@ set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS} -O3 -march=native")
 set(SRCS
     ${PROJECT_SOURCE_DIR}/src/bytes.c
     ${PROJECT_SOURCE_DIR}/src/xor.c
-    ${PROJECT_SOURCE_DIR}/src/analysis.c
+    ${PROJECT_SOURCE_DIR}/src/break_plaintext.c
+    ${PROJECT_SOURCE_DIR}/src/break_single_byte_xor.c
 )
 
 # compat stuff.
@@ -31,6 +32,7 @@ add_library(cryptopals ${SRCS})
 add_executable(testrun
     ${PROJECT_SOURCE_DIR}/tests/test_bytes.c
     ${PROJECT_SOURCE_DIR}/tests/test_xor.c
-    ${PROJECT_SOURCE_DIR}/tests/test_analysis.c
+    ${PROJECT_SOURCE_DIR}/tests/test_break_plaintext.c
+    ${PROJECT_SOURCE_DIR}/tests/test_break_single_byte_xor.c
     ${PROJECT_SOURCE_DIR}/tests/main.c)
 target_link_libraries(testrun munit cryptopals)
