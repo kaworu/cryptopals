@@ -13,7 +13,7 @@
    depend on the looks_like_english() implementation. */
 struct bytes *
 break_single_byte_xor(const struct bytes *ciphertext,
-		uint8_t *key, double *score)
+		struct bytes **key_p, double *score_p)
 {
 	struct bytes *xored = NULL;
 	uint8_t guess = 0;
@@ -56,11 +56,16 @@ break_single_byte_xor(const struct bytes *ciphertext,
 	   the last loop iteration */
 	for (size_t i = 0; i < xored->len; i++)
 		xored->data[i] ^= (guess ^ pk);
-	/* set `key' and `score' if needed */
-	if (key != NULL)
-		*key = guess;
-	if (score != NULL)
-		*score = gprob;
+
+	/* set `key_p' and `score_p' if needed */
+	if (key_p != NULL) {
+		struct bytes *key = bytes_from_single(guess);
+		if (key == NULL)
+			goto out;
+		*key_p = key;
+	}
+	if (score_p != NULL)
+		*score_p = gprob;
 
 	success = 1;
 	/* FALLTHROUGH */

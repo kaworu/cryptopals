@@ -13,21 +13,24 @@ test_break_single_byte_xor_1(const MunitParameter *params, void *data)
 	const char *ciphertext =
 	    "1b37373331363f78151b7f2b783431333d78397828372d363c78373e783a393b3736";
 	const char *expected = "Cooking MC's like a pound of bacon";
-	uint8_t key = 0;
-	double prob = 0;
+	struct bytes *key = NULL;
+	double score = 0;
 
 	struct bytes *buf = bytes_from_hex(ciphertext);
 	if (buf == NULL)
 		munit_error("bytes_from_hex");
 
-	struct bytes *decrypted = break_single_byte_xor(buf, &key, &prob);
+	struct bytes *decrypted = break_single_byte_xor(buf, &key, &score);
 	munit_assert_not_null(decrypted);
 	munit_assert_size(decrypted->len, ==, strlen(expected));
 	munit_assert_memory_equal(decrypted->len, decrypted->data, expected);
-	munit_assert_double(prob, >, 0.80);
-	munit_assert_uint8(key, ==, (uint8_t)'X');
+	munit_assert_not_null(key);
+	munit_assert_size(key->len, ==, 1);
+	munit_assert_uint8(key->data[0], ==, (uint8_t)'X');
+	munit_assert_double(score, >, 0.80);
 
 	bytes_free(decrypted);
+	bytes_free(key);
 	bytes_free(buf);
 	return (MUNIT_OK);
 }
@@ -38,39 +41,45 @@ static MunitResult
 test_break_single_byte_xor_2(const MunitParameter *params, void *data)
 {
 	const char *expected = "Now that the party is jumping\n";
-	struct bytes *found = NULL;
-	uint8_t fkey = 0;
-	double fprob = 0;
+	struct bytes *decrypted = NULL, *key = NULL;
+	double score = 0;
 
 	for (size_t i = 0; i < (sizeof(s1c4data) / sizeof(*s1c4data)); i++) {
+		struct bytes *idecrypted = NULL, *ikey = NULL;
+		double iscore = 0;
+
 		const char *ciphertext = s1c4data[i];
 		struct bytes *buf = bytes_from_hex(ciphertext);
 		if (buf == NULL)
 			munit_error("bytes_from_hex");
 
-		double prob = 0;
-		uint8_t key = 0;
-		struct bytes *decrypted = break_single_byte_xor(buf, &key, &prob);
-		munit_assert_not_null(decrypted);
+		idecrypted = break_single_byte_xor(buf, &ikey, &iscore);
+		munit_assert_not_null(idecrypted);
+		munit_assert_not_null(ikey);
 
-		if (prob > fprob) {
-			bytes_free(found);
-			found = decrypted;
-			fkey  = key;
-			fprob = prob;
-		} else {
+		if (iscore > score) {
 			bytes_free(decrypted);
+			decrypted = idecrypted;
+			bytes_free(key);
+			key = ikey;
+			score = iscore;
+		} else {
+			bytes_free(idecrypted);
+			bytes_free(ikey);
 		}
 		bytes_free(buf);
 	}
 
-	munit_assert_not_null(found);
-	munit_assert_size(found->len, ==, strlen(expected));
-	munit_assert_memory_equal(found->len, found->data, expected);
-	munit_assert_double(fprob, >, 0.80);
-	munit_assert_uint8(fkey, ==, (uint8_t)'5');
+	munit_assert_not_null(decrypted);
+	munit_assert_size(decrypted->len, ==, strlen(expected));
+	munit_assert_memory_equal(decrypted->len, decrypted->data, expected);
+	munit_assert_not_null(key);
+	munit_assert_size(key->len, ==, 1);
+	munit_assert_uint8(key->data[0], ==, (uint8_t)'5');
+	munit_assert_double(score, >, 0.80);
 
-	bytes_free(found);
+	bytes_free(decrypted);
+	bytes_free(key);
 	return (MUNIT_OK);
 }
 
