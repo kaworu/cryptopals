@@ -145,7 +145,7 @@ bytes_from_hex(const char *s)
 	/* FALLTHROUGH */
 out:
 	if (!success) {
-		free(buf);
+		bytes_free(buf);
 		buf = NULL;
 	}
 	return (buf);
@@ -232,7 +232,7 @@ bytes_from_base64(const char *s)
 	/* FALLTHROUGH */
 out:
 	if (!success) {
-		free(buf);
+		bytes_free(buf);
 		buf = NULL;
 	}
 	return (buf);

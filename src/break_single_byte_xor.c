@@ -71,7 +71,7 @@ break_single_byte_xor(const struct bytes *ciphertext,
 	/* FALLTHROUGH */
 out:
 	if (!success) {
-		free(xored);
+		bytes_free(xored);
 		xored = NULL;
 	}
 	return (xored);
