@@ -6,6 +6,24 @@
 #include "test_break_single_byte_xor.h"
 
 
+/* Error conditions */
+static MunitResult
+test_break_single_byte_xor_0(const MunitParameter *params, void *data)
+{
+	struct bytes *empty = bytes_from_str("");
+	if (empty == NULL)
+		munit_error("bytes_from_str");
+
+	/* when NULL is given */
+	munit_assert_null(break_single_byte_xor(NULL, NULL, NULL));
+	/* when an empty buffer is given */
+	munit_assert_null(break_single_byte_xor(empty, NULL, NULL));
+
+	bytes_free(empty);
+	return (MUNIT_OK);
+}
+
+
 /* Set 1 / Challenge 3 */
 static MunitResult
 test_break_single_byte_xor_1(const MunitParameter *params, void *data)
@@ -86,6 +104,7 @@ test_break_single_byte_xor_2(const MunitParameter *params, void *data)
 
 /* The test suite. */
 MunitTest test_break_single_byte_xor_suite_tests[] = {
+	{ "break_single_byte_xor-0", test_break_single_byte_xor_0, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "break_single_byte_xor-1", test_break_single_byte_xor_1, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "break_single_byte_xor-2", test_break_single_byte_xor_2, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{

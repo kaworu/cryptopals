@@ -5,9 +5,42 @@
 #include "xor.h"
 
 
+/* Error conditions */
+static MunitResult
+test_bytes_xor_0(const MunitParameter *params, void *data)
+{
+	struct bytes *buf = bytes_from_str("foobar");
+	struct bytes *empty = bytes_from_str("");
+	if (buf == NULL || empty == NULL)
+		munit_error("bytes_from_str");
+	struct bytes *cpy = bytes_dup(buf);
+	if (cpy == NULL)
+		munit_error("bytes_dup");
+
+	/* when NULL is given */
+	munit_assert_int(bytes_xor(NULL, NULL), ==, -1);
+	munit_assert_int(bytes_xor(NULL, buf),  ==, -1);
+	munit_assert_int(bytes_xor(buf,  NULL), ==, -1);
+	/* check that buf has not be modified by error conditions */
+	munit_assert_size(buf->len, ==, cpy->len);
+	munit_assert_memory_equal(buf->len, buf->data, cpy->data);
+
+	/* when the length doesn't match */
+	munit_assert_int(bytes_xor(buf, empty), ==, -1);
+	/* check that buf has not be modified by error conditions */
+	munit_assert_size(buf->len, ==, cpy->len);
+	munit_assert_memory_equal(buf->len, buf->data, cpy->data);
+
+	bytes_free(cpy);
+	bytes_free(empty);
+	bytes_free(buf);
+	return (MUNIT_OK);
+}
+
+
 /* Set 1 / Challenge 2 */
 static MunitResult
-test_bytes_xor(const MunitParameter *params, void *data)
+test_bytes_xor_1(const MunitParameter *params, void *data)
 {
 	const char *lhs = "1c0111001f010100061a024b53535009181c";
 	const char *rhs = "686974207468652062756c6c277320657965";
@@ -25,26 +58,41 @@ test_bytes_xor(const MunitParameter *params, void *data)
 		munit_error("bytes_to_hex");
 	munit_assert_string_equal(result, expected);
 
+	free(result);
+	bytes_free(mask);
+	bytes_free(buf);
+	return (MUNIT_OK);
+}
+
+
+/* Error conditions */
+static MunitResult
+test_repeating_key_xor_0(const MunitParameter *params, void *data)
+{
+	struct bytes *buf = bytes_from_str("foobar");
 	struct bytes *empty = bytes_from_str("");
-	if (empty == NULL)
+	if (buf == NULL || empty == NULL)
 		munit_error("bytes_from_str");
 	struct bytes *cpy = bytes_dup(buf);
 	if (cpy == NULL)
 		munit_error("bytes_dup");
+
 	/* when NULL is given */
-	munit_assert_int(bytes_xor(NULL, mask), ==, -1);
-	munit_assert_int(bytes_xor(buf,  NULL), ==, -1);
-	munit_assert_int(bytes_xor(NULL, NULL), ==, -1);
-	/* when the length doesn't match */
-	munit_assert_int(bytes_xor(buf, empty), ==, -1);
+	munit_assert_int(repeating_key_xor(NULL, NULL), ==, -1);
+	munit_assert_int(repeating_key_xor(NULL, buf),  ==, -1);
+	munit_assert_int(repeating_key_xor(buf,  NULL), ==, -1);
+	/* check that buf has not be modified by error conditions */
+	munit_assert_size(buf->len, ==, cpy->len);
+	munit_assert_memory_equal(buf->len, buf->data, cpy->data);
+
+	/* when the key length is zero */
+	munit_assert_int(repeating_key_xor(buf, empty), ==, -1);
 	/* check that buf has not be modified by error conditions */
 	munit_assert_size(buf->len, ==, cpy->len);
 	munit_assert_memory_equal(buf->len, buf->data, cpy->data);
 
 	bytes_free(cpy);
 	bytes_free(empty);
-	free(result);
-	bytes_free(mask);
 	bytes_free(buf);
 	return (MUNIT_OK);
 }
@@ -112,7 +160,9 @@ test_repeating_key_xor_2(const MunitParameter *params, void *data)
 
 /* The test suite. */
 MunitTest test_xor_suite_tests[] = {
-	{ "bytes_xor",           test_bytes_xor,           NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "bytes_xor-0",         test_bytes_xor_0,         NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "bytes_xor-1",         test_bytes_xor_1,         NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "repeating_key_xor-0", test_repeating_key_xor_0, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "repeating_key_xor-1", test_repeating_key_xor_1, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "repeating_key_xor-2", test_repeating_key_xor_2, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{

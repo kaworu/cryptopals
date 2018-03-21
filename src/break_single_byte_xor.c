@@ -21,7 +21,7 @@ break_single_byte_xor(const struct bytes *ciphertext,
 	int success = 0;
 
 	/* sanity check */
-	if (ciphertext == NULL)
+	if (ciphertext == NULL || ciphertext->len == 0)
 		goto out;
 
 	/* create a working copy of the buffer to analyze */

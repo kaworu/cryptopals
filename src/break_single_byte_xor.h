@@ -21,7 +21,8 @@
  * If `score_p' is not NULL it will be set to the score of the result on success
  * (see looks_like_english()).
  *
- * Returns NULL if the given `ciphertext' is NULL or bytes_dup() failed.
+ * Returns NULL if the given `ciphertext' is NULL, or is empty, or bytes_dup()
+ * failed.
  */
 struct bytes	*break_single_byte_xor(const struct bytes *ciphertext,
 		    struct bytes **key_p, double *score_p);
