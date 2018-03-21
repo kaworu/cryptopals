@@ -6,7 +6,7 @@
  * Bytes manipulation stuff for cryptopals.com challenges.
  */
 #include <stdint.h>
-#include <stdlib.h>
+#include <stddef.h>
 
 
 /*

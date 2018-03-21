@@ -3,8 +3,6 @@
  *
  * XOR "cipher" stuff for cryptopals.com challenges.
  */
-#include <stdlib.h>
-
 #include "xor.h"
 
 

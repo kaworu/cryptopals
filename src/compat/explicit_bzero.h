@@ -5,6 +5,8 @@
  *
  * à-la OpenBSD explicit_bzero(3).
  */
+#include <stddef.h>
+
 
 void	explicit_bzero(void *buf, size_t len);
 

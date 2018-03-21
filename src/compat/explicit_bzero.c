@@ -3,7 +3,8 @@
  *
  * see https://www.cryptologie.net/article/419/zeroing-memory-compiler-optimizations-and-memset_s/
  */
-#include <stdlib.h>
+#include "compat.h"
+
 
 void
 explicit_bzero(void *buf, size_t len)
