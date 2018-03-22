@@ -4,8 +4,12 @@ cmake_minimum_required(VERSION 2.6.0)
 project(cryptopals)
 
 add_definitions(-std=c11 -Wall -Werror)
-set(CMAKE_C_FLAGS_DEBUG   "${CMAKE_C_FLAGS} -O0 -g")
-set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS} -O3 -march=native")
+set(CMAKE_C_FLAGS_DEBUG    "${CMAKE_C_FLAGS} -O0 -g")
+set(CMAKE_C_FLAGS_COVERAGE "${CMAKE_C_FLAGS} -O0 -g -fprofile-arcs -ftest-coverage")
+set(CMAKE_C_FLAGS_RELEASE  "${CMAKE_C_FLAGS} -O3 -march=native")
+if(CMAKE_BUILD_TYPE MATCHES COVERAGE)
+    set(CMAKE_EXE_LINKER_FLAGS --coverage)
+endif()
 
 set(SRCS
     ${PROJECT_SOURCE_DIR}/src/bytes.c
