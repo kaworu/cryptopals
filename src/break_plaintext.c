@@ -3,8 +3,6 @@
  *
  * Plain text analysis stuff for cryptopals.com challenges.
  */
-#include <math.h>
-
 #include "break_plaintext.h"
 
 
@@ -173,8 +171,8 @@ char_freq(const struct bytes *buf, const double *freq_ref, double *score)
 		for (int i = 0; i < (sizeof(count) / sizeof(*count)); i++) {
 			const double ref = freq_ref[i];
 			const double actual = count[i] * factor;
-			const double delta = fabs(ref - actual);
-			*score += ref - delta;
+			const double delta = ref - actual;
+			*score += ref - (delta < 0 ? -delta : delta);
 		}
 	}
 
@@ -230,8 +228,8 @@ word_lengths_freq(const struct bytes *buf, const double *freq_ref,
 		for (int i = 0; i < (sizeof(count) / sizeof(*count)); i++) {
 			const double ref = freq_ref[i];
 			const double actual = count[i] * factor;
-			const double delta = fabs(ref - actual);
-			*score += ref - delta;
+			const double delta = ref - actual;
+			*score += ref - (delta < 0 ? -delta : delta);
 		}
 	}
 
