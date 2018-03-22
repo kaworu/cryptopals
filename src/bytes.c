@@ -27,25 +27,26 @@ popcnt(uint64_t x)
 
 /*
  * Decode a single base64 character into a byte. Note that only the trailing
- * 6-bit are relevant. Returns UINT8_MAX if the given character is out not in
- * the base64 alphabet.
+ * 6-bit are relevant. Returns UINT8_MAX if the given character is not in the
+ * base64 alphabet.
  */
 static inline uint8_t
 b64decode(char c)
 {
-	if (c >= 'A' && c <= 'Z')
-		return (c - 'A');
-	if (c >= 'a' && c <= 'z')
-		return (26 + c - 'a');
-	if (c >= '0' && c <= '9')
-		return (52 + c - '0');
-	if (c == '+')
-		return (62);
-	if (c == '/')
-		return (63);
+	uint8_t byte = UINT8_MAX;
 
-	/* meh */
-	return (UINT8_MAX);
+	if (c >= 'A' && c <= 'Z')
+		byte = c - 'A';
+	else if (c >= 'a' && c <= 'z')
+		byte = 26 + c - 'a';
+	else if (c >= '0' && c <= '9')
+		byte = 52 + c - '0';
+	else if (c == '+')
+		byte = 62;
+	else if (c == '/')
+		byte = 63;
+
+	return (byte);
 }
 
 
