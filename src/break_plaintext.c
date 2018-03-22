@@ -9,8 +9,8 @@
 
 
 /*
- * Returns the character frequency match in the given bytes struct using
- * freq_ref as reference.
+ * Provide the character frequency match in the given bytes struct using
+ * `freq_ref' as reference.
  *
  * `freq_ref' is an array used to represent characters frequency using only the
  * letters 'a' to 'z' in a case-insensitive fashion. Note that it must be an
@@ -18,12 +18,13 @@
  * until index 25 for the letter 'z' (case-insensitive) and the special index 26
  * for the space (i.e. ' ') character.
  *
- * Returns -1.0 if either argument is NULL.
+ * Returns 0 on success, -1 on failure.
  */
-static double	char_freq(const struct bytes *buf, const double *freq_ref);
+static int	char_freq(const struct bytes *buf, const double *freq_ref,
+		    double *score);
 
 /*
- * Returns the word lengths match in the given bytes struct using freq_ref as
+ * Provide the word lengths match in the given bytes struct using `freq_ref' as
  * reference.
  *
  * `freq_ref' is an array used to represent word lengths frequency.  Note that
@@ -31,27 +32,42 @@ static double	char_freq(const struct bytes *buf, const double *freq_ref);
  * until index 9 for the word lengths of 10 and the special index 11 for "more
  * than ten characters long".
  *
- * Returns -1.0 if either argument is NULL.
+ * Returns 0 on success, -1 on failure.
  */
-static double	word_lengths_freq(const struct bytes *buf,
-		    const double *freq_ref);
+static int	word_lengths_freq(const struct bytes *buf,
+		    const double *freq_ref, double *score);
 
 
 
 /* NOTE: very naive using only some basic character and word lengths
    frequencies. Could be improved by analysing words etc. */
-double
-looks_like_english(const struct bytes *buf)
+int
+looks_like_english(const struct bytes *buf, double *score)
 {
-	const double ch = english_char_freq(buf);
-	const double wl = english_word_lengths_freq(buf);
+	double chars = 0, words = 0;
+	int success = 0;
 
-	return (ch * 0.8 + wl * 0.2);
+	/* sanity checks */
+	if (buf == NULL || score == NULL)
+		goto cleanup;
+
+	if (english_char_freq(buf, &chars) != 0)
+		goto cleanup;
+	if (english_word_lengths_freq(buf, &words) != 0)
+		goto cleanup;
+
+	success = 1;
+	/* FALLTHROUGH */
+cleanup:
+	if (success) {
+		*score = (chars * 0.5 + words * 0.5);
+	}
+	return (success ? 0 : -1);
 }
 
 
-double
-english_char_freq(const struct bytes *buf)
+int
+english_char_freq(const struct bytes *buf, double *score)
 {
 	/* Some english character frequency, taken from
 	   http://www.fitaly.com/board/domper3/posts/136.html */
@@ -85,12 +101,12 @@ english_char_freq(const struct bytes *buf)
 		/* space */ 17.1662,
 	};
 
-	return char_freq(buf, english_char_freq_table);
+	return char_freq(buf, english_char_freq_table, score);
 }
 
 
-double
-english_word_lengths_freq(const struct bytes *buf)
+int
+english_word_lengths_freq(const struct bytes *buf, double *score)
 {
 	/* Some english word lengths , taken from
 	   http://norvig.com/mayzner.html */
@@ -117,18 +133,19 @@ english_word_lengths_freq(const struct bytes *buf)
 		/* len = 20 */  0.001
 	};
 
-	return word_lengths_freq(buf, english_word_lengths_freq_table);
+	return word_lengths_freq(buf, english_word_lengths_freq_table, score);
 }
 
 
-static double
-char_freq(const struct bytes *buf, const double *freq_ref)
+static int
+char_freq(const struct bytes *buf, const double *freq_ref, double *score)
 {
 	size_t count[27] = { 0 }; /* FIXME: that 27 need a #define */
+	int success = 0;
 
 	/* sanity checks */
-	if (buf == NULL || freq_ref == NULL)
-		return (-1);
+	if (buf == NULL || freq_ref == NULL || score == NULL)
+		goto cleanup;
 
 	size_t skipped = 0;
 	/* populate count by inspecting the buffer */
@@ -150,32 +167,34 @@ char_freq(const struct bytes *buf, const double *freq_ref)
 	 *
 	 * FIXME: extract in a function, copy/pasta at word_lengths_freq().
 	 */
-	const size_t total = buf->len - skipped;
-	if (total == 0)
-		return (0);
-	double score = 0;
-	const double factor = 100.0 / total;
-	for (int i = 0; i < (sizeof(count) / sizeof(*count)); i++) {
-		const double ref = freq_ref[i];
-		const double actual = count[i] * factor;
-		const double delta = fabs(ref - actual);
-		score += ref - delta;
+	*score = 0;
+	if (buf->len > 0) {
+		const double factor = 100.0 / buf->len;
+		for (int i = 0; i < (sizeof(count) / sizeof(*count)); i++) {
+			const double ref = freq_ref[i];
+			const double actual = count[i] * factor;
+			const double delta = fabs(ref - actual);
+			*score += ref - delta;
+		}
 	}
 
-	return (score);
+	success = 1;
+	/* FALLTHROUGH */
+cleanup:
+	return (success ? 0 : -1);
 }
 
 
-static double
-word_lengths_freq(const struct bytes *buf, const double *freq_ref)
+static int
+word_lengths_freq(const struct bytes *buf, const double *freq_ref,
+		double *score)
 {
 	size_t count[11] = { 0 }; /* FIXME: that 11 need a #define */
+	int success = 0;
 
 	/* sanity checks */
-	if (buf == NULL || freq_ref == NULL)
-		return (-1);
-	if (buf->len == 0)
-		return (0);
+	if (buf == NULL || freq_ref == NULL || score == NULL)
+		goto cleanup;
 
 	/* total word count */
 	size_t wc = 0;
@@ -205,16 +224,19 @@ word_lengths_freq(const struct bytes *buf, const double *freq_ref)
 	 *
 	 * FIXME: extract in a function, copy/pasta from char_freq().
 	 */
-	if (wc == 0)
-		return (0);
-	double score = 0;
-	const double factor = 100.0 / wc;
-	for (int i = 0; i < (sizeof(count) / sizeof(*count)); i++) {
-		const double ref = freq_ref[i];
-		const double actual = count[i] * factor;
-		const double delta = fabs(ref - actual);
-		score += ref - delta;
+	*score = 0;
+	if (wc > 0) {
+		const double factor = 100.0 / wc;
+		for (int i = 0; i < (sizeof(count) / sizeof(*count)); i++) {
+			const double ref = freq_ref[i];
+			const double actual = count[i] * factor;
+			const double delta = fabs(ref - actual);
+			*score += ref - delta;
+		}
 	}
 
-	return (score);
+	success = 1;
+	/* FALLTHROUGH */
+cleanup:
+	return (success ? 0 : -1);
 }

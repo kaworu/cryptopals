@@ -9,26 +9,30 @@
 
 
 /*
- * Returns the score of the given buffer as plaintext english, -1.0 if the
- * provided bytes struct argument is NULL.
+ * Function type to analyze a given buffer, set the score and returns 0 on
+ * success, -1 on failure.
  */
-double	looks_like_english(const struct bytes *buf);
+typedef int (break_plaintext_func_t)(const struct bytes *buf, double *score);
 
 /*
- * Returns the score of the given buffer as having the same character frequency
- * than english plaintext, -1.0 if the provided bytes struct argument is NULL.
+ * Provide the score of the given buffer as plaintext english.
+ */
+int	looks_like_english(const struct bytes *buf, double *score);
+
+/*
+ * Provide the score of the given buffer as having the same character frequency
+ * than english plaintext.
  *
- * This function should return the same score regardless of the byte order in
- * the given buffer, while looks_like_english() may perform other kind of
- * analysis like pair of character frequency, words length frequency etc.
+ * This function should yield the same score regardless of the byte order in the
+ * given buffer, while looks_like_english() may perform other kind of analysis
+ * like pair of character frequency, words length frequency etc.
  */
-double	english_char_freq(const struct bytes *buf);
+int	english_char_freq(const struct bytes *buf, double *score);
 
 /*
- * Returns the score of the given buffer as having the same word lengths
- * frequency as english plaintext, -1.0 if the provided bytes struct argument is
- * NULL.
+ * Provide the score of the given buffer as having the same word lengths
+ * frequency as english plaintext.
  */
-double	english_word_lengths_freq(const struct bytes *buf);
+int	english_word_lengths_freq(const struct bytes *buf, double *score);
 
 #endif /* ndef BREAK_PLAINTEXT_H */

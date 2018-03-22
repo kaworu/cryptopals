@@ -40,7 +40,9 @@ break_single_byte_xor(const struct bytes *ciphertext,
 		for (size_t i = 0; i < decrypted->len; i++)
 			decrypted->data[i] ^= (k ^ pk);
 		/* run the analysis on the "decrypted" buffer */
-		double s = looks_like_english(decrypted);
+		double s = 0;
+		if (looks_like_english(decrypted, &s) != 0)
+			goto cleanup;
 		/* save the current guess if it looks like the best one */
 		if (s > score) {
 			guess = k;
