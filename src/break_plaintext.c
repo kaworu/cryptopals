@@ -19,7 +19,7 @@
  * Returns 0 on success, -1 on failure.
  */
 static int	char_freq(const struct bytes *buf, const double *freq_ref,
-		    double *score);
+		    double *score_p);
 
 /*
  * Provide the word lengths match in the given bytes struct using `freq_ref' as
@@ -33,20 +33,20 @@ static int	char_freq(const struct bytes *buf, const double *freq_ref,
  * Returns 0 on success, -1 on failure.
  */
 static int	word_lengths_freq(const struct bytes *buf,
-		    const double *freq_ref, double *score);
+		    const double *freq_ref, double *score_p);
 
 
 
 /* NOTE: very naive using only some basic character and word lengths
    frequencies. Could be improved by analysing words etc. */
 int
-looks_like_english(const struct bytes *buf, double *score)
+looks_like_english(const struct bytes *buf, double *score_p)
 {
 	double chars = 0, words = 0;
 	int success = 0;
 
 	/* sanity checks */
-	if (buf == NULL || score == NULL)
+	if (buf == NULL || score_p == NULL)
 		goto cleanup;
 
 	if (english_char_freq(buf, &chars) != 0)
@@ -58,14 +58,14 @@ looks_like_english(const struct bytes *buf, double *score)
 	/* FALLTHROUGH */
 cleanup:
 	if (success) {
-		*score = (chars * 0.5 + words * 0.5);
+		*score_p = (chars * 0.5 + words * 0.5);
 	}
 	return (success ? 0 : -1);
 }
 
 
 int
-english_char_freq(const struct bytes *buf, double *score)
+english_char_freq(const struct bytes *buf, double *score_p)
 {
 	/* Some english character frequency, taken from
 	   http://www.fitaly.com/board/domper3/posts/136.html */
@@ -99,12 +99,12 @@ english_char_freq(const struct bytes *buf, double *score)
 		/* space */ 17.1662,
 	};
 
-	return char_freq(buf, english_char_freq_table, score);
+	return char_freq(buf, english_char_freq_table, score_p);
 }
 
 
 int
-english_word_lengths_freq(const struct bytes *buf, double *score)
+english_word_lengths_freq(const struct bytes *buf, double *score_p)
 {
 	/* Some english word lengths , taken from
 	   http://norvig.com/mayzner.html */
@@ -131,18 +131,18 @@ english_word_lengths_freq(const struct bytes *buf, double *score)
 		/* len = 20 */  0.001
 	};
 
-	return word_lengths_freq(buf, english_word_lengths_freq_table, score);
+	return word_lengths_freq(buf, english_word_lengths_freq_table, score_p);
 }
 
 
 static int
-char_freq(const struct bytes *buf, const double *freq_ref, double *score)
+char_freq(const struct bytes *buf, const double *freq_ref, double *score_p)
 {
 	size_t count[27] = { 0 }; /* FIXME: that 27 need a #define */
 	int success = 0;
 
 	/* sanity checks */
-	if (buf == NULL || freq_ref == NULL || score == NULL)
+	if (buf == NULL || freq_ref == NULL || score_p == NULL)
 		goto cleanup;
 
 	size_t skipped = 0;
@@ -165,14 +165,14 @@ char_freq(const struct bytes *buf, const double *freq_ref, double *score)
 	 *
 	 * FIXME: extract in a function, copy/pasta at word_lengths_freq().
 	 */
-	*score = 0;
+	*score_p = 0;
 	if (buf->len > 0) {
 		const double factor = 100.0 / buf->len;
 		for (int i = 0; i < (sizeof(count) / sizeof(*count)); i++) {
 			const double ref = freq_ref[i];
 			const double actual = count[i] * factor;
 			const double delta = ref - actual;
-			*score += ref - (delta < 0 ? -delta : delta);
+			*score_p += ref - (delta < 0 ? -delta : delta);
 		}
 	}
 
@@ -185,13 +185,13 @@ cleanup:
 
 static int
 word_lengths_freq(const struct bytes *buf, const double *freq_ref,
-		double *score)
+		double *score_p)
 {
 	size_t count[11] = { 0 }; /* FIXME: that 11 need a #define */
 	int success = 0;
 
 	/* sanity checks */
-	if (buf == NULL || freq_ref == NULL || score == NULL)
+	if (buf == NULL || freq_ref == NULL || score_p == NULL)
 		goto cleanup;
 
 	/* total word count */
@@ -222,14 +222,14 @@ word_lengths_freq(const struct bytes *buf, const double *freq_ref,
 	 *
 	 * FIXME: extract in a function, copy/pasta from char_freq().
 	 */
-	*score = 0;
+	*score_p = 0;
 	if (wc > 0) {
 		const double factor = 100.0 / wc;
 		for (int i = 0; i < (sizeof(count) / sizeof(*count)); i++) {
 			const double ref = freq_ref[i];
 			const double actual = count[i] * factor;
 			const double delta = ref - actual;
-			*score += ref - (delta < 0 ? -delta : delta);
+			*score_p += ref - (delta < 0 ? -delta : delta);
 		}
 	}
 
