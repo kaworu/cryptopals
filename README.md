@@ -14,7 +14,7 @@ Oh, you'll need [Cmake](https://cmake.org/) (sorry) and a C11 compiler.
 Type `make test`, sit back and enjoy the show. Alternatively -- if you're super
 lazy -- just check the Travis-CI build output.
 
-### ...aaaand?
+## ...aaaand?
 
 That's it. It's only a bunch of functions in a lib wrapped by tests using the
 data from the challenges. It's cool though, hopefully well commented and using
