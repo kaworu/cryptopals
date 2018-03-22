@@ -3,6 +3,7 @@
  */
 #include "munit.h"
 #include "xor.h"
+#include "test_break_repeating_key_xor.h"
 
 
 /* Error conditions */
@@ -157,6 +158,29 @@ test_repeating_key_xor_2(const MunitParameter *params, void *data)
 	return (MUNIT_OK);
 }
 
+/* Set 1 / Challenge 6 */
+static MunitResult
+test_repeating_key_xor_3(const MunitParameter *params, void *data)
+{
+	struct bytes *buf  = bytes_from_str(s1c6_plaintext);
+	struct bytes *kbuf = bytes_from_str(s1c6_key);
+	if (buf == NULL || kbuf == NULL)
+		munit_error("bytes_from_str");
+
+	int retval = repeating_key_xor(buf, kbuf);
+	munit_assert_int(retval, ==, 0);
+
+	char *ciphertext = bytes_to_base64(buf);
+	if (ciphertext == NULL)
+		munit_error("bytes_to_base64");
+	munit_assert_string_equal(ciphertext, s1c6_ciphertext_base64);
+
+	free(ciphertext);
+	bytes_free(kbuf);
+	bytes_free(buf);
+	return (MUNIT_OK);
+}
+
 
 /* The test suite. */
 MunitTest test_xor_suite_tests[] = {
@@ -165,6 +189,7 @@ MunitTest test_xor_suite_tests[] = {
 	{ "repeating_key_xor-0", test_repeating_key_xor_0, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "repeating_key_xor-1", test_repeating_key_xor_1, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "repeating_key_xor-2", test_repeating_key_xor_2, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "repeating_key_xor-3", test_repeating_key_xor_3, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{
 		.name       = NULL,
 		.test       = NULL,
