@@ -11,14 +11,18 @@ static MunitResult
 test_break_single_byte_xor_0(const MunitParameter *params, void *data)
 {
 	struct bytes *empty = bytes_from_str("");
-	if (empty == NULL)
+	struct bytes *buf   = bytes_from_str("foobar");
+	if (empty == NULL || buf == NULL)
 		munit_error("bytes_from_str");
 
 	/* when NULL is given */
-	munit_assert_null(break_single_byte_xor(NULL, NULL, NULL));
+	munit_assert_null(break_single_byte_xor(NULL, looks_like_english, NULL, NULL));
 	/* when an empty buffer is given */
-	munit_assert_null(break_single_byte_xor(empty, NULL, NULL));
+	munit_assert_null(break_single_byte_xor(empty, looks_like_english, NULL, NULL));
+	/* when no method is given */
+	munit_assert_null(break_single_byte_xor(buf, NULL, NULL, NULL));
 
+	bytes_free(buf);
 	bytes_free(empty);
 	return (MUNIT_OK);
 }
@@ -38,7 +42,7 @@ test_break_single_byte_xor_1(const MunitParameter *params, void *data)
 	if (buf == NULL)
 		munit_error("bytes_from_hex");
 
-	struct bytes *decrypted = break_single_byte_xor(buf, &key, &score);
+	struct bytes *decrypted = break_single_byte_xor(buf, looks_like_english, &key, &score);
 	munit_assert_not_null(decrypted);
 	munit_assert_size(decrypted->len, ==, strlen(expected));
 	munit_assert_memory_equal(decrypted->len, decrypted->data, expected);
@@ -71,7 +75,7 @@ test_break_single_byte_xor_2(const MunitParameter *params, void *data)
 		if (buf == NULL)
 			munit_error("bytes_from_hex");
 
-		idecrypted = break_single_byte_xor(buf, &ikey, &iscore);
+		idecrypted = break_single_byte_xor(buf, looks_like_english, &ikey, &iscore);
 		munit_assert_not_null(idecrypted);
 		munit_assert_not_null(ikey);
 

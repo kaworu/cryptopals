@@ -7,12 +7,9 @@
 #include "break_single_byte_xor.h"
 
 
-/* NOTE: this algorithm could be improved by computing the byte frequency only
-   once (yielding an offset and checking for the result). The current
-   implementation test each byte which is 255 times slower (!) but OTHO doesn't
-   depend on the looks_like_english() implementation. */
 struct bytes *
 break_single_byte_xor(const struct bytes *ciphertext,
+		break_plaintext_func_t method,
 		struct bytes **key_p, double *score_p)
 {
 	struct bytes *decrypted = NULL;
@@ -21,7 +18,7 @@ break_single_byte_xor(const struct bytes *ciphertext,
 	int success = 0;
 
 	/* sanity check */
-	if (ciphertext == NULL || ciphertext->len == 0)
+	if (ciphertext == NULL || ciphertext->len == 0 || method == NULL)
 		goto cleanup;
 
 	/* create a working copy of the buffer to analyze */
@@ -41,7 +38,7 @@ break_single_byte_xor(const struct bytes *ciphertext,
 			decrypted->data[i] ^= (k ^ pk);
 		/* run the analysis on the "decrypted" buffer */
 		double s = 0;
-		if (looks_like_english(decrypted, &s) != 0)
+		if (method(decrypted, &s) != 0)
 			goto cleanup;
 		/* save the current guess if it looks like the best one */
 		if (s > score) {
