@@ -3,43 +3,86 @@
  */
 #include "munit.h"
 #include "break_plaintext.h"
+#include "test_break_plaintext.h"
 
 
-/* text taken from http://norvig.com/mayzner.html */
+static MunitResult
+test_english_char_freq(const MunitParameter *params, void *data)
+{
+	struct bytes *english = bytes_from_str(english_text);
+	struct bytes *german  = bytes_from_str(german_text);
+	struct bytes *random  = bytes_from_base64(random_base64);
+	if (english == NULL || german == NULL)
+		munit_error("bytes_from_str");
+	if (random == NULL)
+		munit_error("bytes_from_base64");
+
+	double eng  = english_char_freq(english);
+	double ger  = english_char_freq(german);
+	double rand = english_char_freq(random);
+	munit_assert_double(eng, >, ger);
+	munit_assert_double(ger, >, rand);
+
+	bytes_free(random);
+	bytes_free(german);
+	bytes_free(english);
+	return (MUNIT_OK);
+}
+
+
+static MunitResult
+test_english_word_lengths_freq(const MunitParameter *params, void *data)
+{
+	struct bytes *english = bytes_from_str(english_text);
+	struct bytes *german  = bytes_from_str(german_text);
+	struct bytes *random  = bytes_from_base64(random_base64);
+	if (english == NULL || german == NULL)
+		munit_error("bytes_from_str");
+	if (random == NULL)
+		munit_error("bytes_from_base64");
+
+	double eng  = english_word_lengths_freq(english);
+	double ger  = english_word_lengths_freq(german);
+	double rand = english_word_lengths_freq(random);
+	munit_assert_double(eng, >, ger);
+	munit_assert_double(ger, >, rand);
+
+	bytes_free(random);
+	bytes_free(german);
+	bytes_free(english);
+	return (MUNIT_OK);
+}
+
+
 static MunitResult
 test_looks_like_english(const MunitParameter *params, void *data)
 {
-	const char *text = "I culled a corpus of 20,000 words from a variety of"
-	    " sources, e.g., newspapers, magazines, books, etc. For each source"
-	    " selected, a starting place was chosen at random. In proceeding"
-	    " forward from this point, all three, four, five, six, and"
-	    " seven-letter words were recorded until a total of 200 words had been"
-	    " selected. This procedure was duplicated 100 times, each time with a"
-	    " different source, thus yielding a grand total of 20,000 words. This"
-	    " sample broke down as follows: three-letter words, 6,807 tokens, 187"
-	    " types; four-letter words, 5,456 tokens, 641 types; five-letter"
-	    " words, 3,422 tokens, 856 types; six-letter words, 2,264 tokens, 868"
-	    " types; seven-letter words, 2,051 tokens, 924 types. I then proceeded"
-	    " to construct tables that showed the frequency counts for three,"
-	    " four, five, six, and seven-letter words, but most importantly,"
-	    " broken down by word length and letter position, which had never"
-	    " been done before to my knowledge.";
-
-	struct bytes *buf = bytes_from_str(text);
-	if (buf == NULL)
+	struct bytes *english = bytes_from_str(english_text);
+	struct bytes *german  = bytes_from_str(german_text);
+	struct bytes *random  = bytes_from_base64(random_base64);
+	if (english == NULL || german == NULL)
 		munit_error("bytes_from_str");
+	if (random == NULL)
+		munit_error("bytes_from_base64");
 
-	const double score = looks_like_english(buf);
-	munit_assert_double(score, >, 0.80);
+	double eng  = looks_like_english(english);
+	double ger  = looks_like_english(german);
+	double rand = looks_like_english(random);
+	munit_assert_double(eng, >, ger);
+	munit_assert_double(ger, >, rand);
 
-	bytes_free(buf);
+	bytes_free(random);
+	bytes_free(german);
+	bytes_free(english);
 	return (MUNIT_OK);
 }
 
 
 /* The test suite. */
 MunitTest test_break_plaintext_suite_tests[] = {
-	{ "looks_like_english", test_looks_like_english, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "english_char_freq",         test_english_char_freq,         NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "english_word_lengths_freq", test_english_word_lengths_freq, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "looks_like_english",        test_looks_like_english,        NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{
 		.name       = NULL,
 		.test       = NULL,
