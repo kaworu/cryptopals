@@ -116,8 +116,7 @@ test_bytes_from_hex(const MunitParameter *params, void *data)
 
 	/* when NULL is given */
 	munit_assert_null(bytes_from_hex(NULL));
-
-	/* test with a string not hex-encoded */
+	/* when the input string is not hex-encoded */
 	munit_assert_null(bytes_from_hex("!0x"));
 
 	return (MUNIT_OK);
@@ -155,8 +154,7 @@ test_bytes_from_base64(const MunitParameter *params, void *data)
 
 	/* when NULL is given */
 	munit_assert_null(bytes_from_base64(NULL));
-
-	/* test with a string not base64-encoded */
+	/* when the input string is not base64-encoded */
 	munit_assert_null(bytes_from_base64("!base64"));
 
 	return (MUNIT_OK);
@@ -225,6 +223,93 @@ test_bytes_slice(const MunitParameter *params, void *data)
 	munit_assert_null(bytes_slice(buf, buf->len + 1, 0));
 	/* invalid length */
 	munit_assert_null(bytes_slice(buf, 1, buf->len));
+
+	bytes_free(buf);
+	return (MUNIT_OK);
+}
+
+
+static MunitResult
+test_bytes_slices(const MunitParameter *params, void *data)
+{
+	const struct {
+		char *input;
+		size_t offset;
+		size_t size;
+		size_t jump;
+		char *expected;
+	} vectors[] = {
+		/*
+		 * jump=0, testing only offset and size
+		 */
+		{ .input = "12345j", .offset = 0, .size = 6, .jump = 0, .expected = "12345j" },
+		{ .input = "12345j", .offset = 1, .size = 5, .jump = 0, .expected = "2345j" },
+		{ .input = "12345j", .offset = 5, .size = 1, .jump = 0, .expected = "j" },
+		{ .input = "12345j", .offset = 0, .size = 1, .jump = 0, .expected = "12345j" },
+		/* incomplete first slice */
+		{ .input = "12345j", .offset = 0, .size = 7, .jump = 0, .expected = "12345j" },
+		/* imcomplete last slice */
+		{ .input = "12345j", .offset = 0, .size = 4, .jump = 0, .expected = "12345j" },
+		/*
+		 * offset=0, testing only size and jump
+		 */
+		{ .input = "o23456", .offset = 0, .size = 1, .jump = 1, .expected = "o35" },
+		{ .input = "o23456", .offset = 0, .size = 2, .jump = 1, .expected = "o245" },
+		{ .input = "o23456", .offset = 0, .size = 1, .jump = 2, .expected = "o4" },
+		{ .input = "o23456", .offset = 0, .size = 1, .jump = 3, .expected = "o5" },
+		{ .input = "o23456", .offset = 0, .size = 1, .jump = 4, .expected = "o6" },
+		{ .input = "o23456", .offset = 0, .size = 1, .jump = 5, .expected = "o" },
+		/* jump outside */
+		{ .input = "o23456", .offset = 0, .size = 1, .jump = 6, .expected = "o" },
+		/* imcomplete first slice */
+		{ .input = "o23456", .offset = 0, .size = 7, .jump = 1, .expected = "o23456" },
+		/* imcomplete last slice */
+		{ .input = "o23456", .offset = 0, .size = 2, .jump = 3, .expected = "o26" },
+		/*
+		 * all parameters > 0
+		 */
+		{ .input = "12345a", .offset = 1, .size = 1, .jump = 1, .expected = "24a" },
+		{ .input = "12345a", .offset = 2, .size = 2, .jump = 1, .expected = "34a" },
+		/* jump outside */
+		{ .input = "12345a", .offset = 5, .size = 1, .jump = 5, .expected = "a" },
+		/* imcomplete first slice */
+		{ .input = "12345a", .offset = 2, .size = 5, .jump = 9, .expected = "345a" },
+		/* imcomplete last slice */
+		{ .input = "12345a", .offset = 1, .size = 2, .jump = 2, .expected = "23a" },
+		/* from the documentation example */
+		{ .input = "123456e", .offset = 1, .size = 2, .jump = 3, .expected = "23e" },
+	};
+
+	for (int i = 0; i < (sizeof(vectors) / sizeof(*vectors)); i++) {
+		const char *input    = vectors[i].input;
+		const size_t offset  = vectors[i].offset;
+		const size_t size    = vectors[i].size;
+		const size_t jump    = vectors[i].jump;
+		const char *expected = vectors[i].expected;
+
+		struct bytes *buf = bytes_from_str(input);
+		if (buf == NULL)
+			munit_error("bytes_from_str");
+		struct bytes *result = bytes_slices(buf, offset, size, jump);
+		munit_assert_not_null(result);
+		munit_assert_size(result->len, ==, strlen(expected));
+		munit_assert_memory_equal(result->len, result->data, expected);
+
+		bytes_free(result);
+		bytes_free(buf);
+	}
+
+	struct bytes *buf = bytes_from_str("foobar");
+	if (buf == NULL)
+		munit_error("bytes_from_str");
+	/* when NULL is given */
+	munit_assert_null(bytes_slices(NULL, 1, 1, 1));
+	/* invalid offset */
+	munit_assert_null(bytes_slices(buf, buf->len + 1, 1, 1));
+	/* invalid size */
+	munit_assert_null(bytes_slices(buf, 1, 0, 1));
+	/* no data */
+	munit_assert_null(bytes_slices(buf, buf->len, 1, 0));
 
 	bytes_free(buf);
 	return (MUNIT_OK);
@@ -392,6 +477,7 @@ MunitTest test_bytes_suite_tests[] = {
 	{ "bytes_from_base64",      test_bytes_from_base64,      NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bytes_dup",              test_bytes_dup,              NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bytes_slice",            test_bytes_slice,            NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "bytes_slices",           test_bytes_slices,           NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bytes_hamming_distance", test_bytes_hamming_distance, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bytes_to_str",           test_bytes_to_str,           NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bytes_to_hex",           test_bytes_to_hex,           NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },

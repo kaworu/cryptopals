@@ -272,6 +272,61 @@ bytes_slice(const struct bytes *src, size_t offset, size_t len)
 	return (bytes_from_raw(src->data + offset, len));
 }
 
+struct bytes *
+bytes_slices(const struct bytes *src, size_t offset, size_t size, size_t jump)
+{
+	struct bytes *buf = NULL;
+	const uint8_t *p = NULL;
+	int success = 0;
+
+	/* sanity checks */
+	if (src == NULL || src->len < offset || size == 0)
+		goto cleanup;
+
+	/* compute the resulting buffer length */
+	size_t nbytes = 0;
+	const uint8_t * const start = src->data + offset;
+	const uint8_t * const end   = src->data + src->len;
+	p = start;
+	while (p < end) {
+		/* the current slice's size */
+		const size_t slen = (p + size >= end ? end - p : size);
+		nbytes += slen * sizeof(uint8_t);
+		p += slen + jump;
+	}
+	if (nbytes == 0)
+		goto cleanup;
+
+	/* alloc and init the result buffer */
+	buf = malloc(sizeof(struct bytes) + nbytes * sizeof(uint8_t));
+	if (buf == NULL)
+		goto cleanup;
+	buf->len = nbytes;
+
+	/* processing loop, use the same logic as the length detection loop */
+	uint8_t *buf_p = buf->data;
+	p = start;
+	while (p < end) {
+		/* the current slice's size */
+		const size_t slen = (p + size >= end ? end - p : size);
+		(void)memcpy(buf_p, p, slen);
+		buf_p += slen;
+		p += slen + jump;
+	}
+
+	/* "safety net" ensuring that we've written exactly the count of byte
+	   expected. Not so safe though because we could have written past the
+	   buffer length if the equality doesn't hold. */
+	success = (buf_p == buf->data + buf->len);
+	/* FALLTHROUGH */
+cleanup:
+	if (!success) {
+		bytes_free(buf);
+		buf = NULL;
+	}
+	return (buf);
+}
+
 
 intmax_t
 bytes_hamming_distance(const struct bytes *a, const struct bytes *b)

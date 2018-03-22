@@ -73,13 +73,40 @@ struct bytes	*bytes_from_base64(const char *s);
 struct bytes	*bytes_dup(const struct bytes *src);
 
 /*
- * Create a bytes struct from a slice of another bytes struct.
+ * Create a bytes struct from a slice of another source bytes struct.
  *
  * Returns a pointer to a newly allocated bytes struct that should passed to
  * bytes_free(). Returns NULL if the given pointer is NULL, or malloc(3) failed,
  * or if the requested slice is out of bounds.
  */
-struct bytes	*bytes_slice(const struct bytes *src, size_t offset, size_t len);
+struct bytes	*bytes_slice(const struct bytes *src,
+		    size_t offset, size_t len);
+
+/*
+ * Create a bytes struct from several slices of another source bytes struct.
+ *
+ * Start by ignoring `offset' bytes from the source, then copy it by slice of
+ * length `size' ignoring `jump' bytes between each slice.
+ *
+ * Note that when there are not enough bytes in the source for the last slice,
+ * the last slice's length will be smaller than `size'. Thus, the returned
+ * buffer length may not be a multiple of the provided `size'.
+ *
+ * For example
+ *     bytes_slices(bytes_from_str("123456e"), 1, 2, 3)
+ * should give the same bytes as
+ *     bytes_from_str("23e")
+ * because "1" is skipped by `offset`, "23" is the first selected slice of size
+ * 2, "456" is the jump of size 3 between the first and second slices, and
+ * finally "e" is the last incomplete slice of size 1.
+ *
+ * Returns a pointer to a newly allocated bytes struct that should passed to
+ * bytes_free(). Returns NULL if the given pointer is NULL, or malloc(3) failed,
+ * or offset is out of bound, or size is zero, or the resulting buffer would be
+ * empty.
+ */
+struct bytes	*bytes_slices(const struct bytes *src,
+		    size_t offset, size_t size, size_t jump);
 
 /*
  * Compute the Hamming distance between the two given bytes struct.
