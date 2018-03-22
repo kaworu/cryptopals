@@ -33,7 +33,7 @@ test_bytes_from_single(const MunitParameter *params, void *data)
 		0x0, 0x1, 0xa0, 0xef, 0xfe, 0xff
 	};
 
-	for (size_t i = 0; i <= sizeof(vectors) / sizeof(*vectors); i++) {
+	for (size_t i = 0; i < (sizeof(vectors) / sizeof(*vectors)); i++) {
 		const uint8_t byte = vectors[i];
 
 		struct bytes *buf = bytes_from_single(byte);
