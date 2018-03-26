@@ -51,6 +51,19 @@ b64decode(char c)
 
 
 struct bytes *
+bytes_zeroed(size_t len)
+{
+	struct bytes *buf = NULL;
+
+	buf = calloc(1, sizeof(struct bytes) + len * sizeof(uint8_t));
+	if (buf != NULL)
+		buf->len = len;
+
+	return (buf);
+}
+
+
+struct bytes *
 bytes_from_raw(const void *p, size_t len)
 {
 	struct bytes *buf = NULL;

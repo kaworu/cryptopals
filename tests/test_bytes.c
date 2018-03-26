@@ -6,6 +6,30 @@
 
 
 static MunitResult
+test_bytes_zeroed(const MunitParameter *params, void *data)
+{
+	const size_t vectors[] = { 0, 1, 2, UINT8_MAX + 1 };
+
+	for (size_t i = 0; i < (sizeof(vectors) / sizeof(*vectors)); i++) {
+		const size_t len = vectors[i];
+		uint8_t *expected = calloc(len, sizeof(uint8_t));
+		if (expected == NULL)
+			munit_error("calloc");
+
+		struct bytes *buf = bytes_zeroed(len);
+		munit_assert_not_null(buf);
+		munit_assert_size(buf->len, ==, len);
+		munit_assert_memory_equal(buf->len, buf->data, expected);
+
+		bytes_free(buf);
+		free(expected);
+	}
+
+	return (MUNIT_OK);
+}
+
+
+static MunitResult
 test_bytes_from_raw(const MunitParameter *params, void *data)
 {
 	const char *input = "foobar";
@@ -470,6 +494,7 @@ test_bytes_hex_to_base64(const MunitParameter *params, void *data)
 
 /* The test suite. */
 MunitTest test_bytes_suite_tests[] = {
+	{ "bytes_zeroed",           test_bytes_zeroed,           NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bytes_from_raw",         test_bytes_from_raw,         NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bytes_from_single",      test_bytes_from_single,      NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bytes_from_str",         test_bytes_from_str,         NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },

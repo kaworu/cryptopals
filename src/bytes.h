@@ -19,6 +19,14 @@ struct bytes {
 
 
 /*
+ * Create a bytes struct of the requested length filled with zero.
+ *
+ * Returns a pointer to a newly allocated bytes struct that should passed to
+ * bytes_free(), or NULL if malloc(3) failed.
+ */
+struct bytes	*bytes_zeroed(size_t len);
+
+/*
  * Create a bytes struct from a given buffer and its length.
  *
  * Returns a pointer to a newly allocated bytes struct that should passed to
