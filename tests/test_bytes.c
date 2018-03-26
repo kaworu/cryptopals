@@ -64,7 +64,7 @@ test_bytes_from_str(const MunitParameter *params, void *data)
 		{ .input = "foobar", .expected = 6 },
 	};
 
-	for (int i = 0; i < (sizeof(vectors) / sizeof(*vectors)); i++) {
+	for (size_t i = 0; i < (sizeof(vectors) / sizeof(*vectors)); i++) {
 		const char *input = vectors[i].input;
 		const size_t expected = vectors[i].expected;
 
@@ -102,7 +102,7 @@ test_bytes_from_hex(const MunitParameter *params, void *data)
 		{ .input = "666f6f626172", .expected = "foobar" },
 	};
 
-	for (int i = 0; i < (sizeof(vectors) / sizeof(*vectors)); i++) {
+	for (size_t i = 0; i < (sizeof(vectors) / sizeof(*vectors)); i++) {
 		const char *input = vectors[i].input;
 		const char *expected = vectors[i].expected;
 
@@ -140,7 +140,7 @@ test_bytes_from_base64(const MunitParameter *params, void *data)
 		{ .input = "Zm9vYmFy", .expected = "foobar" },
 	};
 
-	for (int i = 0; i < (sizeof(vectors) / sizeof(*vectors)); i++) {
+	for (size_t i = 0; i < (sizeof(vectors) / sizeof(*vectors)); i++) {
 		const char *input = vectors[i].input;
 		const char *expected = vectors[i].expected;
 
@@ -176,7 +176,7 @@ test_bytes_dup(const MunitParameter *params, void *data)
 		{ .input = "foobar" },
 	};
 
-	for (int i = 0; i < (sizeof(vectors) / sizeof(*vectors)); i++) {
+	for (size_t i = 0; i < (sizeof(vectors) / sizeof(*vectors)); i++) {
 		const char *input = vectors[i].input;
 		struct bytes *buf = bytes_from_str(input);
 		if (buf == NULL)
@@ -280,7 +280,7 @@ test_bytes_slices(const MunitParameter *params, void *data)
 		{ .input = "123456e", .offset = 1, .size = 2, .jump = 3, .expected = "23e" },
 	};
 
-	for (int i = 0; i < (sizeof(vectors) / sizeof(*vectors)); i++) {
+	for (size_t i = 0; i < (sizeof(vectors) / sizeof(*vectors)); i++) {
 		const char *input    = vectors[i].input;
 		const size_t offset  = vectors[i].offset;
 		const size_t size    = vectors[i].size;
@@ -350,7 +350,7 @@ test_bytes_to_str(const MunitParameter *params, void *data)
 		{ .input = "foobar", .expected = "foobar" },
 	};
 
-	for (int i = 0; i < (sizeof(vectors) / sizeof(*vectors)); i++) {
+	for (size_t i = 0; i < (sizeof(vectors) / sizeof(*vectors)); i++) {
 		const char *input = vectors[i].input;
 		const char *expected = vectors[i].expected;
 		struct bytes *buf = bytes_from_str(input);
@@ -388,7 +388,7 @@ test_bytes_to_hex(const MunitParameter *params, void *data)
 		{ .input = "foobar", .expected = "666F6F626172" },
 	};
 
-	for (int i = 0; i < (sizeof(vectors) / sizeof(*vectors)); i++) {
+	for (size_t i = 0; i < (sizeof(vectors) / sizeof(*vectors)); i++) {
 		const char *input = vectors[i].input;
 		const char *expected = vectors[i].expected;
 		struct bytes *buf = bytes_from_str(input);
@@ -427,7 +427,7 @@ test_bytes_to_base64(const MunitParameter *params, void *data)
 		{ .input = "foobar", .expected = "Zm9vYmFy" },
 	};
 
-	for (int i = 0; i < (sizeof(vectors) / sizeof(*vectors)); i++) {
+	for (size_t i = 0; i < (sizeof(vectors) / sizeof(*vectors)); i++) {
 		const char *input = vectors[i].input;
 		const char *expected = vectors[i].expected;
 		struct bytes *buf = bytes_from_str(input);

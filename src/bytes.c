@@ -291,7 +291,8 @@ bytes_slices(const struct bytes *src, size_t offset, size_t size, size_t jump)
 	p = start;
 	while (p < end) {
 		/* the current slice's size */
-		const size_t slen = (p + size >= end ? end - p : size);
+		const size_t slen = (p + size >= end ?
+			    (size_t)(end - p) : size);
 		nbytes += slen * sizeof(uint8_t);
 		p += slen + jump;
 	}
@@ -309,7 +310,8 @@ bytes_slices(const struct bytes *src, size_t offset, size_t size, size_t jump)
 	p = start;
 	while (p < end) {
 		/* the current slice's size */
-		const size_t slen = (p + size >= end ? end - p : size);
+		const size_t slen = (p + size >= end ?
+			    (size_t)(end - p) : size);
 		(void)memcpy(buf_p, p, slen);
 		buf_p += slen;
 		p += slen + jump;

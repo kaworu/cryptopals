@@ -3,12 +3,14 @@ include(CheckLibraryExists)
 cmake_minimum_required(VERSION 2.6.0)
 project(cryptopals)
 
-add_definitions(-std=c11 -Wall -Werror)
-set(CMAKE_C_FLAGS_DEBUG    "${CMAKE_C_FLAGS} -O0 -g")
+add_compile_options(-std=c11 -Wall -Wextra -Werror)
+add_compile_options(-fstack-protector-strong -o aslr -fpie)
+set(CMAKE_EXE_LINKER_FLAGS ${CMAKE_EXE_LINKER_FLAGS} -pie)
+# Per build type flags.
+set(CMAKE_C_FLAGS_DEBUG    "${CMAKE_C_FLAGS} -O0 -g -fsanitize=undefined")
 set(CMAKE_C_FLAGS_COVERAGE "${CMAKE_C_FLAGS} -O0 -g -fprofile-arcs -ftest-coverage")
-set(CMAKE_C_FLAGS_RELEASE  "${CMAKE_C_FLAGS} -O3 -march=native")
 if(CMAKE_BUILD_TYPE MATCHES COVERAGE)
-    set(CMAKE_EXE_LINKER_FLAGS --coverage)
+    set(CMAKE_EXE_LINKER_FLAGS ${CMAKE_EXE_LINKER_FLAGS} --coverage)
 endif()
 
 set(SRCS
@@ -30,19 +32,28 @@ if(NOT HAVE_FREEZERO)
 endif()
 
 # µnit Testing Framework
+set(MUNIT_SRCS
+    ${PROJECT_SOURCE_DIR}/munit/munit.c
+)
 include_directories("${PROJECT_SOURCE_DIR}/munit")
+# XXX: clang choke with this flag.
+set_source_files_properties(${MUNIT_SRCS} PROPERTIES COMPILE_FLAGS -Wno-missing-field-initializers)
 add_library(munit ${PROJECT_SOURCE_DIR}/munit/munit.c)
 
-# Our library stuff.
+# Our library.
 include_directories("${PROJECT_SOURCE_DIR}/src")
 add_library(cryptopals ${SRCS})
 
-# Test executable.
-add_executable(testrunner
+# Test stuff.
+set(TEST_SRCS
     ${PROJECT_SOURCE_DIR}/tests/test_bytes.c
     ${PROJECT_SOURCE_DIR}/tests/test_xor.c
     ${PROJECT_SOURCE_DIR}/tests/test_break_plaintext.c
     ${PROJECT_SOURCE_DIR}/tests/test_break_single_byte_xor.c
     ${PROJECT_SOURCE_DIR}/tests/test_break_repeating_key_xor.c
-    ${PROJECT_SOURCE_DIR}/tests/main.c)
+    ${PROJECT_SOURCE_DIR}/tests/main.c
+)
+# XXX: we don't use much the µnit parameters
+set_source_files_properties(${TEST_SRCS} PROPERTIES COMPILE_FLAGS -Wno-unused-parameter)
+add_executable(testrunner ${TEST_SRCS})
 target_link_libraries(testrunner munit cryptopals)

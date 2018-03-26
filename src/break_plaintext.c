@@ -168,7 +168,7 @@ char_freq(const struct bytes *buf, const double *freq_ref, double *score_p)
 	*score_p = 0;
 	if (buf->len > 0) {
 		const double factor = 100.0 / buf->len;
-		for (int i = 0; i < (sizeof(count) / sizeof(*count)); i++) {
+		for (size_t i = 0; i < (sizeof(count) / sizeof(*count)); i++) {
 			const double ref = freq_ref[i];
 			const double actual = count[i] * factor;
 			const double delta = ref - actual;
@@ -225,7 +225,7 @@ word_lengths_freq(const struct bytes *buf, const double *freq_ref,
 	*score_p = 0;
 	if (wc > 0) {
 		const double factor = 100.0 / wc;
-		for (int i = 0; i < (sizeof(count) / sizeof(*count)); i++) {
+		for (size_t i = 0; i < (sizeof(count) / sizeof(*count)); i++) {
 			const double ref = freq_ref[i];
 			const double actual = count[i] * factor;
 			const double delta = ref - actual;
