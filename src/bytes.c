@@ -80,7 +80,7 @@ bytes_repeated(size_t len, uint8_t byte)
 		return (NULL);
 
 	buf->len = len;
-	(void)memset(buf->data, byte, len);
+	(void)explicit_memset(buf->data, byte, len);
 
 	return (buf);
 }
@@ -314,7 +314,7 @@ bytes_pkcs7_padded(const struct bytes *src, uint8_t k)
 
 	padded->len = len;
 	(void)memcpy(padded->data, src->data, src->len);
-	(void)memset(padded->data + src->len, n, n);
+	(void)explicit_memset(padded->data + src->len, n, n);
 
 	return (padded);
 }

@@ -1,17 +1,13 @@
 /*
  * compat/explicit_bzero.c
  *
- * see https://www.cryptologie.net/article/419/zeroing-memory-compiler-optimizations-and-memset_s/
+ * à-la OpenBSD explicit_bzero(3).
  */
 #include "compat.h"
 
 
 void
-explicit_bzero(void *buf, size_t len)
+explicit_bzero(void *ptr, size_t size)
 {
-	volatile unsigned char *p = buf;
-	while (len > 0) {
-		*p++ = 0;
-		len--;
-	}
+	(void)explicit_memset(ptr, 0, size);
 }

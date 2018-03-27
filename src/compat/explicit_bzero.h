@@ -8,6 +8,6 @@
 #include <stddef.h>
 
 
-void	explicit_bzero(void *buf, size_t len);
+void	explicit_bzero(void *ptr, size_t size);
 
 #endif /* ndef COMPAT_EXPLICIT_BZERO_H */

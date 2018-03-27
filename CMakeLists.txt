@@ -29,6 +29,10 @@ set(SRCS
 )
 include_directories("${PROJECT_SOURCE_DIR}/src")
 # compat stuff.
+check_library_exists(c explicit_memset "string.h" HAVE_EXPLICIT_MEMSET)
+if(NOT HAVE_EXPLICIT_MEMSET)
+    set(SRCS ${SRCS} "${PROJECT_SOURCE_DIR}/src/compat/explicit_memset.c")
+endif()
 check_library_exists(c explicit_bzero "strings.h" HAVE_EXPLICIT_BZERO)
 if(NOT HAVE_EXPLICIT_BZERO)
     set(SRCS ${SRCS} "${PROJECT_SOURCE_DIR}/src/compat/explicit_bzero.c")
