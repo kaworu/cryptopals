@@ -15,9 +15,9 @@
 
 
 /**
- * Encrypt or deecrypt a given ciphertext encrypted via AES-128 in ECB mode
- * under the provided key. For encryption, decryption give 1, respectively 0 for
- * the `enc' parameter.
+ * Encrypt or decrypt a given ciphertext encrypted via AES-128 in ECB mode under
+ * the provided key. For encryption, decryption give 1, respectively 0 for the
+ * `enc' parameter.
  *
  * Returns the ciphertext or NULL on error.
  */
@@ -83,6 +83,7 @@ cleanup:
 static struct bytes *
 aes_128_ecb_crypt(const struct bytes *in, const struct bytes *key, int enc)
 {
+	const EVP_CIPHER *cipher = EVP_aes_128_ecb();
 	EVP_CIPHER_CTX *ctx = NULL;
 	struct bytes *out = NULL;
 	int success = 0;
@@ -101,7 +102,6 @@ aes_128_ecb_crypt(const struct bytes *in, const struct bytes *key, int enc)
 		goto cleanup;
 
 	/* setup the context cipher */
-	const EVP_CIPHER *cipher = EVP_aes_128_ecb();
 	if (EVP_CipherInit_ex(ctx, cipher, NULL, NULL, NULL, enc) != 1)
 		goto cleanup;
 
