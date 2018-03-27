@@ -12,17 +12,35 @@ test_bytes_zeroed(const MunitParameter *params, void *data)
 
 	for (size_t i = 0; i < (sizeof(vectors) / sizeof(*vectors)); i++) {
 		const size_t len = vectors[i];
-		uint8_t *expected = calloc(len, sizeof(uint8_t));
-		if (expected == NULL)
-			munit_error("calloc");
 
 		struct bytes *buf = bytes_zeroed(len);
 		munit_assert_not_null(buf);
 		munit_assert_size(buf->len, ==, len);
-		munit_assert_memory_equal(buf->len, buf->data, expected);
+		for (size_t j = 0; j < len; j++)
+			munit_assert_uint8(buf->data[j], ==, 0);
 
 		bytes_free(buf);
-		free(expected);
+	}
+
+	return (MUNIT_OK);
+}
+
+
+static MunitResult
+test_bytes_repeated(const MunitParameter *params, void *data)
+{
+	const uint8_t vectors[] = { 0, 1, 2, UINT8_MAX };
+
+	for (size_t i = 0; i < (sizeof(vectors) / sizeof(*vectors)); i++) {
+		const uint8_t n = vectors[i];
+
+		struct bytes *buf = bytes_repeated(n, n);
+		munit_assert_not_null(buf);
+		munit_assert_size(buf->len, ==, n);
+		for (size_t j = 0; j < n; j++)
+			munit_assert_uint8(buf->data[j], ==, n);
+
+		bytes_free(buf);
 	}
 
 	return (MUNIT_OK);
@@ -495,6 +513,7 @@ test_bytes_hex_to_base64(const MunitParameter *params, void *data)
 /* The test suite. */
 MunitTest test_bytes_suite_tests[] = {
 	{ "bytes_zeroed",           test_bytes_zeroed,           NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "bytes_repeated",         test_bytes_repeated,         NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bytes_from_raw",         test_bytes_from_raw,         NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bytes_from_single",      test_bytes_from_single,      NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bytes_from_str",         test_bytes_from_str,         NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },

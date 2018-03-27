@@ -56,8 +56,31 @@ bytes_zeroed(size_t len)
 	struct bytes *buf = NULL;
 
 	buf = calloc(1, sizeof(struct bytes) + len * sizeof(uint8_t));
-	if (buf != NULL)
-		buf->len = len;
+	if (buf == NULL)
+		return (NULL);
+
+	buf->len = len;
+
+	return (buf);
+}
+
+
+struct bytes *
+bytes_repeated(size_t len, uint8_t byte)
+{
+	struct bytes *buf = NULL;
+
+	/* special case where we can directly call calloc(3) instead of
+	   malloc(3) + memset(3) */
+	if (byte == 0)
+		return (bytes_zeroed(len));
+
+	buf = malloc(sizeof(struct bytes) + len * sizeof(uint8_t));
+	if (buf == NULL)
+		return (NULL);
+
+	buf->len = len;
+	(void)memset(buf->data, byte, len);
 
 	return (buf);
 }
