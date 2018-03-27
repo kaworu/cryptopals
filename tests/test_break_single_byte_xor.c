@@ -66,16 +66,16 @@ test_break_single_byte_xor_2(const MunitParameter *params, void *data)
 	struct bytes *decrypted = NULL, *key = NULL;
 	double score = 0;
 
-	for (size_t i = 0; i < (sizeof(s1c4data) / sizeof(*s1c4data)); i++) {
+	for (size_t i = 0; i < (sizeof(s1c4_data) / sizeof(*s1c4_data)); i++) {
 		struct bytes *idecrypted = NULL, *ikey = NULL;
 		double iscore = 0;
 
-		const char *ciphertext = s1c4data[i];
-		struct bytes *buf = bytes_from_hex(ciphertext);
-		if (buf == NULL)
+		struct bytes *ciphertext = bytes_from_hex(s1c4_data[i]);
+		if (ciphertext == NULL)
 			munit_error("bytes_from_hex");
 
-		idecrypted = break_single_byte_xor(buf, looks_like_english, &ikey, &iscore);
+		idecrypted = break_single_byte_xor(ciphertext,
+			    looks_like_english, &ikey, &iscore);
 		munit_assert_not_null(idecrypted);
 		munit_assert_not_null(ikey);
 
@@ -89,7 +89,7 @@ test_break_single_byte_xor_2(const MunitParameter *params, void *data)
 			bytes_free(idecrypted);
 			bytes_free(ikey);
 		}
-		bytes_free(buf);
+		bytes_free(ciphertext);
 	}
 
 	munit_assert_not_null(decrypted);
