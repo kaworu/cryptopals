@@ -13,10 +13,16 @@ if(CMAKE_BUILD_TYPE MATCHES COVERAGE)
     set(CMAKE_EXE_LINKER_FLAGS ${CMAKE_EXE_LINKER_FLAGS} --coverage)
 endif()
 
+# OpenSSL
+find_package(OpenSSL REQUIRED)
+include_directories(${OPENSSL_INCLUDE_DIRS})
+link_directories(${OPENSSL_LIBRARIES})
+
 # Our cryptopals library.
 set(SRCS
     ${PROJECT_SOURCE_DIR}/src/bytes.c
     ${PROJECT_SOURCE_DIR}/src/xor.c
+    ${PROJECT_SOURCE_DIR}/src/aes.c
     ${PROJECT_SOURCE_DIR}/src/break_plaintext.c
     ${PROJECT_SOURCE_DIR}/src/break_single_byte_xor.c
     ${PROJECT_SOURCE_DIR}/src/break_repeating_key_xor.c
@@ -32,6 +38,7 @@ if(NOT HAVE_FREEZERO)
     set(SRCS ${SRCS} "${PROJECT_SOURCE_DIR}/src/compat/freezero.c")
 endif()
 add_library(cryptopals ${SRCS})
+target_link_libraries(cryptopals ${OPENSSL_LIBRARIES})
 
 # µnit Testing Framework
 set(MUNIT_SRCS
@@ -49,6 +56,7 @@ set(TEST_SRCS
     ${PROJECT_SOURCE_DIR}/tests/test_break_plaintext.c
     ${PROJECT_SOURCE_DIR}/tests/test_break_single_byte_xor.c
     ${PROJECT_SOURCE_DIR}/tests/test_break_repeating_key_xor.c
+    ${PROJECT_SOURCE_DIR}/tests/test_aes.c
     ${PROJECT_SOURCE_DIR}/tests/main.c
 )
 # XXX: we don't use much µnit parameters.

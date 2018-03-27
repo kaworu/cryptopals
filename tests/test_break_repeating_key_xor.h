@@ -73,8 +73,7 @@ static const char *s1c6_ciphertext_base64 =
 	"Jk8DCkkcC3hFMQIEC0EbAVIqCFZBO1IdBgZUVA4QTgUWSR4QJwwRTWM=";
 
 
-static const char *s1c6_key =
-	"Terminator X: Bring the noise";
+static const char *s1c6_key = "Terminator X: Bring the noise";
 
 
 static const char *s1c6_plaintext =
