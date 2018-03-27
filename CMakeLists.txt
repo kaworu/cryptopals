@@ -22,10 +22,10 @@ link_directories(${OPENSSL_LIBRARIES})
 set(SRCS
     ${PROJECT_SOURCE_DIR}/src/bytes.c
     ${PROJECT_SOURCE_DIR}/src/xor.c
-    ${PROJECT_SOURCE_DIR}/src/aes.c
     ${PROJECT_SOURCE_DIR}/src/break_plaintext.c
     ${PROJECT_SOURCE_DIR}/src/break_single_byte_xor.c
     ${PROJECT_SOURCE_DIR}/src/break_repeating_key_xor.c
+    ${PROJECT_SOURCE_DIR}/src/aes.c
 )
 include_directories("${PROJECT_SOURCE_DIR}/src")
 # compat stuff.

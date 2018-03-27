@@ -240,6 +240,57 @@ test_bytes_dup(const MunitParameter *params, void *data)
 }
 
 
+/* Set 2 / Challenge 9 */
+static MunitResult
+test_bytes_pkcs7_padded(const MunitParameter *params, void *data)
+{
+	const struct {
+		char *input;
+		uint8_t pad;
+		char *expected;
+	} vectors[] = {
+		{ .input = "",    .pad = 1, .expected = "\x01" },
+		{ .input = "",    .pad = 2, .expected = "\x02\x02" },
+		{ .input = "foo", .pad = 3, .expected = "foo\x03\x03\x03" },
+		{ .input = "foo", .pad = 4, .expected = "foo\x01" },
+		{
+			.input    = "YELLOW SUBMARINE",
+			.pad      = 20,
+			.expected = "YELLOW SUBMARINE\x04\x04\x04\x04"
+                },
+	};
+
+	for (size_t i = 0; i < (sizeof(vectors) / sizeof(*vectors)); i++) {
+		const char *input    = vectors[i].input;
+		const uint8_t pad    = vectors[i].pad;
+		const char *expected = vectors[i].expected;
+		struct bytes *buf = bytes_from_str(input);
+		if (buf == NULL)
+			munit_error("bytes_from_str");
+
+		struct bytes *padded = bytes_pkcs7_padded(buf, pad);
+		munit_assert_not_null(padded);
+		munit_assert_size(padded->len, ==, strlen(expected));
+		munit_assert_memory_equal(padded->len, padded->data, expected);
+
+		bytes_free(padded);
+		bytes_free(buf);
+	}
+
+	/* when NULL is given */
+	munit_assert_null(bytes_pkcs7_padded(NULL, 1));
+
+	/* when zero is given */
+	struct bytes *buf = bytes_from_str("foobar");
+	if (buf == NULL)
+		munit_error("bytes_from_str");
+	munit_assert_null(bytes_pkcs7_padded(buf, 0));
+
+	bytes_free(buf);
+	return (MUNIT_OK);
+}
+
+
 static MunitResult
 test_bytes_slice(const MunitParameter *params, void *data)
 {
@@ -520,6 +571,7 @@ MunitTest test_bytes_suite_tests[] = {
 	{ "bytes_from_hex",         test_bytes_from_hex,         NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bytes_from_base64",      test_bytes_from_base64,      NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bytes_dup",              test_bytes_dup,              NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "bytes_pkcs7_padded",     test_bytes_pkcs7_padded,     NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bytes_slice",            test_bytes_slice,            NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bytes_slices",           test_bytes_slices,           NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bytes_hamming_distance", test_bytes_hamming_distance, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
