@@ -298,29 +298,6 @@ bytes_dup(const struct bytes *src)
 
 
 struct bytes *
-bytes_pkcs7_padded(const struct bytes *src, uint8_t k)
-{
-	struct bytes *padded = NULL;
-
-	/* sanity check */
-	if (src == NULL || k == 0)
-		return (NULL);
-
-	const uint8_t n = k - (src->len % k);
-	const size_t len = src->len + n;
-	padded = malloc(sizeof(struct bytes) + len * sizeof(uint8_t));
-	if (padded == NULL)
-		return (NULL);
-
-	padded->len = len;
-	(void)memcpy(padded->data, src->data, src->len);
-	(void)explicit_memset(padded->data + src->len, n, n);
-
-	return (padded);
-}
-
-
-struct bytes *
 bytes_slice(const struct bytes *src, size_t offset, size_t len)
 {
 	/* sanity checks */
@@ -331,6 +308,7 @@ bytes_slice(const struct bytes *src, size_t offset, size_t len)
 
 	return (bytes_from_raw(src->data + offset, len));
 }
+
 
 struct bytes *
 bytes_slices(const struct bytes *src, size_t offset, size_t size, size_t jump)
@@ -404,6 +382,27 @@ bytes_hamming_distance(const struct bytes *a, const struct bytes *b)
 		d += popcnt(a->data[i] ^ b->data[i]);
 
 	return (d);
+}
+
+
+struct bytes *
+bytes_pkcs7_padded(const struct bytes *src, uint8_t k)
+{
+	struct bytes *padded = NULL;
+
+	/* sanity check */
+	if (src == NULL || k == 0)
+		return (NULL);
+
+	const uint8_t n = k - (src->len % k);
+	const size_t len = src->len + n;
+	padded = bytes_alloc(len);
+	if (padded == NULL)
+		return (NULL);
+	(void)memcpy(padded->data, src->data, src->len);
+	(void)explicit_memset(padded->data + src->len, n, n);
+
+	return (padded);
 }
 
 

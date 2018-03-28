@@ -89,15 +89,6 @@ struct bytes	*bytes_from_base64(const char *s);
 struct bytes	*bytes_dup(const struct bytes *src);
 
 /*
- * Returns a copy of the provided buffer padded to `k' using PCSK#7.
- *
- * Returns a pointer to a newly allocated bytes struct that should passed to
- * bytes_free(). Returns NULL if the given pointer is NULL, or k is zero, or
- * malloc(3) failed.
- */
-struct bytes	*bytes_pkcs7_padded(const struct bytes *src, uint8_t k);
-
-/*
  * Create a bytes struct from a slice of another source bytes struct.
  *
  * Returns a pointer to a newly allocated bytes struct that should passed to
@@ -139,6 +130,15 @@ struct bytes	*bytes_slices(const struct bytes *src,
  * Returns -1 if either argument is NULL or their length doesn't match.
  */
 intmax_t	bytes_hamming_distance(const struct bytes *, const struct bytes *);
+
+/*
+ * Returns a copy of the provided buffer padded to `k' using PCSK#7.
+ *
+ * Returns a pointer to a newly allocated bytes struct that should passed to
+ * bytes_free(). Returns NULL if the given pointer is NULL, or k is zero, or
+ * malloc(3) failed.
+ */
+struct bytes	*bytes_pkcs7_padded(const struct bytes *src, uint8_t k);
 
 /*
  * Returns the NUL-terminated string representation of the given bytes struct.
