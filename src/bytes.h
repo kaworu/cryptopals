@@ -148,7 +148,8 @@ struct bytes	*bytes_slices(const struct bytes *src,
  *
  * Returns -1 if either argument is NULL or their length doesn't match.
  */
-intmax_t	bytes_hamming_distance(const struct bytes *, const struct bytes *);
+intmax_t	bytes_hamming_distance(const struct bytes *l,
+		    const struct bytes *r);
 
 /*
  * Returns a copy of the provided buffer padded to `k' using PCSK#7.
