@@ -240,6 +240,92 @@ test_bytes_dup(const MunitParameter *params, void *data)
 }
 
 
+static MunitResult
+test_bytes_bcmp(const MunitParameter *params, void *data)
+{
+	const struct {
+		char *a;
+		char *b;
+		int cmp;
+	} vectors[] = {
+		{ .a = "",       .b = "",       .cmp = 0 },
+		{ .a = "x",      .b = "x",      .cmp = 0 },
+		{ .a = "x",      .b = "y",      .cmp = 1 },
+		{ .a = "foo",    .b = "bar",    .cmp = 1 },
+		{ .a = "foobar", .b = "foobar", .cmp = 0 },
+		/* length mismatch */
+		{ .a = "x",      .b = "",       .cmp = 1 },
+		{ .a = "",       .b = "x",      .cmp = 1 },
+		{ .a = "1",       .b = "12",    .cmp = 1 },
+		{ .a = "12",      .b = "1",     .cmp = 1 },
+		/* NULL */
+		{ .a = NULL,     .b = "foobar", .cmp = 1 },
+		{ .a = "foobar", .b = NULL,     .cmp = 1 },
+		{ .a = NULL,     .b = NULL,     .cmp = 1 },
+	};
+
+	for (size_t i = 0; i < (sizeof(vectors) / sizeof(*vectors)); i++) {
+		struct bytes *a = bytes_from_str(vectors[i].a);
+		struct bytes *b = bytes_from_str(vectors[i].b);
+		int expected = vectors[i].cmp;
+		if (vectors[i].a != NULL && a == NULL)
+			munit_error("bytes_from_str");
+		if (vectors[i].b != NULL && b == NULL)
+			munit_error("bytes_from_str");
+
+		munit_assert_int(bytes_bcmp(a, b), ==, expected);
+
+		bytes_free(a);
+		bytes_free(b);
+	}
+
+	return (MUNIT_OK);
+}
+
+
+static MunitResult
+test_bytes_timingsafe_bcmp(const MunitParameter *params, void *data)
+{
+	const struct {
+		char *a;
+		char *b;
+		int cmp;
+	} vectors[] = {
+		{ .a = "",       .b = "",       .cmp = 0 },
+		{ .a = "x",      .b = "x",      .cmp = 0 },
+		{ .a = "x",      .b = "y",      .cmp = 1 },
+		{ .a = "foo",    .b = "bar",    .cmp = 1 },
+		{ .a = "foobar", .b = "foobar", .cmp = 0 },
+		/* length mismatch */
+		{ .a = "x",      .b = "",       .cmp = 1 },
+		{ .a = "",       .b = "x",      .cmp = 1 },
+		{ .a = "1",       .b = "12",    .cmp = 1 },
+		{ .a = "12",      .b = "1",     .cmp = 1 },
+		/* NULL */
+		{ .a = NULL,     .b = "foobar", .cmp = 1 },
+		{ .a = "foobar", .b = NULL,     .cmp = 1 },
+		{ .a = NULL,     .b = NULL,     .cmp = 1 },
+	};
+
+	for (size_t i = 0; i < (sizeof(vectors) / sizeof(*vectors)); i++) {
+		struct bytes *a = bytes_from_str(vectors[i].a);
+		struct bytes *b = bytes_from_str(vectors[i].b);
+		int expected = vectors[i].cmp;
+		if (vectors[i].a != NULL && a == NULL)
+			munit_error("bytes_from_str");
+		if (vectors[i].b != NULL && b == NULL)
+			munit_error("bytes_from_str");
+
+		munit_assert_int(bytes_timingsafe_bcmp(a, b), ==, expected);
+
+		bytes_free(a);
+		bytes_free(b);
+	}
+
+	return (MUNIT_OK);
+}
+
+
 /* Set 2 / Challenge 9 */
 static MunitResult
 test_bytes_pkcs7_padded(const MunitParameter *params, void *data)
@@ -627,6 +713,8 @@ MunitTest test_bytes_suite_tests[] = {
 	{ "bytes_from_hex",         test_bytes_from_hex,         NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bytes_from_base64",      test_bytes_from_base64,      NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bytes_dup",              test_bytes_dup,              NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "bytes_bcmp",             test_bytes_bcmp,             NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "bytes_timingsafe_bcmp",  test_bytes_timingsafe_bcmp,  NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bytes_pkcs7_padded",     test_bytes_pkcs7_padded,     NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bytes_joined",           test_bytes_joined,           NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bytes_slice",            test_bytes_slice,            NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },

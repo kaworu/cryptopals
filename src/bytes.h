@@ -89,6 +89,25 @@ struct bytes	*bytes_from_base64(const char *s);
 struct bytes	*bytes_dup(const struct bytes *src);
 
 /*
+ * Returns 0 if the two given bytes structs are not NULL and have the same
+ * length and data, 1 otherwise.
+ *
+ * NOTE: bytes_bcmp() does *not* run in constant time, see
+ * bytes_timingsafe_bcmp().
+ */
+int	bytes_bcmp(const struct bytes *a, const struct bytes *b);
+
+/*
+ * Returns 0 if the two given bytes structs are not NULL and have the same
+ * length and data, 1 otherwise.
+ *
+ * NOTE: Unlike bytes_bcmp(), the running time of bytes_timingsafe_bcmp() is
+ * independent of the bytes structs data, and does not return a lexicographic
+ * ordering on the data at a and b; it tells only whether they are equal.
+ */
+int	bytes_timingsafe_bcmp(const struct bytes *a, const struct bytes *b);
+
+/*
  * Create a bytes struct from a slice of another source bytes struct.
  *
  * Returns a pointer to a newly allocated bytes struct that should passed to

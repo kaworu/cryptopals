@@ -307,6 +307,29 @@ bytes_dup(const struct bytes *src)
 }
 
 
+int
+bytes_bcmp(const struct bytes *a, const struct bytes *b)
+{
+	if (a == NULL || b == NULL)
+		return (1);
+	if (a->len != b->len)
+		return (1);
+	int cmp = memcmp(a->data, b->data, a->len);
+	return (cmp == 0 ? 0 : 1);
+}
+
+
+int
+bytes_timingsafe_bcmp(const struct bytes *a, const struct bytes *b)
+{
+	if (a == NULL || b == NULL)
+		return (1);
+	if (a->len != b->len)
+		return (1);
+	return timingsafe_bcmp(a->data, b->data, a->len);
+}
+
+
 struct bytes *
 bytes_slice(const struct bytes *src, size_t offset, size_t len)
 {
