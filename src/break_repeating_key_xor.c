@@ -85,7 +85,7 @@ break_repeating_key_xor(const struct bytes *ciphertext,
 		const double d = compute_keysize_distance(ciphertext, keysize);
 		if (d == -1)
 			goto cleanup;
-		kds[i].keysize  = keysize;
+		kds[i].keysize = keysize;
 		kds[i].distance = d;
 	}
 
@@ -220,7 +220,7 @@ break_known_keysize(const struct bytes *ciphertext,
 	if (keybuf == NULL)
 		goto cleanup;
 	for (size_t offset = 0; offset < keysize; offset++) {
-		struct bytes *slices, *sres, *skey_p;
+		struct bytes *slices, *ires, *ikey_p;
 		/* filter only the ciphertext bytes having been XOR'd with the
 		   current byte from the key */
 		slices = bytes_slices(ciphertext, offset, 1, keysize - 1);
@@ -229,17 +229,17 @@ break_known_keysize(const struct bytes *ciphertext,
 		/* NOTE: we can't use any heuristic depending on the byte order
 		   here (e.g. english_word_lengths_freq()) because the selected
 		   bytes from the ciphertext are not adjacent. */
-		skey_p = NULL;
-		sres = break_single_byte_xor(slices, english_char_freq, &skey_p, NULL);
-		if (sres == NULL || skey_p == NULL || skey_p->len != 1) {
+		ikey_p = NULL;
+		ires = break_single_byte_xor(slices, english_char_freq, &ikey_p, NULL);
+		if (ires == NULL || ikey_p == NULL || ikey_p->len != 1) {
 			bytes_free(slices);
 			goto cleanup;
 		}
 		/* finally populate `keybuf' */
-		keybuf[offset] = skey_p->data[0];
+		keybuf[offset] = ikey_p->data[0];
 		/* cleanup */
-		bytes_free(skey_p);
-		bytes_free(sres);
+		bytes_free(ikey_p);
+		bytes_free(ires);
 		bytes_free(slices);
 	}
 

@@ -17,8 +17,10 @@ break_single_byte_xor(const struct bytes *ciphertext,
 	double score = 0;
 	int success = 0;
 
-	/* sanity check */
-	if (ciphertext == NULL || ciphertext->len == 0 || method == NULL)
+	/* sanity checks */
+	if (ciphertext == NULL || ciphertext->len == 0)
+		goto cleanup;
+	if (method == NULL)
 		goto cleanup;
 
 	/* create a working copy of the buffer to analyze */

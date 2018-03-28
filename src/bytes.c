@@ -601,11 +601,8 @@ bytes_to_base64(const struct bytes *bytes)
 void
 bytes_free(struct bytes *victim)
 {
-	size_t len;
-
 	if (victim == NULL)
 		return;
-
-	len = (sizeof(struct bytes) + victim->len * sizeof(uint8_t));
+	size_t len = (sizeof(struct bytes) + victim->len * sizeof(uint8_t));
 	freezero(victim, len);
 }

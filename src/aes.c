@@ -43,7 +43,7 @@ int
 aes_128_ecb_detect(const struct bytes *buf, double *score_p)
 {
 	const EVP_CIPHER *cipher = EVP_aes_128_ecb();
-	const size_t blocksize = (size_t)EVP_CIPHER_block_size(cipher);
+	const size_t blocksize = EVP_CIPHER_block_size(cipher);
 	size_t nmatch = 0;
 	int success = 0;
 
@@ -134,12 +134,12 @@ aes_128_ecb_crypt(const struct bytes *in, const struct bytes *key, int enc)
 	success = 1;
 	/* FALLTHROUGH */
 cleanup:
+	EVP_CIPHER_CTX_free(ctx);
+	/* XXX: we don't provide any clue on what happened on error */
+	ERR_remove_state(/* pid will be looked up */0);
 	if (!success) {
 		bytes_free(out);
 		out = NULL;
 	}
-	EVP_CIPHER_CTX_free(ctx);
-	/* XXX: we don't provide any clue on what happened on error */
-	ERR_remove_state(/* pid will be looked up */0);
 	return (out);
 }

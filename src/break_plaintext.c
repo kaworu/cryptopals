@@ -57,9 +57,8 @@ looks_like_english(const struct bytes *buf, double *score_p)
 	success = 1;
 	/* FALLTHROUGH */
 cleanup:
-	if (success) {
+	if (success)
 		*score_p = (chars * 0.5 + words * 0.5);
-	}
 	return (success ? 0 : -1);
 }
 
