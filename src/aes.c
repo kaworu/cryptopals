@@ -65,7 +65,7 @@ aes_128_ecb_detect(const struct bytes *buf, double *score_p)
 				goto cleanup;
 			}
 			/* NOTE: we don't need const time comparison here */
-			if (memcmp(lhs, rhs, blocksize) == 0)
+			if (bytes_bcmp(lhs, rhs) == 0)
 				nmatch += 1;
 			bytes_free(lhs);
 			bytes_free(rhs);
