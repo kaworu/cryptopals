@@ -84,6 +84,7 @@ static struct bytes *
 aes_128_ecb_crypt(const struct bytes *in, const struct bytes *key, int enc)
 {
 	const EVP_CIPHER *cipher = EVP_aes_128_ecb();
+	const size_t blocksize = EVP_CIPHER_block_size(cipher);
 	EVP_CIPHER_CTX *ctx = NULL;
 	struct bytes *out = NULL;
 	int success = 0;
@@ -93,8 +94,6 @@ aes_128_ecb_crypt(const struct bytes *in, const struct bytes *key, int enc)
 		goto cleanup;
 	if (in->len > INT_MAX || key->len > INT_MAX)
 		goto cleanup;
-	const int inlen  = (int)in->len;
-	const int keylen = (int)key->len;
 
 	/* create the context */
 	ctx = EVP_CIPHER_CTX_new();
@@ -106,21 +105,18 @@ aes_128_ecb_crypt(const struct bytes *in, const struct bytes *key, int enc)
 		goto cleanup;
 
 	/* setup the context cipher key */
-	if (EVP_CIPHER_CTX_set_key_length(ctx, keylen) != 1)
+	if (EVP_CIPHER_CTX_set_key_length(ctx, key->len) != 1)
 		goto cleanup;
 	if (EVP_CipherInit_ex(ctx, NULL, NULL, key->data, NULL, -1) != 1)
 		goto cleanup;
 
-	const int blocksize = EVP_CIPHER_block_size(cipher);
-	if (blocksize <= 0)
-		goto cleanup;
 	/* NOTE: add twice the block size needed by enc update and final */
-	out = bytes_zeroed(in->len + (size_t)blocksize * 2);
+	out = bytes_zeroed(in->len + blocksize * 2);
 	if (out == NULL)
 		goto cleanup;
 
 	int uplen = -1;
-	int ret = EVP_CipherUpdate(ctx, out->data, &uplen, in->data, inlen);
+	int ret = EVP_CipherUpdate(ctx, out->data, &uplen, in->data, in->len);
 	if (ret != 1 || uplen < 0)
 		goto cleanup;
 
@@ -128,7 +124,7 @@ aes_128_ecb_crypt(const struct bytes *in, const struct bytes *key, int enc)
 	ret = EVP_CipherFinal_ex(ctx, out->data + uplen, &finlen);
 	if (ret != 1 || finlen < 0 || (INT_MAX - uplen) < finlen)
 		goto cleanup;
-	const size_t outlen = (size_t)(uplen + finlen);
+	const size_t outlen = uplen + finlen;
 
 	if (out->len < outlen)
 		abort();
