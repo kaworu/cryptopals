@@ -50,6 +50,24 @@ b64decode(char c)
 }
 
 
+/*
+ * malloc(3) a bytes struct and set the len member. Note that the data member is
+ * not set and must be filled by the caller.
+ */
+static inline struct bytes *
+bytes_alloc(size_t len)
+{
+	struct bytes *buf;
+
+	buf = malloc(sizeof(struct bytes) + len * sizeof(uint8_t));
+	if (buf == NULL)
+		return (NULL);
+
+	buf->len = len;
+	return (buf);
+}
+
+
 struct bytes *
 bytes_zeroed(size_t len)
 {
@@ -75,11 +93,9 @@ bytes_repeated(size_t len, uint8_t byte)
 	if (byte == 0)
 		return (bytes_zeroed(len));
 
-	buf = malloc(sizeof(struct bytes) + len * sizeof(uint8_t));
+	buf = bytes_alloc(len);
 	if (buf == NULL)
 		return (NULL);
-
-	buf->len = len;
 	(void)explicit_memset(buf->data, byte, len);
 
 	return (buf);
@@ -95,11 +111,9 @@ bytes_from_raw(const void *p, size_t len)
 	if (p == NULL)
 		return (NULL);
 
-	buf = malloc(sizeof(struct bytes) + len * sizeof(uint8_t));
+	buf = bytes_alloc(len);
 	if (buf == NULL)
 		return (NULL);
-
-	buf->len = len;
 	(void)memcpy(buf->data, p, len);
 
 	return (buf);
@@ -142,10 +156,9 @@ bytes_from_hex(const char *s)
 	if (nbytes * 2 != hexlen)
 		goto cleanup;
 
-	buf = malloc(sizeof(struct bytes) + nbytes * sizeof(uint8_t));
+	buf = bytes_alloc(nbytes);
 	if (buf == NULL)
 		goto cleanup;
-	buf->len = nbytes;
 
 	/* decoding loop */
 	for (size_t i = 0; i < nbytes; i++) {
@@ -227,10 +240,9 @@ bytes_from_base64(const char *s)
 		}
 	}
 
-	buf = malloc(sizeof(struct bytes) + nbytes * sizeof(uint8_t));
+	buf = bytes_alloc(nbytes);
 	if (buf == NULL)
 		goto cleanup;
-	buf->len = nbytes;
 
 	/* decoding loop */
 	for (i = 0; i < nunit; i++) {
@@ -286,11 +298,9 @@ bytes_dup(const struct bytes *src)
 		return (NULL);
 
 	len = src->len;
-	cpy = malloc(sizeof(struct bytes) + len * sizeof(uint8_t));
+	cpy = bytes_alloc(len);
 	if (cpy == NULL)
 		return (NULL);
-
-	cpy->len = len;
 	(void)memcpy(cpy->data, src->data, len);
 
 	return (cpy);
@@ -337,10 +347,9 @@ bytes_slices(const struct bytes *src, size_t offset, size_t size, size_t jump)
 		goto cleanup;
 
 	/* alloc and init the result buffer */
-	buf = malloc(sizeof(struct bytes) + nbytes * sizeof(uint8_t));
+	buf = bytes_alloc(nbytes);
 	if (buf == NULL)
 		goto cleanup;
-	buf->len = nbytes;
 
 	/* processing loop, use the same logic as the length detection loop */
 	uint8_t *buf_p = buf->data;
