@@ -292,6 +292,62 @@ test_bytes_pkcs7_padded(const MunitParameter *params, void *data)
 
 
 static MunitResult
+test_bytes_joined(const MunitParameter *params, void *data)
+{
+	const struct {
+		char *inputs[6];
+		size_t count;
+		char *expected;
+	} vectors[] = {
+		{ .inputs = {}, .count = 0, .expected = "" },
+		{ .inputs = { "", "" },  .count = 2, .expected = "" },
+		{ .inputs = { "", "x" }, .count = 2, .expected = "x" },
+		{ .inputs = { "x", "" }, .count = 2, .expected = "x" },
+		{ .inputs = { "f", "o", "o" }, .count = 3, .expected = "foo" },
+		{ .inputs = { "foo", "ba", "r", "" }, .count = 4, .expected = "foobar" },
+	};
+
+	for (size_t i = 0; i < (sizeof(vectors) / sizeof(*vectors)); i++) {
+		char *const *inputs = vectors[i].inputs;
+		const size_t count   = vectors[i].count;
+		const char *expected = vectors[i].expected;
+
+		struct bytes **array = calloc(count, sizeof(struct bytes *));
+		if (array == NULL)
+			munit_error("calloc");
+		for (size_t i = 0; i < count; i++) {
+			array[i] = bytes_from_str(inputs[i]);
+			if (array[i] == NULL)
+				munit_error("bytes_from_str");
+		}
+
+		struct bytes *joined = bytes_joined(array, count);
+		munit_assert_not_null(joined);
+		munit_assert_size(joined->len, ==, strlen(expected));
+		munit_assert_memory_equal(joined->len, joined->data, expected);
+
+		for (size_t i = 0; i < count; i++)
+			bytes_free(array[i]);
+		free(array);
+		bytes_free(joined);
+	}
+
+	/* when NULL is given */
+	munit_assert_null(bytes_joined(NULL, 1));
+
+	/* when one of the element is NULL */
+	struct bytes *buf = bytes_from_str("foobar");
+	if (buf == NULL)
+		munit_error("bytes_from_str");
+	struct bytes *array[] = { buf, NULL, buf };
+	munit_assert_null(bytes_joined(array, 3));
+
+	bytes_free(buf);
+	return (MUNIT_OK);
+}
+
+
+static MunitResult
 test_bytes_slice(const MunitParameter *params, void *data)
 {
 	struct bytes *buf = bytes_from_str("foobar");
@@ -572,6 +628,7 @@ MunitTest test_bytes_suite_tests[] = {
 	{ "bytes_from_base64",      test_bytes_from_base64,      NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bytes_dup",              test_bytes_dup,              NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bytes_pkcs7_padded",     test_bytes_pkcs7_padded,     NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "bytes_joined",           test_bytes_joined,           NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bytes_slice",            test_bytes_slice,            NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bytes_slices",           test_bytes_slices,           NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bytes_hamming_distance", test_bytes_hamming_distance, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },

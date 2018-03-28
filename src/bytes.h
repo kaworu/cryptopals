@@ -141,6 +141,15 @@ intmax_t	bytes_hamming_distance(const struct bytes *, const struct bytes *);
 struct bytes	*bytes_pkcs7_padded(const struct bytes *src, uint8_t k);
 
 /*
+ * Returns a new buffer that is the concatenation of all the provided buffers
+ * (in order). Note that `parts' is not modified.
+ *
+ * Returns a pointer to a newly allocated bytes struct that should passed to
+ * bytes_free(). Returns NULL if the given pointer is NULL or malloc(3) failed.
+ */
+struct bytes	*bytes_joined(struct bytes *const *parts, size_t count);
+
+/*
  * Returns the NUL-terminated string representation of the given bytes struct.
  *
  * Returns a pointer to a newly allocated bytes struct that should passed to

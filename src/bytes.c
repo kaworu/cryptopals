@@ -415,6 +415,47 @@ bytes_pkcs7_padded(const struct bytes *src, uint8_t k)
 }
 
 
+struct bytes *
+bytes_joined(struct bytes *const *parts, size_t count)
+{
+	struct bytes *joined = NULL;
+	int success = 0;
+
+	/* sanity checks */
+	if (parts == NULL)
+		goto cleanup;
+	for (size_t i = 0; i < count; i++) {
+		if (parts[i] == NULL)
+			goto cleanup;
+	}
+
+	/* compute the total length needed */
+	size_t len = 0;
+	for (size_t i = 0; i < count; i++)
+		len += parts[i]->len;
+
+	joined = bytes_alloc(len);
+	if (joined == NULL)
+		goto cleanup;
+
+	uint8_t *p = joined->data;
+	for (size_t i = 0; i < count; i++) {
+		const struct bytes *part = parts[i];
+		(void)memcpy(p, part->data, part->len);
+		p += part->len;
+	}
+
+	success = 1;
+	/* FALLTHROUGH */
+cleanup:
+	if (!success) {
+		bytes_free(joined);
+		joined = NULL;
+	}
+	return (joined);
+}
+
+
 char *
 bytes_to_str(const struct bytes *bytes)
 {
