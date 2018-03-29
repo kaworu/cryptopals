@@ -170,9 +170,6 @@ compute_keysize_distance(const struct bytes *buf, size_t keysize)
 	b0 = bytes_slice(buf, 0 * keysize, keysize);
 	b1 = bytes_slice(buf, 1 * keysize, keysize);
 	b2 = bytes_slice(buf, 2 * keysize, keysize);
-	if (b0 == NULL || b1 == NULL || b2 == NULL)
-		goto cleanup;
-
 	/* compute the hamming distance for each couple of slices */
 	const intmax_t db0b1 = bytes_hamming_distance(b0, b1);
 	const intmax_t db0b2 = bytes_hamming_distance(b0, b2);
@@ -224,8 +221,6 @@ break_known_keysize(const struct bytes *ciphertext,
 		/* filter only the ciphertext bytes having been XOR'd with the
 		   current byte from the key */
 		slices = bytes_slices(ciphertext, offset, 1, keysize - 1);
-		if (slices == NULL)
-			goto cleanup;
 		/* NOTE: we can't use any heuristic depending on the byte order
 		   here (e.g. english_word_lengths_freq()) because the selected
 		   bytes from the ciphertext are not adjacent. */
