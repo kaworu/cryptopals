@@ -24,4 +24,10 @@
 #include "compat/freezero.h"
 #endif
 
+#if defined(HAVE_TIMINGSAFE_BCMP)
+#include <string.h>
+#else
+#include "compat/timingsafe_bcmp.h"
+#endif
+
 #endif /* ndef COMPAT_H */
