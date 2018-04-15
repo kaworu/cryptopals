@@ -37,4 +37,13 @@ struct bytes	*aes_128_ecb_decrypt(const struct bytes *ciphertext,
  */
 int	aes_128_ecb_detect(const struct bytes *buf, double *score_p);
 
+/**
+ * Decrypt a given ciphertext encrypted via AES-128 in CBC mode under the
+ * provided key with the given IV.
+ *
+ * Returns the ciphertext or NULL on error.
+ */
+struct bytes	*aes_128_cbc_decrypt(const struct bytes *ciphertext,
+		    const struct bytes *key, const struct bytes *iv);
+
 #endif /* ndef AES_H */

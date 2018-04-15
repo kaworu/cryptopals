@@ -145,6 +145,67 @@ test_aes_128_ecb_detect_1(const MunitParameter *params, void *data)
 }
 
 
+/* Error conditions */
+static MunitResult
+test_aes_128_cbc_decrypt_0(const MunitParameter *params, void *data)
+{
+	struct bytes *ciphertext = bytes_from_base64(s2c10_ciphertext_base64);
+	if (ciphertext == NULL)
+		munit_error("bytes_from_base64");
+	struct bytes *key = bytes_from_str(s2c10_key);
+	struct bytes *one_byte = bytes_from_str("x");
+	if (key == NULL || one_byte == NULL)
+		munit_error("bytes_from_str");
+	struct bytes *iv = bytes_zeroed(16);
+	if (iv == NULL)
+		munit_error("bytes_zeroed");
+
+	/* when NULL is given */
+	munit_assert_null(aes_128_cbc_decrypt(NULL, key, iv));
+	munit_assert_null(aes_128_cbc_decrypt(ciphertext, NULL, iv));
+	munit_assert_null(aes_128_cbc_decrypt(ciphertext, key, NULL));
+	/* when the key length is invalid */
+	munit_assert_null(aes_128_cbc_decrypt(ciphertext, one_byte, iv));
+	/* when the iv length is invalid */
+	munit_assert_null(aes_128_cbc_decrypt(ciphertext, key, one_byte));
+	/* when the ciphertext length is invalid */
+	munit_assert_null(aes_128_cbc_decrypt(one_byte, key, iv));
+
+	bytes_free(iv);
+	bytes_free(one_byte);
+	bytes_free(key);
+	bytes_free(ciphertext);
+	return (MUNIT_OK);
+}
+
+
+/* Set 2 / Challenge 10 */
+static MunitResult
+test_aes_128_cbc_decrypt_1(const MunitParameter *params, void *data)
+{
+	struct bytes *ciphertext = bytes_from_base64(s2c10_ciphertext_base64);
+	if (ciphertext == NULL)
+		munit_error("bytes_from_base64");
+	struct bytes *key = bytes_from_str(s2c10_key);
+	if (key == NULL)
+		munit_error("bytes_from_str");
+	struct bytes *iv = bytes_zeroed(16);
+	if (iv == NULL)
+		munit_error("bytes_zeroed");
+
+	struct bytes *plaintext = aes_128_cbc_decrypt(ciphertext, key, iv);
+	munit_assert_not_null(plaintext);
+	munit_assert_size(plaintext->len, ==, strlen(s2c10_plaintext));
+	munit_assert_memory_equal(plaintext->len, plaintext->data, s2c10_plaintext);
+
+	bytes_free(plaintext);
+	bytes_free(iv);
+	bytes_free(key);
+	bytes_free(ciphertext);
+	return (MUNIT_OK);
+}
+
+
 /* The test suite. */
 MunitTest test_aes_suite_tests[] = {
 	{ "aes_128_ecb_encrypt-0", test_aes_128_ecb_encrypt_0, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
@@ -153,6 +214,8 @@ MunitTest test_aes_suite_tests[] = {
 	{ "aes_128_ecb_decrypt-1", test_aes_128_ecb_decrypt_1, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "aes_128_ecb_detect-0",  test_aes_128_ecb_detect_0,  NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "aes_128_ecb_detect-1",  test_aes_128_ecb_detect_1,  NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "aes_128_cbc_decrypt-0", test_aes_128_cbc_decrypt_0, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "aes_128_cbc_decrypt-1", test_aes_128_cbc_decrypt_1, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{
 		.name       = NULL,
 		.test       = NULL,

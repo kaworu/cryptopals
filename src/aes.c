@@ -11,6 +11,7 @@
 #include <openssl/err.h>
 #include <openssl/evp.h>
 
+#include "xor.h"
 #include "aes.h"
 
 
@@ -78,6 +79,76 @@ aes_128_ecb_detect(const struct bytes *buf, double *score_p)
 	/* FALLTHROUGH */
 cleanup:
 	return (success ? 0 : -1);
+}
+
+
+struct bytes *
+aes_128_cbc_decrypt(const struct bytes *ciphertext,
+		const struct bytes *key, const struct bytes *iv)
+{
+	const EVP_CIPHER *cipher = EVP_aes_128_cbc();
+	const size_t blocksize = EVP_CIPHER_block_size(cipher);
+	struct bytes *plaintext = NULL, *padded = NULL;
+	struct bytes **ptblocks = NULL;
+	size_t nblocks = 0;
+	struct bytes *prevblock = NULL;
+	int success = 0;
+
+	/* sanity checks */
+	if (ciphertext == NULL || key == NULL || iv == NULL)
+		goto cleanup;
+	if (ciphertext->len % blocksize != 0)
+		goto cleanup;
+	if (key->len != (size_t)EVP_CIPHER_key_length(cipher))
+		goto cleanup;
+	if (iv->len != (size_t)EVP_CIPHER_iv_length(cipher))
+		goto cleanup;
+
+	nblocks = ciphertext->len / blocksize;
+	ptblocks = calloc(nblocks, sizeof(struct bytes *));
+	if (ptblocks == NULL)
+		goto cleanup;
+
+	/* main decrypt loop, process each block in order. */
+	int err = 0;
+	for (size_t i = 0; i < nblocks; i++) {
+		struct bytes *ctblock;
+		/* get the current ciphertext block */
+		ctblock = bytes_slice(ciphertext, i * blocksize, blocksize);
+		/* decrypt it, the result is not the plaintext block yet */
+		ptblocks[i] = aes_128_ecb_crypt(ctblock, key, 0, 0);
+		/* add the previous block (the iv on the first iteration) to
+		   the decrypted one to find the plaintext block */
+		err |= bytes_xor(ptblocks[i], i == 0 ? iv : prevblock);
+		/* save the current ciphertext block for the next iteration */
+		bytes_free(prevblock);
+		prevblock = ctblock;
+	}
+	if (err)
+		goto cleanup;
+
+	/* remove padding */
+	padded = bytes_joined(ptblocks, nblocks);
+	if (padded == NULL || padded->len == 0)
+		goto cleanup;
+	const uint8_t padding = padded->data[padded->len - 1];
+	if (padding > padded->len)
+		goto cleanup;
+	plaintext = bytes_slice(padded, /* offset */0, padded->len - padding);
+
+	success = 1;
+	/* FALLTHROUGH */
+cleanup:
+	bytes_free(padded);
+	bytes_free(prevblock);
+	for (size_t i = 0; ptblocks != NULL && i < nblocks; i++)
+		bytes_free(ptblocks[i]);
+	free(ptblocks);
+	if (!success) {
+		bytes_free(plaintext);
+		plaintext = NULL;
+	}
+	return (plaintext);
 }
 
 
