@@ -17,25 +17,26 @@
 /**
  * Encrypt or decrypt a given ciphertext encrypted via AES-128 in ECB mode under
  * the provided key. For encryption, decryption give 1, respectively 0 for the
- * `enc' parameter.
+ * `enc' parameter. If `padding' is zero padding is not performed, checked on
+ * encryption, respectively decryption.
  *
  * Returns the ciphertext or NULL on error.
  */
 static struct bytes	*aes_128_ecb_crypt(const struct bytes *in,
-		    const struct bytes *key, int enc);
+			    const struct bytes *key, int enc, int padding);
 
 
 struct bytes *
 aes_128_ecb_encrypt(const struct bytes *plaintext, const struct bytes *key)
 {
-	return (aes_128_ecb_crypt(plaintext, key, /* encrypt */1));
+	return (aes_128_ecb_crypt(plaintext, key, /* encrypt */1, /* padding */1));
 }
 
 
 struct bytes *
 aes_128_ecb_decrypt(const struct bytes *ciphertext, const struct bytes *key)
 {
-	return (aes_128_ecb_crypt(ciphertext, key, /* encrypt */0));
+	return (aes_128_ecb_crypt(ciphertext, key, /* encrypt */0, /* padding */1));
 }
 
 
@@ -81,7 +82,8 @@ cleanup:
 
 
 static struct bytes *
-aes_128_ecb_crypt(const struct bytes *in, const struct bytes *key, int enc)
+aes_128_ecb_crypt(const struct bytes *in, const struct bytes *key, int enc,
+		    int padding)
 {
 	const EVP_CIPHER *cipher = EVP_aes_128_ecb();
 	const size_t blocksize = EVP_CIPHER_block_size(cipher);
@@ -109,26 +111,30 @@ aes_128_ecb_crypt(const struct bytes *in, const struct bytes *key, int enc)
 		goto cleanup;
 	if (EVP_CipherInit_ex(ctx, NULL, NULL, key->data, NULL, -1) != 1)
 		goto cleanup;
+	if (EVP_CIPHER_CTX_set_padding(ctx, padding) != 1)
+		goto cleanup;
 
 	/* NOTE: add twice the block size needed by enc update and final */
 	out = bytes_zeroed(in->len + blocksize * 2);
 	if (out == NULL)
 		goto cleanup;
 
+	/* update */
 	int uplen = -1;
 	int ret = EVP_CipherUpdate(ctx, out->data, &uplen, in->data, in->len);
 	if (ret != 1 || uplen < 0)
 		goto cleanup;
 
+	/* finalize */
 	int finlen = -1;
 	ret = EVP_CipherFinal_ex(ctx, out->data + uplen, &finlen);
 	if (ret != 1 || finlen < 0 || (INT_MAX - uplen) < finlen)
 		goto cleanup;
 	const size_t outlen = uplen + finlen;
 
+	/* set the output buffer length */
 	if (out->len < outlen)
 		abort();
-
 	out->len = outlen;
 
 	success = 1;

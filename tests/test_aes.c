@@ -10,23 +10,21 @@
 static MunitResult
 test_aes_128_ecb_encrypt_0(const MunitParameter *params, void *data)
 {
-	struct bytes *ciphertext = bytes_from_base64(s1c7_ciphertext_base64);
-	if (ciphertext == NULL)
-		munit_error("bytes_from_base64");
+	struct bytes *plaintext = bytes_from_str(s1c7_plaintext);
 	struct bytes *key = bytes_from_str(s1c7_key);
 	struct bytes *empty = bytes_from_str("");
-	if (key == NULL || empty == NULL)
+	if (plaintext == NULL || key == NULL || empty == NULL)
 		munit_error("bytes_from_str");
 
 	/* when NULL is given */
 	munit_assert_null(aes_128_ecb_encrypt(NULL, key));
-	munit_assert_null(aes_128_ecb_encrypt(ciphertext, NULL));
+	munit_assert_null(aes_128_ecb_encrypt(plaintext, NULL));
 	/* when the key has not a valid length */
-	munit_assert_null(aes_128_ecb_encrypt(ciphertext, empty));
+	munit_assert_null(aes_128_ecb_encrypt(plaintext, empty));
 
 	bytes_free(empty);
 	bytes_free(key);
-	bytes_free(ciphertext);
+	bytes_free(plaintext);
 	return (MUNIT_OK);
 }
 
@@ -61,21 +59,23 @@ test_aes_128_ecb_encrypt_1(const MunitParameter *params, void *data)
 static MunitResult
 test_aes_128_ecb_decrypt_0(const MunitParameter *params, void *data)
 {
-	struct bytes *plaintext = bytes_from_str(s1c7_plaintext);
+	struct bytes *ciphertext = bytes_from_base64(s1c7_ciphertext_base64);
+	if (ciphertext == NULL)
+		munit_error("bytes_from_base64");
 	struct bytes *key = bytes_from_str(s1c7_key);
 	struct bytes *empty = bytes_from_str("");
-	if (plaintext == NULL || key == NULL || empty == NULL)
+	if (key == NULL || empty == NULL)
 		munit_error("bytes_from_str");
 
 	/* when NULL is given */
 	munit_assert_null(aes_128_ecb_decrypt(NULL, key));
-	munit_assert_null(aes_128_ecb_decrypt(plaintext, NULL));
+	munit_assert_null(aes_128_ecb_decrypt(ciphertext, NULL));
 	/* when the key has not a valid length */
-	munit_assert_null(aes_128_ecb_decrypt(plaintext, empty));
+	munit_assert_null(aes_128_ecb_decrypt(ciphertext, empty));
 
 	bytes_free(empty);
 	bytes_free(key);
-	bytes_free(plaintext);
+	bytes_free(ciphertext);
 	return (MUNIT_OK);
 }
 
