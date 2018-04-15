@@ -390,7 +390,7 @@ test_bytes_joined(const MunitParameter *params, void *data)
 		{ .inputs = { "", "x" }, .count = 2, .expected = "x" },
 		{ .inputs = { "x", "" }, .count = 2, .expected = "x" },
 		{ .inputs = { "f", "o", "o" }, .count = 3, .expected = "foo" },
-		{ .inputs = { "foo", "ba", "r", "" }, .count = 4, .expected = "foobar" },
+		{ .inputs = { "foo", "ba", "", "r" }, .count = 4, .expected = "foobar" },
 	};
 
 	for (size_t i = 0; i < (sizeof(vectors) / sizeof(*vectors)); i++) {

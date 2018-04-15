@@ -51,8 +51,8 @@ b64decode(char c)
 
 
 /*
- * malloc(3) a bytes struct and set the len member. Note that the data member is
- * not set and must be filled by the caller.
+ * malloc(3) a bytes struct and set the len member. Note that the data member
+ * content is not set and must be filled by the caller.
  */
 static inline struct bytes *
 bytes_alloc(size_t len)
@@ -62,8 +62,8 @@ bytes_alloc(size_t len)
 	buf = malloc(sizeof(struct bytes) + len * sizeof(uint8_t));
 	if (buf == NULL)
 		return (NULL);
-
 	buf->len = len;
+
 	return (buf);
 }
 
@@ -76,7 +76,6 @@ bytes_zeroed(size_t len)
 	buf = calloc(1, sizeof(struct bytes) + len * sizeof(uint8_t));
 	if (buf == NULL)
 		return (NULL);
-
 	buf->len = len;
 
 	return (buf);
@@ -290,15 +289,12 @@ cleanup:
 struct bytes *
 bytes_dup(const struct bytes *src)
 {
-	size_t len;
-	struct bytes *cpy = NULL;
-
 	/* sanity check */
 	if (src == NULL)
 		return (NULL);
 
-	len = src->len;
-	cpy = bytes_alloc(len);
+	const size_t len = src->len;
+	struct bytes *cpy = bytes_alloc(len);
 	if (cpy == NULL)
 		return (NULL);
 	(void)memcpy(cpy->data, src->data, len);
@@ -356,8 +352,8 @@ bytes_slices(const struct bytes *src, size_t offset, size_t size, size_t jump)
 
 	/* compute the resulting buffer length */
 	size_t nbytes = 0;
-	const uint8_t * const start = src->data + offset;
-	const uint8_t * const end   = src->data + src->len;
+	const uint8_t *const start = src->data + offset;
+	const uint8_t *const end   = src->data + src->len;
 	p = start;
 	while (p < end) {
 		/* the current slice's size */
@@ -420,15 +416,13 @@ bytes_hamming_distance(const struct bytes *a, const struct bytes *b)
 struct bytes *
 bytes_pkcs7_padded(const struct bytes *src, uint8_t k)
 {
-	struct bytes *padded = NULL;
-
 	/* sanity check */
 	if (src == NULL || k == 0)
 		return (NULL);
 
 	const uint8_t n = k - (src->len % k);
 	const size_t len = src->len + n;
-	padded = bytes_alloc(len);
+	struct bytes *padded = bytes_alloc(len);
 	if (padded == NULL)
 		return (NULL);
 	(void)memcpy(padded->data, src->data, src->len);
@@ -522,7 +516,7 @@ bytes_to_hex(const struct bytes *bytes)
 	for (size_t i = 0; i < bytes->len; i++) {
 		const uint8_t byte = bytes->data[i];
 		/* pointer to the first character of the current unit */
-		char * const p = str + (i * 2);
+		char *const p = str + (i * 2);
 		p[0] = b16table[byte >> 4];  /* "higher" 4-bit group */
 		p[1] = b16table[byte & 0xf]; /* "lower" 4-bit group */
 	}
@@ -574,7 +568,7 @@ bytes_to_base64(const struct bytes *bytes)
 		const uint8_t b1 = bytes->data[i * 3 + 1];
 		const uint8_t b2 = bytes->data[i * 3 + 2];
 		/* pointer to the first character of the current unit */
-		char * const p = str + (i * 4);
+		char *const p = str + (i * 4);
 		/* first character: leading six bits of the first byte */
 		p[0] = b64table[b0 >> 2];
 		/* second character: trailing two bits of the first byte
@@ -590,7 +584,7 @@ bytes_to_base64(const struct bytes *bytes)
 	/* check if we have a final unit to encode with padding */
 	if (rbytes > 0) {
 		/* pointer to the first character of the final unit */
-		char * const p = str + (i * 4);
+		char *const p = str + (i * 4);
 		if (rbytes == 2) {
 			/* this unit is short of exactly one byte. In other
 			   words, there are two bytes available for this unit,

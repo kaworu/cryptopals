@@ -52,7 +52,8 @@ struct bytes	*bytes_from_raw(const void *p, size_t len);
 struct bytes	*bytes_from_single(uint8_t byte);
 
 /*
- * Create a bytes struct from a NUL-terminated string.
+ * Create a bytes struct from a NUL-terminated string. Note that only strlen(s)
+ * bytes are copied; in other words the terminating NUL is not copied.
  *
  * Returns a pointer to a newly allocated bytes struct that should passed to
  * bytes_free(). Returns NULL if the given pointer is NULL, or malloc(3) failed.
