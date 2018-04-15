@@ -3,7 +3,7 @@ include(CheckLibraryExists)
 cmake_minimum_required(VERSION 2.6.0)
 project(cryptopals)
 
-add_compile_options(-std=c11 -Wall -Wextra -Werror)
+add_compile_options(-std=c11 -Wall -Wextra -Werror -fno-strict-aliasing)
 add_compile_options(-fstack-protector-strong -o aslr -fpie)
 set(CMAKE_EXE_LINKER_FLAGS ${CMAKE_EXE_LINKER_FLAGS} -pie)
 # Per build type flags.
