@@ -26,6 +26,7 @@ set(SRCS
     ${PROJECT_SOURCE_DIR}/src/break_single_byte_xor.c
     ${PROJECT_SOURCE_DIR}/src/break_repeating_key_xor.c
     ${PROJECT_SOURCE_DIR}/src/aes.c
+    ${PROJECT_SOURCE_DIR}/src/break_aes.c
 )
 include_directories("${PROJECT_SOURCE_DIR}/src")
 # compat stuff.
@@ -59,6 +60,7 @@ set(TEST_SRCS
     ${PROJECT_SOURCE_DIR}/tests/test_break_single_byte_xor.c
     ${PROJECT_SOURCE_DIR}/tests/test_break_repeating_key_xor.c
     ${PROJECT_SOURCE_DIR}/tests/test_aes.c
+    ${PROJECT_SOURCE_DIR}/tests/test_break_aes.c
     ${PROJECT_SOURCE_DIR}/tests/main.c
 )
 # XXX: we don't use much µnit parameters.
