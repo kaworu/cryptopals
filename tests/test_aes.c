@@ -105,6 +105,65 @@ test_aes_128_ecb_decrypt_1(const MunitParameter *params, void *data)
 
 /* Error conditions */
 static MunitResult
+test_aes_128_cbc_encrypt_0(const MunitParameter *params, void *data)
+{
+	struct bytes *plaintext = bytes_from_str(s2c10_plaintext);
+	struct bytes *key = bytes_from_str(s2c10_key);
+	struct bytes *one_byte = bytes_from_str("x");
+	if (plaintext == NULL || key == NULL || one_byte == NULL)
+		munit_error("bytes_from_str");
+	struct bytes *iv = bytes_zeroed(16);
+	if (iv == NULL)
+		munit_error("bytes_zeroed");
+
+	/* when NULL is given */
+	munit_assert_null(aes_128_cbc_encrypt(NULL, key, iv));
+	munit_assert_null(aes_128_cbc_encrypt(plaintext, NULL, iv));
+	munit_assert_null(aes_128_cbc_encrypt(plaintext, key, NULL));
+	/* when the key has not a valid length */
+	munit_assert_null(aes_128_cbc_encrypt(plaintext, one_byte, iv));
+	/* when the iv has not a valid length */
+	munit_assert_null(aes_128_cbc_encrypt(plaintext, key, one_byte));
+
+	bytes_free(iv);
+	bytes_free(one_byte);
+	bytes_free(key);
+	bytes_free(plaintext);
+	return (MUNIT_OK);
+}
+
+
+static MunitResult
+test_aes_128_cbc_encrypt_1(const MunitParameter *params, void *data)
+{
+	struct bytes *expected = bytes_from_base64(s2c10_ciphertext_base64);
+	if (expected == NULL)
+		munit_error("bytes_from_base64");
+	struct bytes *key = bytes_from_str(s2c10_key);
+	struct bytes *plaintext = bytes_from_str(s2c10_plaintext);
+	if (key == NULL || plaintext == NULL)
+		munit_error("bytes_from_str");
+	struct bytes *iv = bytes_zeroed(16);
+	if (iv == NULL)
+		munit_error("bytes_zeroed");
+
+	struct bytes *ciphertext = aes_128_cbc_encrypt(plaintext, key, iv);
+	munit_assert_not_null(ciphertext);
+	munit_assert_size(ciphertext->len, ==, expected->len);
+	munit_assert_memory_equal(ciphertext->len, ciphertext->data,
+		    expected->data);
+
+	bytes_free(iv);
+	bytes_free(ciphertext);
+	bytes_free(plaintext);
+	bytes_free(key);
+	bytes_free(expected);
+	return (MUNIT_OK);
+}
+
+
+/* Error conditions */
+static MunitResult
 test_aes_128_cbc_decrypt_0(const MunitParameter *params, void *data)
 {
 	struct bytes *ciphertext = bytes_from_base64(s2c10_ciphertext_base64);
@@ -170,6 +229,8 @@ MunitTest test_aes_suite_tests[] = {
 	{ "aes_128_ecb_encrypt-1", test_aes_128_ecb_encrypt_1, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "aes_128_ecb_decrypt-0", test_aes_128_ecb_decrypt_0, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "aes_128_ecb_decrypt-1", test_aes_128_ecb_decrypt_1, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "aes_128_cbc_encrypt-0", test_aes_128_cbc_encrypt_0, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "aes_128_cbc_encrypt-1", test_aes_128_cbc_encrypt_1, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "aes_128_cbc_decrypt-0", test_aes_128_cbc_decrypt_0, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "aes_128_cbc_decrypt-1", test_aes_128_cbc_decrypt_1, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{

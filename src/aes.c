@@ -40,6 +40,73 @@ aes_128_ecb_decrypt(const struct bytes *ciphertext, const struct bytes *key)
 
 
 struct bytes *
+aes_128_cbc_encrypt(const struct bytes *plaintext,
+		const struct bytes *key, const struct bytes *iv)
+{
+	const EVP_CIPHER *cipher = EVP_aes_128_cbc();
+	const size_t blocksize = EVP_CIPHER_block_size(cipher);
+	struct bytes *padded = NULL, *ciphertext = NULL;
+	struct bytes **ctblocks = NULL;
+	size_t nblocks = 0;
+	int success = 0;
+
+	/* sanity checks */
+	if (plaintext == NULL || key == NULL || iv == NULL)
+		goto cleanup;
+	if (key->len != (size_t)EVP_CIPHER_key_length(cipher))
+		goto cleanup;
+	if (iv->len != (size_t)EVP_CIPHER_iv_length(cipher))
+		goto cleanup;
+
+	/* PKCS padd the plaintext */
+	padded = bytes_pkcs7_padded(plaintext, blocksize);
+	if (padded == NULL)
+		goto cleanup;
+
+	nblocks = padded->len / blocksize;
+	ctblocks = calloc(nblocks, sizeof(struct bytes *));
+	if (ctblocks == NULL)
+		goto cleanup;
+
+	/* main encryption loop, process each block in order. */
+	int err = 0;
+	for (size_t i = 0; i < nblocks; i++) {
+		struct bytes *ptblock;
+		/* get the current plaintext block */
+		ptblock = bytes_slice(padded, i * blocksize, blocksize);
+		/* add the previous block (the iv on the first iteration) to
+		   the plaintext block */
+		err |= bytes_xor(ptblock, i == 0 ? iv : ctblocks[i - 1]);
+		/* the ciphertext block is the xored block encrypted */
+		ctblocks[i] = aes_128_ecb_crypt(ptblock, key, 1, 0);
+		bytes_free(ptblock);
+	}
+	/* padded (our plaintext copy) is not needed anymore, erase it asap */
+	bytes_free(padded);
+	padded = NULL;
+	if (err)
+		goto cleanup;
+
+	ciphertext = bytes_joined(ctblocks, nblocks);
+	if (ciphertext == NULL)
+		goto cleanup;
+
+	success = 1;
+	/* FALLTHROUGH */
+cleanup:
+	for (size_t i = 0; ctblocks != NULL && i < nblocks; i++)
+		bytes_free(ctblocks[i]);
+	free(ctblocks);
+	bytes_free(padded);
+	if (!success) {
+		bytes_free(ciphertext);
+		ciphertext = NULL;
+	}
+	return (ciphertext);
+}
+
+
+struct bytes *
 aes_128_cbc_decrypt(const struct bytes *ciphertext,
 		const struct bytes *key, const struct bytes *iv)
 {
