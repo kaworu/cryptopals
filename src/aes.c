@@ -66,7 +66,7 @@ aes_128_cbc_decrypt(const struct bytes *ciphertext,
 	if (ptblocks == NULL)
 		goto cleanup;
 
-	/* main decrypt loop, process each block in order. */
+	/* main decryption loop, process each block in order. */
 	int err = 0;
 	for (size_t i = 0; i < nblocks; i++) {
 		struct bytes *ctblock;

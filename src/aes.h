@@ -22,7 +22,7 @@ struct bytes	*aes_128_ecb_encrypt(const struct bytes *plaintext,
  * Decrypt a given ciphertext encrypted via AES-128 in ECB mode under the
  * provided key.
  *
- * Returns the ciphertext or NULL on error.
+ * Returns the plaintext or NULL on error.
  */
 struct bytes	*aes_128_ecb_decrypt(const struct bytes *ciphertext,
 		    const struct bytes *key);
@@ -31,7 +31,7 @@ struct bytes	*aes_128_ecb_decrypt(const struct bytes *ciphertext,
  * Decrypt a given ciphertext encrypted via AES-128 in CBC mode under the
  * provided key with the given IV.
  *
- * Returns the ciphertext or NULL on error.
+ * Returns the plaintext or NULL on error.
  */
 struct bytes	*aes_128_cbc_decrypt(const struct bytes *ciphertext,
 		    const struct bytes *key, const struct bytes *iv);
