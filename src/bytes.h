@@ -178,6 +178,7 @@ struct bytes	*bytes_pkcs7_padded(const struct bytes *src, uint8_t k);
  * bytes_free(). Returns NULL if the given pointer is NULL or malloc(3) failed.
  */
 struct bytes	*bytes_joined(struct bytes *const *parts, size_t count);
+struct bytes	*bytes_joined_const(const struct bytes *const *parts, size_t count);
 
 /*
  * Returns the NUL-terminated string representation of the given bytes struct.

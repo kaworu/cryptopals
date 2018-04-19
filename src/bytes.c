@@ -449,6 +449,14 @@ bytes_pkcs7_padded(const struct bytes *src, uint8_t k)
 struct bytes *
 bytes_joined(struct bytes *const *parts, size_t count)
 {
+	const struct bytes *const *parts_c = (const struct bytes *const *)parts;
+	return (bytes_joined_const(parts_c, count));
+}
+
+
+struct bytes *
+bytes_joined_const(const struct bytes *const *parts, size_t count)
+{
 	struct bytes *joined = NULL;
 	int success = 0;
 

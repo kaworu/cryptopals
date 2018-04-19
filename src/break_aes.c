@@ -57,7 +57,7 @@ aes_128_ecb_cbc_encryption_oracle(const struct bytes *input, int *ecb)
 {
 	const EVP_CIPHER *cipher = EVP_aes_128_cbc();
 	struct bytes *random = NULL, *before = NULL, *after = NULL;
-	struct bytes *dup = NULL, *padded = NULL;
+	struct bytes *padded = NULL;
 	struct bytes *key = NULL, *iv = NULL, *output = NULL;
 	int success = 0;
 
@@ -75,15 +75,13 @@ aes_128_ecb_cbc_encryption_oracle(const struct bytes *input, int *ecb)
 	/* random IV generation */
 	iv = bytes_randomized((size_t)EVP_CIPHER_iv_length(cipher));
 
-	/* build the padded input */
 	/* leading pad */
 	before = bytes_randomized(5 + random->data[0] % 6);
 	/* trailing pad */
 	after = bytes_randomized(5 + random->data[1] % 6);
-	/* XXX: we need to clone the input data because it is const */
-	dup = bytes_dup(input);
-	struct bytes *const parts[3] = { before, dup, after };
-	padded = bytes_joined(parts, 3);
+	const struct bytes *const parts[3] = { before, input, after };
+	/* build the padded input */
+	padded = bytes_joined_const(parts, 3);
 
 	/* choose if we're using ECB mode with a 50% probability */
 	const int use_ecb_mode = random->data[2] & 0x1;
@@ -101,7 +99,6 @@ aes_128_ecb_cbc_encryption_oracle(const struct bytes *input, int *ecb)
 	/* FALLTHROUGH */
 cleanup:
 	bytes_free(padded);
-	bytes_free(dup);
 	bytes_free(after);
 	bytes_free(before);
 	bytes_free(iv);
