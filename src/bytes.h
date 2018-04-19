@@ -82,6 +82,15 @@ struct bytes	*bytes_from_hex(const char *s);
 struct bytes	*bytes_from_base64(const char *s);
 
 /*
+ * Create a bytes struct filled with random data. Note that it uses rand(3)
+ * *on purpose* and consequently it is *not* very secure.
+ *
+ * Returns a pointer to a newly allocated bytes struct that should passed to
+ * bytes_free(), NULL if malloc(3) failed.
+ */
+struct bytes	*bytes_randomized(size_t len);
+
+/*
  * Create a bytes struct from another bytes struct by duplicating it.
  *
  * Returns a pointer to a newly allocated bytes struct that should passed to

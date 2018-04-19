@@ -287,6 +287,20 @@ cleanup:
 
 
 struct bytes *
+bytes_randomized(size_t len)
+{
+	struct bytes *buf = bytes_alloc(len);
+	if (buf == NULL)
+		return (NULL);
+
+	for (size_t i = 0; i < len; i++)
+		buf->data[i] = rand() & 0xff;
+
+	return (buf);
+}
+
+
+struct bytes *
 bytes_dup(const struct bytes *src)
 {
 	/* sanity check */
