@@ -2,6 +2,7 @@
  * test_break_aes.c
  */
 #include "munit.h"
+#include "helpers.h"
 #include "break_aes.h"
 #include "test_break_aes.h"
 
@@ -47,10 +48,52 @@ test_aes_128_ecb_detect_1(const MunitParameter *params, void *data)
 	return (MUNIT_OK);
 }
 
+
+/* Error conditions */
+static MunitResult
+test_aes_128_ecb_cbc_detect_0(const MunitParameter *params, void *data)
+{
+	struct bytes *too_small = bytes_zeroed(4 * 16 - 1);
+	if (too_small == NULL)
+		munit_error("bytes_zeroed");
+
+	munit_assert_int(aes_128_ecb_cbc_detect(NULL), ==, -1);
+	munit_assert_int(aes_128_ecb_cbc_detect(too_small), ==, -1);
+
+	bytes_free(too_small);
+	return (MUNIT_OK);
+}
+
+
+/* Set 2 / Challenge 11 */
+static MunitResult
+test_aes_128_ecb_cbc_detect_1(const MunitParameter *params, void *data)
+{
+	int ecb = 0;
+	struct bytes *jibber = NULL;
+	struct bytes *input = aes_128_ecb_cbc_detect_input();
+	if (input == NULL)
+		munit_error("aes_128_ecb_cbc_detect_input");
+
+	for (size_t i = 0; i < 100; i++) {
+		jibber = aes_128_ecb_cbc_encryption_oracle(input, &ecb);
+		if (jibber == NULL)
+			munit_error("aes_128_ecb_cbc_encryption_oracle");
+		munit_assert_int(aes_128_ecb_cbc_detect(jibber), ==, ecb);
+		bytes_free(jibber);
+	}
+
+	bytes_free(input);
+	return (MUNIT_OK);
+}
+
+
 /* The test suite. */
 MunitTest test_break_aes_suite_tests[] = {
-	{ "aes_128_ecb_detect-0",  test_aes_128_ecb_detect_0,  NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
-	{ "aes_128_ecb_detect-1",  test_aes_128_ecb_detect_1,  NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "aes_128_ecb_detect-0",     test_aes_128_ecb_detect_0,     NULL,        NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "aes_128_ecb_detect-1",     test_aes_128_ecb_detect_1,     NULL,        NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "aes_128_ecb_cbc_detect-0", test_aes_128_ecb_cbc_detect_0, NULL,        NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "aes_128_ecb_cbc_detect-1", test_aes_128_ecb_cbc_detect_1, srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{
 		.name       = NULL,
 		.test       = NULL,
