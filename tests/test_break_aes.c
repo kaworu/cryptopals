@@ -88,12 +88,37 @@ test_aes_128_ecb_cbc_detect_1(const MunitParameter *params, void *data)
 }
 
 
+/* Set 2 / Challenge 12 */
+static MunitResult
+test_aes_128_ecb_baat_breaker(const MunitParameter *params, void *data)
+{
+	struct bytes *key = bytes_randomized(16);
+	if (key == NULL)
+		munit_error("bytes_randomized");
+	struct bytes *message = bytes_from_base64(s2c12_message_base64);
+	if (message == NULL)
+		munit_error("bytes_from_base64");
+
+	struct bytes *recovered =
+		    aes_128_ecb_byte_at_a_time_breaker(message, key);
+	munit_assert_not_null(recovered);
+	munit_assert_size(recovered->len, ==, message->len);
+	munit_assert_memory_equal(message->len, message->data, recovered->data);
+
+	bytes_free(recovered);
+	bytes_free(message);
+	bytes_free(key);
+	return (MUNIT_OK);
+}
+
+
 /* The test suite. */
 MunitTest test_break_aes_suite_tests[] = {
 	{ "aes_128_ecb_detect-0",     test_aes_128_ecb_detect_0,     NULL,        NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "aes_128_ecb_detect-1",     test_aes_128_ecb_detect_1,     NULL,        NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "aes_128_ecb_cbc_detect-0", test_aes_128_ecb_cbc_detect_0, NULL,        NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "aes_128_ecb_cbc_detect-1", test_aes_128_ecb_cbc_detect_1, srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "aes_128_ecb_baat_breaker", test_aes_128_ecb_baat_breaker, srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{
 		.name       = NULL,
 		.test       = NULL,

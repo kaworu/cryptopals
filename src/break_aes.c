@@ -79,9 +79,9 @@ aes_128_ecb_cbc_encryption_oracle(const struct bytes *input, int *ecb)
 	before = bytes_randomized(5 + random->data[0] % 6);
 	/* trailing pad */
 	after = bytes_randomized(5 + random->data[1] % 6);
-	const struct bytes *const parts[3] = { before, input, after };
+	const struct bytes *const parts[] = { before, input, after };
 	/* build the padded input */
-	padded = bytes_joined_const(parts, 3);
+	padded = bytes_joined_const(parts, sizeof(parts) / sizeof(*parts));
 
 	/* choose if we're using ECB mode with a 50% probability */
 	const int use_ecb_mode = random->data[2] & 0x1;
@@ -162,4 +162,145 @@ aes_128_ecb_cbc_detect(const struct bytes *buf)
 cleanup:
 	bytes_free(blocks);
 	return (success ? ecb : -1);
+}
+
+
+struct bytes *
+aes_128_ecb_byte_at_a_time_oracle(
+		    const struct bytes *payload,
+		    const struct bytes *message,
+		    const struct bytes *key)
+{
+	struct bytes *input = NULL, *output = NULL;
+	int success = 0;
+
+	/* sanity checks */
+	if (payload == NULL || message == NULL || key == NULL)
+		goto cleanup;
+
+	const struct bytes *const parts[] = { payload, message };
+	input = bytes_joined_const(parts, sizeof(parts) / sizeof(*parts));
+
+	output = aes_128_ecb_encrypt(input, key);
+	if (output == NULL)
+		goto cleanup;
+
+	success = 1;
+	/* FALLTHROUGH */
+cleanup:
+	bytes_free(input);
+	if (!success) {
+		bytes_free(output);
+		output = NULL;
+	}
+	return (output);
+}
+
+
+struct bytes *
+aes_128_ecb_byte_at_a_time_breaker(const void *message, const void *key)
+{
+#define oracle(x)	aes_128_ecb_byte_at_a_time_oracle((x), message, key)
+	const EVP_CIPHER *cipher = EVP_aes_128_ecb();
+	const size_t expected_blocksize = EVP_CIPHER_block_size(cipher);
+	size_t blocksize = 0, msglen = 0;
+	struct bytes *payload = NULL, *ciphertext = NULL;
+	struct bytes *attempt = NULL, *recovered = NULL;
+	int success = 0;
+
+	/* find the blocksize and the message's length */
+	size_t prevsize = 0;
+	for (size_t i = 0; i <= expected_blocksize && blocksize == 0; i++) {
+		struct bytes *payload, *ciphertext;
+		payload = bytes_repeated(i, (uint8_t)'A');
+		ciphertext = oracle(payload);
+		bytes_free(payload);
+		if (ciphertext == NULL)
+			goto cleanup;
+		if (!prevsize) {
+			prevsize = ciphertext->len;
+		} else if (prevsize < ciphertext->len) {
+			blocksize = ciphertext->len - prevsize;
+			/* ciphertext is [m . p . p'] where m is the message,
+			   p the payload and p' a full block of padding. */
+			msglen = ciphertext->len - i - blocksize;
+		}
+		bytes_free(ciphertext);
+	}
+	if (blocksize != expected_blocksize)
+		goto cleanup;
+
+	/* detect ECB */
+	double score = -1;
+	payload = bytes_zeroed(3 * blocksize);
+	ciphertext = oracle(payload);
+	/* in ECB mode, the three first blocks should be the same */
+	struct bytes *head = bytes_slice(ciphertext, 0, 3 * blocksize);
+	bytes_free(payload);
+	bytes_free(ciphertext);
+	const int ret = aes_128_ecb_detect(head, &score);
+	bytes_free(head);
+	if (ret != 0 || score != 1.0)
+		goto cleanup;
+
+	/* allocate the recovered message, initially filled with 0 */
+	recovered = bytes_zeroed(msglen);
+	if (recovered == NULL)
+		goto cleanup;
+
+	/* count of block needed to hold the full message */
+	const size_t nblock = msglen / blocksize + 1;
+	/* a buffer holding our attempt at cracking the message bytes */
+	attempt = bytes_zeroed(nblock * blocksize);
+	if (attempt == NULL)
+		goto cleanup;
+	/* offset of the last block, the one holding the byte we are guessing */
+	const size_t boffset = (nblock - 1) * blocksize;
+	/* processing loop, breaking one message byte at a time */
+	for (size_t i = 1; i <= msglen; i++) {
+		struct bytes *pre, *ct, *iblock;
+		/* the index of the byte we are breaking in this iteration in
+		   the ciphertext given by the oracle */
+		const size_t index = nblock * blocksize - i;
+		/* pad the start of the choosen plaintext so that the byte at
+		   index is at the very end of the block at boffset */
+		pre = bytes_repeated(index, (uint8_t)'A');
+		ct = oracle(pre);
+		/* retrieve the block holding the byte we are guessing */
+		iblock = bytes_slice(ct, boffset, blocksize);
+		bytes_free(ct);
+		/*
+		 * Our guess attempt is of the form [pre . guessed . guess].
+		 * Just like for iblock `pre' is leading, `guessed' are the byte
+		 * we already know and `guess' is our try for the byte at index.
+		 */
+		(void)bytes_put(attempt, 0, pre);
+		(void)bytes_sput(attempt, index, recovered, 0, i);
+		/* try each possible value for the byte until we find a match */
+		for (uint16_t byte = 0; byte <= UINT8_MAX; byte++) {
+			attempt->data[index + i - 1] = (uint8_t)byte;
+			ct = oracle(attempt);
+			struct bytes *block = bytes_slice(ct, boffset, blocksize);
+			bytes_free(ct);
+			const int found = (bytes_bcmp(block, iblock) == 0);
+			bytes_free(block);
+			if (found) {
+				recovered->data[i - 1] = (uint8_t)byte;
+				break;
+			}
+		}
+		bytes_free(iblock);
+		bytes_free(pre);
+	}
+
+	success = 1;
+	/* FALLTHROUGH */
+cleanup:
+	bytes_free(attempt);
+	if (!success) {
+		bytes_free(recovered);
+		recovered = NULL;
+	}
+	return (recovered);
+#undef oracle
 }

@@ -44,4 +44,24 @@ struct bytes	*aes_128_ecb_cbc_detect_input(void);
  */
 int	aes_128_ecb_cbc_detect(const struct bytes *buf);
 
+/**
+ * AES ECB Encryption Oracle as described by Set 2 / Challenge 12.
+ *
+ * Returns a pointer to a newly allocated bytes struct that should passed to
+ * bytes_free(), or NULL if malloc(3) failed or if any given parameter is NULL.
+ */
+struct bytes	*aes_128_ecb_byte_at_a_time_oracle(
+		    const struct bytes *payload,
+		    const struct bytes *message,
+		    const struct bytes *key);
+
+/**
+ * AES ECB Decryption Oracle as described by Set 2 / Challenge 12.
+ *
+ * Returns a pointer to a newly allocated bytes struct that should passed to
+ * bytes_free(), or NULL if malloc(3) failed or if any given parameter is NULL.
+ */
+struct bytes	*aes_128_ecb_byte_at_a_time_breaker(
+		    const void *message, const void *key);
+
 #endif /* ndef BREAK_AES_H */
