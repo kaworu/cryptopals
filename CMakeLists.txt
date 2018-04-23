@@ -27,6 +27,7 @@ set(SRCS
     ${PROJECT_SOURCE_DIR}/src/break_repeating_key_xor.c
     ${PROJECT_SOURCE_DIR}/src/aes.c
     ${PROJECT_SOURCE_DIR}/src/break_aes.c
+    ${PROJECT_SOURCE_DIR}/src/uri.c
 )
 include_directories("${PROJECT_SOURCE_DIR}/src")
 # compat stuff.
@@ -61,6 +62,7 @@ set(TEST_SRCS
     ${PROJECT_SOURCE_DIR}/tests/test_break_repeating_key_xor.c
     ${PROJECT_SOURCE_DIR}/tests/test_aes.c
     ${PROJECT_SOURCE_DIR}/tests/test_break_aes.c
+    ${PROJECT_SOURCE_DIR}/tests/test_uri.c
     ${PROJECT_SOURCE_DIR}/tests/helpers.c
     ${PROJECT_SOURCE_DIR}/tests/main.c
 )
