@@ -495,6 +495,33 @@ cleanup:
 }
 
 
+int
+bytes_put(struct bytes *dest, size_t offset, const struct bytes *src)
+{
+	/* sanity check, required because we deference src. */
+	if (src == NULL)
+		return (-1);
+	return (bytes_sput(dest, offset, src, 0, src->len));
+}
+
+
+int
+bytes_sput(struct bytes *dest, size_t offset,
+		    const struct bytes *src, size_t soffset, size_t slen)
+{
+	/* sanity checks */
+	if (dest == NULL || src == NULL || dest == src)
+		return (-1);
+	if (soffset + slen > src->len)
+		return (-1);
+	if (offset + slen > dest->len)
+		return (-1);
+
+	(void)memcpy(dest->data + offset, src->data + soffset, slen);
+	return (0);
+}
+
+
 char *
 bytes_to_str(const struct bytes *bytes)
 {

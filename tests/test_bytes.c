@@ -254,10 +254,10 @@ test_bytes_bcmp(const MunitParameter *params, void *data)
 		{ .a = "foo",    .b = "bar",    .cmp = 1 },
 		{ .a = "foobar", .b = "foobar", .cmp = 0 },
 		/* length mismatch */
-		{ .a = "x",      .b = "",       .cmp = 1 },
-		{ .a = "",       .b = "x",      .cmp = 1 },
-		{ .a = "1",       .b = "12",    .cmp = 1 },
-		{ .a = "12",      .b = "1",     .cmp = 1 },
+		{ .a = "x",  .b = "",   .cmp = 1 },
+		{ .a = "",   .b = "x",  .cmp = 1 },
+		{ .a = "1",  .b = "12", .cmp = 1 },
+		{ .a = "12", .b = "1",  .cmp = 1 },
 		/* NULL */
 		{ .a = NULL,     .b = "foobar", .cmp = 1 },
 		{ .a = "foobar", .b = NULL,     .cmp = 1 },
@@ -297,10 +297,10 @@ test_bytes_timingsafe_bcmp(const MunitParameter *params, void *data)
 		{ .a = "foo",    .b = "bar",    .cmp = 1 },
 		{ .a = "foobar", .b = "foobar", .cmp = 0 },
 		/* length mismatch */
-		{ .a = "x",      .b = "",       .cmp = 1 },
-		{ .a = "",       .b = "x",      .cmp = 1 },
-		{ .a = "1",       .b = "12",    .cmp = 1 },
-		{ .a = "12",      .b = "1",     .cmp = 1 },
+		{ .a = "x",  .b = "",   .cmp = 1 },
+		{ .a = "",   .b = "x",  .cmp = 1 },
+		{ .a = "1",  .b = "12", .cmp = 1 },
+		{ .a = "12", .b = "1",  .cmp = 1 },
 		/* NULL */
 		{ .a = NULL,     .b = "foobar", .cmp = 1 },
 		{ .a = "foobar", .b = NULL,     .cmp = 1 },
@@ -429,6 +429,132 @@ test_bytes_joined(const MunitParameter *params, void *data)
 	munit_assert_null(bytes_joined(array, 3));
 
 	bytes_free(buf);
+	return (MUNIT_OK);
+}
+
+
+static MunitResult
+test_bytes_put(const MunitParameter *params, void *data)
+{
+	const struct {
+		char *dest;
+		size_t offset;
+		char *src;
+		char *expected;
+	} vectors[] = {
+		{ .dest = "foo",    .offset = 0, .src = "",    .expected = "foo" },
+		{ .dest = "foo",    .offset = 0, .src = "_",   .expected = "_oo" },
+		{ .dest = "foo",    .offset = 0, .src = "__",  .expected = "__o" },
+		{ .dest = "foo",    .offset = 0, .src = "___", .expected = "___" },
+		{ .dest = "foo",    .offset = 1, .src = "__",  .expected = "f__" },
+		{ .dest = "foo",    .offset = 3, .src = "",    .expected = "foo" },
+		{ .dest = "foobar", .offset = 3, .src = "__",  .expected = "foo__r" },
+	};
+
+	for (size_t i = 0; i < (sizeof(vectors) / sizeof(*vectors)); i++) {
+		struct bytes *dest   = bytes_from_str(vectors[i].dest);
+		const size_t offset  = vectors[i].offset;
+		struct bytes *src    = bytes_from_str(vectors[i].src);
+		const char *expected = vectors[i].expected;
+		if (dest == NULL || src == NULL)
+			munit_error("bytes_from_str");
+
+		const int ret = bytes_put(dest, offset, src);
+		munit_assert_int(ret, ==, 0);
+		munit_assert_size(dest->len, ==, strlen(expected));
+		munit_assert_memory_equal(dest->len, dest->data, expected);
+
+		bytes_free(src);
+		bytes_free(dest);
+	}
+
+	struct bytes *dest = bytes_from_str("foobar");
+	struct bytes *src  = bytes_from_str("foobar");
+	if (dest == NULL || src == NULL)
+		munit_error("bytes_from_str");
+
+	/* when NULL is given */
+	munit_assert_int(bytes_put(NULL, 0, dest), ==, -1);
+	/* off-by-one offset / src length */
+	munit_assert_int(bytes_put(dest, 1, src), ==, -1);
+	munit_assert_size(dest->len, ==, strlen("foobar"));
+	munit_assert_memory_equal(dest->len, dest->data, "foobar");
+	/* same dest and src */
+	munit_assert_int(bytes_put(dest, 0, dest), ==, -1);
+	munit_assert_size(dest->len, ==, strlen("foobar"));
+	munit_assert_memory_equal(dest->len, dest->data, "foobar");
+
+	bytes_free(dest);
+	bytes_free(src);
+	return (MUNIT_OK);
+}
+
+
+static MunitResult
+test_bytes_sput(const MunitParameter *params, void *data)
+{
+	const struct {
+		char *dest;
+		size_t offset;
+		char *src;
+		size_t soffset;
+		size_t slen;
+		char *expected;
+	} vectors[] = {
+		{ .dest = "foo",    .offset = 0, .src = "",    .soffset = 0, .slen = 0, .expected = "foo" },
+		{ .dest = "foo",    .offset = 0, .src = "_",   .soffset = 0, .slen = 1, .expected = "_oo" },
+		{ .dest = "foo",    .offset = 0, .src = "__",  .soffset = 0, .slen = 2, .expected = "__o" },
+		{ .dest = "foo",    .offset = 0, .src = "___", .soffset = 0, .slen = 3, .expected = "___" },
+		{ .dest = "foo",    .offset = 1, .src = "___", .soffset = 1, .slen = 1, .expected = "f_o" },
+		{ .dest = "foo",    .offset = 2, .src = "__",  .soffset = 1, .slen = 1, .expected = "fo_" },
+		{ .dest = "foo",    .offset = 1, .src = "___", .soffset = 1, .slen = 2, .expected = "f__" },
+	};
+
+	for (size_t i = 0; i < (sizeof(vectors) / sizeof(*vectors)); i++) {
+		struct bytes *dest   = bytes_from_str(vectors[i].dest);
+		const size_t offset  = vectors[i].offset;
+		struct bytes *src    = bytes_from_str(vectors[i].src);
+		const size_t soffset = vectors[i].soffset;
+		const size_t slen    = vectors[i].slen;
+		const char *expected = vectors[i].expected;
+		if (dest == NULL || src == NULL)
+			munit_error("bytes_from_str");
+
+		const int ret = bytes_sput(dest, offset, src, soffset, slen);
+		munit_assert_int(ret, ==, 0);
+		munit_assert_size(dest->len, ==, strlen(expected));
+		munit_assert_memory_equal(dest->len, dest->data, expected);
+
+		bytes_free(src);
+		bytes_free(dest);
+	}
+
+	struct bytes *dest = bytes_from_str("foobar");
+	struct bytes *src  = bytes_from_str("foobar");
+	if (dest == NULL || src == NULL)
+		munit_error("bytes_from_str");
+
+	/* when NULL is given */
+	munit_assert_int(bytes_sput(NULL, 0, dest, 0, dest->len), ==, -1);
+	/* off-by-one offset / src length */
+	munit_assert_int(bytes_sput(dest, 1, src, 0, dest->len), ==, -1);
+	munit_assert_size(dest->len, ==, strlen("foobar"));
+	munit_assert_memory_equal(dest->len, dest->data, "foobar");
+	/* off-by-one soffset / src length */
+	munit_assert_int(bytes_sput(dest, 0, src, 1, dest->len), ==, -1);
+	munit_assert_size(dest->len, ==, strlen("foobar"));
+	munit_assert_memory_equal(dest->len, dest->data, "foobar");
+	/* off-by-one offset / soffset / src length */
+	munit_assert_int(bytes_sput(dest, 2, src, 1, dest->len), ==, -1);
+	munit_assert_size(dest->len, ==, strlen("foobar"));
+	munit_assert_memory_equal(dest->len, dest->data, "foobar");
+	/* same dest and src */
+	munit_assert_int(bytes_sput(dest, 0, dest, 0, dest->len), ==, -1);
+	munit_assert_size(dest->len, ==, strlen("foobar"));
+	munit_assert_memory_equal(dest->len, dest->data, "foobar");
+
+	bytes_free(dest);
+	bytes_free(src);
 	return (MUNIT_OK);
 }
 
@@ -717,6 +843,8 @@ MunitTest test_bytes_suite_tests[] = {
 	{ "bytes_timingsafe_bcmp",  test_bytes_timingsafe_bcmp,  NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bytes_pkcs7_padded",     test_bytes_pkcs7_padded,     NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bytes_joined",           test_bytes_joined,           NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "bytes_put",              test_bytes_put,              NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "bytes_sput",             test_bytes_sput,             NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bytes_slice",            test_bytes_slice,            NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bytes_slices",           test_bytes_slices,           NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bytes_hamming_distance", test_bytes_hamming_distance, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },

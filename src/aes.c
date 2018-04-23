@@ -45,9 +45,7 @@ aes_128_cbc_encrypt(const struct bytes *plaintext,
 {
 	const EVP_CIPHER *cipher = EVP_aes_128_cbc();
 	const size_t blocksize = EVP_CIPHER_block_size(cipher);
-	struct bytes *padded = NULL, *ciphertext = NULL;
-	struct bytes **ctblocks = NULL;
-	size_t nblocks = 0;
+	struct bytes *padded = NULL, *prevblock = NULL, *ciphertext = NULL;
 	int success = 0;
 
 	/* sanity checks */
@@ -60,43 +58,37 @@ aes_128_cbc_encrypt(const struct bytes *plaintext,
 
 	/* PKCS padd the plaintext */
 	padded = bytes_pkcs7_padded(plaintext, blocksize);
-	if (padded == NULL)
+	if (padded == NULL || padded->len % blocksize != 0)
 		goto cleanup;
+	const size_t nblocks = padded->len / blocksize;
 
-	nblocks = padded->len / blocksize;
-	ctblocks = calloc(nblocks, sizeof(struct bytes *));
-	if (ctblocks == NULL)
+	ciphertext = bytes_zeroed(nblocks * blocksize);
+	if (ciphertext == NULL)
 		goto cleanup;
 
 	/* main encryption loop, process each block in order. */
 	int err = 0;
 	for (size_t i = 0; i < nblocks; i++) {
-		struct bytes *ptblock;
+		struct bytes *ptblock, *ctblock;
 		/* get the current plaintext block */
 		ptblock = bytes_slice(padded, i * blocksize, blocksize);
 		/* add the previous block (the iv on the first iteration) to
 		   the plaintext block */
-		err |= bytes_xor(ptblock, i == 0 ? iv : ctblocks[i - 1]);
+		err |= bytes_xor(ptblock, i == 0 ? iv : prevblock);
 		/* the ciphertext block is the xored block encrypted */
-		ctblocks[i] = aes_128_ecb_crypt(ptblock, key, 1, 0);
+		ctblock = aes_128_ecb_crypt(ptblock, key, 1, 0);
 		bytes_free(ptblock);
+		err |= bytes_put(ciphertext, i * blocksize, ctblock);
+		bytes_free(prevblock);
+		prevblock = ctblock;
 	}
-	/* padded (our plaintext copy) is not needed anymore, erase it asap */
-	bytes_free(padded);
-	padded = NULL;
 	if (err)
-		goto cleanup;
-
-	ciphertext = bytes_joined(ctblocks, nblocks);
-	if (ciphertext == NULL)
 		goto cleanup;
 
 	success = 1;
 	/* FALLTHROUGH */
 cleanup:
-	for (size_t i = 0; ctblocks != NULL && i < nblocks; i++)
-		bytes_free(ctblocks[i]);
-	free(ctblocks);
+	bytes_free(prevblock);
 	bytes_free(padded);
 	if (!success) {
 		bytes_free(ciphertext);
@@ -113,8 +105,6 @@ aes_128_cbc_decrypt(const struct bytes *ciphertext,
 	const EVP_CIPHER *cipher = EVP_aes_128_cbc();
 	const size_t blocksize = EVP_CIPHER_block_size(cipher);
 	struct bytes *plaintext = NULL, *padded = NULL;
-	struct bytes **ptblocks = NULL;
-	size_t nblocks = 0;
 	struct bytes *prevblock = NULL;
 	int success = 0;
 
@@ -128,32 +118,34 @@ aes_128_cbc_decrypt(const struct bytes *ciphertext,
 	if (iv->len != (size_t)EVP_CIPHER_iv_length(cipher))
 		goto cleanup;
 
-	nblocks = ciphertext->len / blocksize;
-	ptblocks = calloc(nblocks, sizeof(struct bytes *));
-	if (ptblocks == NULL)
+	const size_t nblocks = ciphertext->len / blocksize;
+	padded = bytes_zeroed(ciphertext->len);
+	if (padded == NULL)
 		goto cleanup;
 
 	/* main decryption loop, process each block in order. */
 	int err = 0;
 	for (size_t i = 0; i < nblocks; i++) {
-		struct bytes *ctblock;
+		struct bytes *ctblock, *ptblock;
 		/* get the current ciphertext block */
 		ctblock = bytes_slice(ciphertext, i * blocksize, blocksize);
 		/* decrypt it, the result is not the plaintext block yet */
-		ptblocks[i] = aes_128_ecb_crypt(ctblock, key, 0, 0);
+		ptblock = aes_128_ecb_crypt(ctblock, key, 0, 0);
 		/* add the previous block (the iv on the first iteration) to
 		   the decrypted one to find the plaintext block */
-		err |= bytes_xor(ptblocks[i], i == 0 ? iv : prevblock);
+		err |= bytes_xor(ptblock, i == 0 ? iv : prevblock);
 		/* save the current ciphertext block for the next iteration */
 		bytes_free(prevblock);
 		prevblock = ctblock;
+		/* populate the padded plaintext */
+		err |= bytes_put(padded, i * blocksize, ptblock);
+		bytes_free(ptblock);
 	}
 	if (err)
 		goto cleanup;
 
 	/* remove padding */
-	padded = bytes_joined(ptblocks, nblocks);
-	if (padded == NULL || padded->len == 0)
+	if (padded->len == 0)
 		goto cleanup;
 	const uint8_t padding = padded->data[padded->len - 1];
 	if (padding > padded->len)
@@ -165,9 +157,6 @@ aes_128_cbc_decrypt(const struct bytes *ciphertext,
 cleanup:
 	bytes_free(padded);
 	bytes_free(prevblock);
-	for (size_t i = 0; ptblocks != NULL && i < nblocks; i++)
-		bytes_free(ptblocks[i]);
-	free(ptblocks);
 	if (!success) {
 		bytes_free(plaintext);
 		plaintext = NULL;
