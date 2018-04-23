@@ -171,8 +171,8 @@ intmax_t	bytes_hamming_distance(const struct bytes *l,
 struct bytes	*bytes_pkcs7_padded(const struct bytes *src, uint8_t k);
 
 /*
- * Returns a new buffer that is the concatenation of all the provided buffers
- * (in order). Note that `parts' is not modified.
+ * Create a new buffer that is the concatenation of all the provided buffers (in
+ * order). Note that `parts' is not modified.
  *
  * Returns a pointer to a newly allocated bytes struct that should passed to
  * bytes_free(). Returns NULL if the given pointer is NULL or malloc(3) failed.
@@ -198,27 +198,30 @@ int	bytes_sput(struct bytes *dest, size_t offset,
 		    const struct bytes *src, size_t soffset, size_t slen);
 
 /*
- * Returns the NUL-terminated string representation of the given bytes struct.
+ * Create a NUL-terminated string representation of the given bytes struct.
  *
- * Returns a pointer to a newly allocated bytes struct that should passed to
- * bytes_free(). Returns NULL if the given pointer is NULL, or malloc(3) failed.
+ * Returns a pointer to a newly allocated NUL-terminated string that should
+ * passed to free(). Returns NULL if the given pointer is NULL, or malloc(3)
+ * failed.
  */
 char	*bytes_to_str(const struct bytes *bytes);
 
 /*
- * Returns the hex representation of the given bytes struct, using uppercase
+ * Create a hex representation of the given bytes struct, using uppercase
  * letters.
  *
- * Returns a pointer to a newly allocated bytes struct that should passed to
- * bytes_free(). Returns NULL if the given pointer is NULL, or malloc(3) failed.
+ * Returns a pointer to a newly allocated NUL-terminated string that should
+ * passed to free(). Returns NULL if the given pointer is NULL, or malloc(3)
+ * failed.
  */
 char	*bytes_to_hex(const struct bytes *bytes);
 
 /*
- * Returns the base64 representation of the given bytes struct.
+ * Create a base64 representation of the given bytes struct.
  *
- * Returns a pointer to a newly allocated bytes struct that should passed to
- * bytes_free(). Returns NULL if the given pointer is NULL, or malloc(3) failed.
+ * Returns a pointer to a newly allocated NUL-terminated string that should
+ * passed to free(). Returns NULL if the given pointer is NULL, or malloc(3)
+ * failed.
  */
 char	*bytes_to_base64(const struct bytes *bytes);
 
