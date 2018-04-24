@@ -3,7 +3,7 @@ include(CheckLibraryExists)
 cmake_minimum_required(VERSION 2.6.0)
 project(cryptopals)
 
-add_compile_options(-std=c11 -Wall -Wextra -Werror -fno-strict-aliasing)
+add_compile_options(-std=c11 -Wall -Wextra -Werror -fno-strict-aliasing -D_BSD_SOURCE)
 add_compile_options(-fstack-protector-strong -o aslr -fpie)
 set(CMAKE_EXE_LINKER_FLAGS ${CMAKE_EXE_LINKER_FLAGS} -pie)
 # Per build type flags.
@@ -28,6 +28,7 @@ set(SRCS
     ${PROJECT_SOURCE_DIR}/src/aes.c
     ${PROJECT_SOURCE_DIR}/src/break_aes.c
     ${PROJECT_SOURCE_DIR}/src/uri.c
+    ${PROJECT_SOURCE_DIR}/src/cookie.c
 )
 include_directories("${PROJECT_SOURCE_DIR}/src")
 # compat stuff.
@@ -78,6 +79,7 @@ set(TEST_SRCS
     ${PROJECT_SOURCE_DIR}/tests/test_aes.c
     ${PROJECT_SOURCE_DIR}/tests/test_break_aes.c
     ${PROJECT_SOURCE_DIR}/tests/test_uri.c
+    ${PROJECT_SOURCE_DIR}/tests/test_cookie.c
     ${PROJECT_SOURCE_DIR}/tests/helpers.c
     ${PROJECT_SOURCE_DIR}/tests/main.c
 )
