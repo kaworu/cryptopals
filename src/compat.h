@@ -30,4 +30,16 @@
 #include "compat/timingsafe_bcmp.h"
 #endif
 
+#if defined(HAVE_STRLCPY)
+#include <string.h>
+#else
+#include "compat/strlcpy.h"
+#endif
+
+#if defined(HAVE_STRLCAT)
+#include <string.h>
+#else
+#include "compat/strlcat.h"
+#endif
+
 #endif /* ndef COMPAT_H */
