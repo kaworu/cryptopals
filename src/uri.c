@@ -11,22 +11,22 @@
 
 
 /*
- * Returns 1 if the given character should be escaped, 0 otherwise.
+ * Returns 1 if the given character should be encoded, 0 otherwise.
  *
  * see https://tools.ietf.org/html/rfc2396#section-2.2
  */
 static inline int
-must_be_escaped(char c)
+must_be_encoded(char c)
 {
-	/* alpha characters don't need to be escaped */
+	/* alpha characters don't need to be encoded */
 	if ((c >= 'a' && c <= 'z') ||(c >= 'A' && c <= 'Z'))
 		return (0);
 
-	/* digits don't need to be escaped */
+	/* digits don't need to be encoded */
 	if (c >= '0' && c <= '9')
 		return (0);
 
-	/* mark characters don't need to be escaped */
+	/* mark characters don't need to be encoded */
 	switch (c) {
 	case '-':  /* FALLTHROUGH */
 	case '_':  /* FALLTHROUGH */
@@ -45,17 +45,17 @@ must_be_escaped(char c)
 
 
 int
-uri_escape_len(const char *unescaped, size_t *len_p)
+uri_encode_len(const char *decoded, size_t *len_p)
 {
 	size_t len = 0;
 	int success = 0;
 
 	/* sanity check */
-	if (unescaped == NULL)
+	if (decoded == NULL)
 		goto cleanup;
 
-	for (const char *p = unescaped; *p != '\0'; p++)
-		len += (must_be_escaped(*p) ? 3 : 1);
+	for (const char *p = decoded; *p != '\0'; p++)
+		len += (must_be_encoded(*p) ? 3 : 1);
 
 	if (len_p != NULL)
 		*len_p = len;
@@ -68,26 +68,26 @@ cleanup:
 
 
 char *
-uri_escape(const char *unescaped)
+uri_encode(const char *decoded)
 {
 	static const char b16table[16] = "0123456789ABCDEF";
 	size_t len = 0;
-	char *escaped = NULL;
+	char *encoded = NULL;
 	int success = 0;
 
 	/* sanity check */
-	if (unescaped == NULL)
+	if (decoded == NULL)
 		goto cleanup;
 
-	if (uri_escape_len(unescaped, &len) != 0)
+	if (uri_encode_len(decoded, &len) != 0)
 		goto cleanup;
-	escaped = calloc(len + 1, sizeof(char));
-	if (escaped == NULL)
+	encoded = calloc(len + 1, sizeof(char));
+	if (encoded == NULL)
 		goto cleanup;
 
-	char *d = escaped;
-	for (const char *p = unescaped; *p != '\0'; p++) {
-		if (!must_be_escaped(*p)) {
+	char *d = encoded;
+	for (const char *p = decoded; *p != '\0'; p++) {
+		if (!must_be_encoded(*p)) {
 			*d++ = *p;
 		} else {
 			const uint8_t byte = (uint8_t)*p;
@@ -97,42 +97,46 @@ uri_escape(const char *unescaped)
 		}
 	}
 
-	success = (d == escaped + len);
+	success = (d == encoded + len);
 	/* FALLTHROUGH */
 cleanup:
 	if (!success) {
-		freezero(escaped, len);
-		escaped = NULL;
+		freezero(encoded, len);
+		encoded = NULL;
 	}
-	return (escaped);
+	return (encoded);
 }
 
 
 int
-uri_unescape_len(const char *escaped, size_t *len_p)
+uri_decode_len(const char *encoded, size_t *len_p)
 {
 	size_t len = 0;
 	int success = 0;
 
 	/* sanity check */
-	if (escaped == NULL)
+	if (encoded == NULL)
 		goto cleanup;
 
-	for (const char *p = escaped; *p != '\0'; p++) {
-		int is_num, is_alpha;
+	for (const char *p = encoded; *p != '\0'; p++) {
+		if (*p == '%') {
+			int is_digit, is_hex_alpha;
+			p++;
+			is_digit = (*p >= '0' && *p <= '9');
+			is_hex_alpha = (*p >= 'a' && *p <= 'f') ||
+				    (*p >= 'A' && *p <= 'F');
+			if (!(is_digit || is_hex_alpha))
+				goto cleanup;
+			p++;
+			is_digit = (*p >= '0' && *p <= '9');
+			is_hex_alpha = (*p >= 'a' && *p <= 'f') ||
+				    (*p >= 'A' && *p <= 'F');
+			if (!(is_digit || is_hex_alpha))
+				goto cleanup;
+		} else if (must_be_encoded(*p)) {
+			goto cleanup;
+		}
 		len += 1;
-		if (*p != '%')
-			continue;
-		p++;
-		is_num   = (*p >= '0' && *p <= '9');
-		is_alpha = (*p >= 'a' && *p <= 'f') || (*p >= 'A' && *p <= 'F');
-		if (!(is_num || is_alpha))
-			goto cleanup;
-		p++;
-		is_num   = (*p >= '0' && *p <= '9');
-		is_alpha = (*p >= 'a' && *p <= 'f') || (*p >= 'A' && *p <= 'F');
-		if (!(is_num || is_alpha))
-			goto cleanup;
 	}
 
 	if (len_p != NULL)
@@ -146,24 +150,24 @@ cleanup:
 
 
 char *
-uri_unescape(const char *escaped)
+uri_decode(const char *encoded)
 {
 	size_t len = 0;
-	char *unescaped = NULL;
+	char *decoded = NULL;
 	int success = 0;
 
 	/* sanity check */
-	if (escaped == NULL)
+	if (encoded == NULL)
 		goto cleanup;
 
-	if (uri_unescape_len(escaped, &len) != 0)
+	if (uri_decode_len(encoded, &len) != 0)
 		goto cleanup;
-	unescaped = calloc(len + 1, sizeof(char));
-	if (unescaped == NULL)
+	decoded = calloc(len + 1, sizeof(char));
+	if (decoded == NULL)
 		goto cleanup;
 
-	char *d = unescaped;
-	for (const char *p = escaped; *p != '\0'; p++) {
+	char *d = decoded;
+	for (const char *p = encoded; *p != '\0'; p++) {
 		if (*p != '%') {
 			*d++ = *p;
 		} else {
@@ -190,12 +194,12 @@ uri_unescape(const char *escaped)
 		}
 	}
 
-	success = (d == unescaped + len);
+	success = (d == decoded + len);
 	/* FALLTHROUGH */
 cleanup:
 	if (!success) {
-		freezero(unescaped, len);
-		unescaped = NULL;
+		freezero(decoded, len);
+		decoded = NULL;
 	}
-	return (unescaped);
+	return (decoded);
 }
