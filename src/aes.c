@@ -13,7 +13,7 @@
 #include "aes.h"
 
 
-/**
+/*
  * Encrypt or decrypt a given ciphertext encrypted via AES-128 in ECB mode under
  * the provided key. For encryption, decryption give 1, respectively 0 for the
  * `enc' parameter. If `padding' is zero padding is not performed, checked on
