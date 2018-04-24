@@ -1,7 +1,7 @@
-#ifndef TEST_BREAK_AES_H
-#define TEST_BREAK_AES_H
+#ifndef TEST_BREAK_ECB_H
+#define TEST_BREAK_ECB_H
 /*
- * test_break_aes.h
+ * test_break_ecb.h
  */
 
 
@@ -226,4 +226,4 @@ static const char *s2c12_message_base64 =
 	"dXN0IHRvIHNheSBoaQpEaWQgeW91IHN0b3A/IE5vLCBJIGp1c3QgZHJvdmUg"
 	"YnkK";
 
-#endif /* ndef TEST_BREAK_AES_H */
+#endif /* ndef TEST_BREAK_ECB_H */

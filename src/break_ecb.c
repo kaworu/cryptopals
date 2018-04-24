@@ -1,18 +1,18 @@
 /*
- * break_aes.c
+ * break_ecb.c
  *
- * AES analysis stuff for cryptopals.com challenges.
+ * ECB analysis stuff for cryptopals.com challenges.
  */
 #include <openssl/conf.h>
 #include <openssl/err.h>
 #include <openssl/evp.h>
 
 #include "aes.h"
-#include "break_aes.h"
+#include "break_ecb.h"
 
 
 int
-aes_128_ecb_detect(const struct bytes *buf, double *score_p)
+ecb_detect(const struct bytes *buf, double *score_p)
 {
 	const EVP_CIPHER *cipher = EVP_aes_128_ecb();
 	const size_t blocksize = EVP_CIPHER_block_size(cipher);
@@ -53,7 +53,7 @@ cleanup:
 
 
 struct bytes *
-aes_128_ecb_cbc_encryption_oracle(const struct bytes *input, int *ecb)
+ecb_cbc_encryption_oracle(const struct bytes *input, int *ecb)
 {
 	const EVP_CIPHER *cipher = EVP_aes_128_cbc();
 	struct bytes *random = NULL, *before = NULL, *after = NULL;
@@ -113,7 +113,7 @@ cleanup:
 
 
 struct bytes *
-aes_128_ecb_cbc_detect_input(void)
+ecb_cbc_detect_input(void)
 {
 	const EVP_CIPHER *cipher = EVP_aes_128_ecb();
 	const size_t blocksize = EVP_CIPHER_block_size(cipher);
@@ -130,7 +130,7 @@ aes_128_ecb_cbc_detect_input(void)
 
 
 int
-aes_128_ecb_cbc_detect(const struct bytes *buf)
+ecb_cbc_detect(const struct bytes *buf)
 {
 	const EVP_CIPHER *cipher = EVP_aes_128_ecb();
 	const size_t blocksize = EVP_CIPHER_block_size(cipher);
@@ -147,7 +147,7 @@ aes_128_ecb_cbc_detect(const struct bytes *buf)
 	blocks = bytes_slice(buf, blocksize, 3 * blocksize);
 
 	double score = -1;
-	if (aes_128_ecb_detect(blocks, &score) != 0)
+	if (ecb_detect(blocks, &score) != 0)
 		goto cleanup;
 
 	/*
@@ -166,7 +166,7 @@ cleanup:
 
 
 struct bytes *
-aes_128_ecb_byte_at_a_time_oracle(
+ecb_byte_at_a_time_oracle(
 		    const struct bytes *payload,
 		    const struct bytes *message,
 		    const struct bytes *key)
@@ -198,9 +198,9 @@ cleanup:
 
 
 struct bytes *
-aes_128_ecb_byte_at_a_time_breaker(const void *message, const void *key)
+ecb_byte_at_a_time_breaker(const void *message, const void *key)
 {
-#define oracle(x)	aes_128_ecb_byte_at_a_time_oracle((x), message, key)
+#define oracle(x)	ecb_byte_at_a_time_oracle((x), message, key)
 	const EVP_CIPHER *cipher = EVP_aes_128_ecb();
 	const size_t expected_blocksize = EVP_CIPHER_block_size(cipher);
 	size_t blocksize = 0, msglen = 0;
@@ -238,7 +238,7 @@ aes_128_ecb_byte_at_a_time_breaker(const void *message, const void *key)
 	struct bytes *head = bytes_slice(ciphertext, 0, 3 * blocksize);
 	bytes_free(payload);
 	bytes_free(ciphertext);
-	const int ret = aes_128_ecb_detect(head, &score);
+	const int ret = ecb_detect(head, &score);
 	bytes_free(head);
 	if (ret != 0 || score != 1.0)
 		goto cleanup;
