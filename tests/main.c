@@ -18,13 +18,13 @@ extern MunitTest test_cookie_suite_tests[];
 
 static MunitSuite all_test_suites[] = {
 	{ "bytes/",  test_bytes_suite_tests,                   NULL, 1, MUNIT_SUITE_OPTION_NONE },
+	{ "cookie/", test_cookie_suite_tests,                  NULL, 1, MUNIT_SUITE_OPTION_NONE },
 	{ "xor/",    test_xor_suite_tests,                     NULL, 1, MUNIT_SUITE_OPTION_NONE },
 	{ "pt/",     test_break_plaintext_suite_tests,         NULL, 1, MUNIT_SUITE_OPTION_NONE },
 	{ "sbx/",    test_break_single_byte_xor_suite_tests,   NULL, 1, MUNIT_SUITE_OPTION_NONE },
 	{ "rkx/",    test_break_repeating_key_xor_suite_tests, NULL, 1, MUNIT_SUITE_OPTION_NONE },
 	{ "aes/",    test_aes_suite_tests,                     NULL, 1, MUNIT_SUITE_OPTION_NONE },
 	{ "ecb/",    test_break_ecb_suite_tests,               NULL, 1, MUNIT_SUITE_OPTION_NONE },
-	{ "cookie/", test_cookie_suite_tests,                  NULL, 1, MUNIT_SUITE_OPTION_NONE },
 	{
 		.prefix     = NULL,
 		.tests      = NULL,

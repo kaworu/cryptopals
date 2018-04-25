@@ -3,10 +3,13 @@
  *
  * ECB analysis stuff for cryptopals.com challenges.
  */
+#include <string.h>
 #include <openssl/conf.h>
 #include <openssl/err.h>
 #include <openssl/evp.h>
 
+#include "compat.h"
+#include "cookie.h"
 #include "aes.h"
 #include "break_ecb.h"
 
@@ -211,7 +214,6 @@ ecb_byte_at_a_time_breaker(const void *message, const void *key)
 	/* find the blocksize and the message's length */
 	size_t prevsize = 0;
 	for (size_t i = 0; i <= expected_blocksize && blocksize == 0; i++) {
-		struct bytes *payload, *ciphertext;
 		payload = bytes_repeated(i, (uint8_t)'A');
 		ciphertext = oracle(payload);
 		bytes_free(payload);
@@ -302,5 +304,136 @@ cleanup:
 		recovered = NULL;
 	}
 	return (recovered);
+#undef oracle
+}
+
+
+struct bytes *
+ecb_cut_and_paste_profile_for(const char *email,
+		    const struct bytes *key)
+{
+	struct cookie *profile = NULL;
+	char *desc = NULL;
+	struct bytes *plaintext = NULL, *ciphertext = NULL;
+	int success = 0;
+
+	profile = cookie_alloc();
+	if (cookie_append(profile, "email", email) != 0)
+		goto cleanup;
+	if (cookie_append(profile, "uid", "10") != 0)
+		goto cleanup;
+	if (cookie_append(profile, "role", "user") != 0)
+		goto cleanup;
+	desc = cookie_encode(profile);
+	plaintext = bytes_from_str(desc);
+	ciphertext = aes_128_ecb_encrypt(plaintext, key);
+
+	success = 1;
+	/* FALLTHROUGH */
+cleanup:
+	bytes_free(plaintext);
+	freezero(desc, desc == NULL ? 0 : strlen(desc));
+	cookie_free(profile);
+	if (!success) {
+		bytes_free(ciphertext);
+		ciphertext = NULL;
+	}
+	return (ciphertext);
+}
+
+
+struct cookie *
+ecb_cut_and_paste_profile(const struct bytes *ciphertext,
+		    const struct bytes *key)
+{
+	struct bytes *plaintext = aes_128_ecb_decrypt(ciphertext, key);
+	char *desc = bytes_to_str(plaintext);
+	bytes_free(plaintext);
+	struct cookie *profile = cookie_decode(desc);
+	freezero(desc, desc == NULL ? 0 : strlen(desc));
+	return (profile);
+}
+
+
+struct bytes *
+ecb_cut_and_paste_profile_breaker(const void *key)
+{
+#define oracle(x)	ecb_cut_and_paste_profile_for((x), key);
+	struct bytes *head = NULL, *tail = NULL, *admin = NULL;
+	int success = 0;
+
+	/*
+	 * We could find the blocksize, expansion length, and detect ECB here
+	 * just like in ecb_byte_at_a_time_breaker() but let's skip this part.
+	 */
+	const size_t blocksize = EVP_CIPHER_block_size(EVP_aes_128_ecb());
+	const size_t explen = strlen("email=&uid=??&role=user");
+
+	/*
+	 * We want to craft an email such as the `role=' part of the expansion
+	 * is at the very end of a block, visually:
+	 *     [email=AAA...&uid=??&role=][user . padding]
+	 *                  \_________________/
+	 *                       expansion
+	 */
+	size_t emaillen = blocksize - (explen - strlen("user")) % blocksize;
+	struct bytes *email = bytes_repeated(emaillen, (uint8_t)'A');
+	char *email_str = bytes_to_str(email);
+	bytes_free(email);
+	struct bytes *ciphertext = oracle(email_str);
+	freezero(email_str, email_str == NULL ? 0 : strlen(email_str));
+	if (ciphertext == NULL || ciphertext->len < blocksize)
+		goto cleanup;
+	/* the last block is the [user . padding] part, we want every blocks but
+	   this one */
+	const size_t nblocks = ciphertext->len / blocksize;
+	head = bytes_slice(ciphertext, 0, (nblocks - 1) * blocksize);
+	bytes_free(ciphertext);
+
+	/*
+	 * Now we want to craft an email such as:
+	 *     [email=AAA...][admin . padding][&uid=??&role=user . padding]
+	 *            \_____________________/
+	 *                    email
+	 */
+	emaillen = blocksize - strlen("email=") % blocksize;
+	email = bytes_repeated(emaillen + blocksize, (uint8_t)'A');
+	struct bytes *role = bytes_from_str("admin");
+	struct bytes *padded = bytes_pkcs7_padded(role, blocksize);
+	bytes_free(role);
+	(void)bytes_put(email, emaillen, padded);
+	bytes_free(padded);
+	email_str = bytes_to_str(email);
+	bytes_free(email);
+	ciphertext = oracle(email_str);
+	freezero(email_str, email_str == NULL ? 0 : strlen(email_str));
+	if (ciphertext == NULL || ciphertext->len < blocksize)
+		goto cleanup;
+	/* We only want the [admin . padding] block */
+	const size_t skip = (strlen("email=") + emaillen) / blocksize;
+	tail = bytes_slice(ciphertext, skip * blocksize, blocksize);
+	bytes_free(ciphertext);
+
+	/*
+	 * Finally construct the admin profile ciphertext by appending the head
+	 * part to the tail, visually:
+	 *
+	 *     [email=AAA...&uid=??&role=][admin . padding]
+	 *     \_________________________/\_______________/
+	 *                head                  tail
+	 */
+	const struct bytes *const parts[] = { head, tail };
+	admin = bytes_joined_const(parts, sizeof(parts) / sizeof(*parts));
+
+	success = 1;
+	/* FALLTHROUGH */
+cleanup:
+	bytes_free(tail);
+	bytes_free(head);
+	if (!success) {
+		bytes_free(admin);
+		admin = NULL;
+	}
+	return (admin);
 #undef oracle
 }

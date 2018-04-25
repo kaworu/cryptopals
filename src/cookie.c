@@ -23,6 +23,10 @@ struct cookie {
 };
 
 
+/*
+ * Return a copy of the given NUL-terminated string `src' without the special
+ * cookie characters `=' and `&', or NULL if `src' is NULL or malloc(3) failed.
+ */
 static char *
 cookie_escape(const char *src)
 {

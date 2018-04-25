@@ -6,6 +6,7 @@
  * ECB analysis stuff for cryptopals.com challenges.
  */
 #include "bytes.h"
+#include "cookie.h"
 
 
 /*
@@ -62,5 +63,33 @@ struct bytes	*ecb_byte_at_a_time_oracle(const struct bytes *payload,
  */
 struct bytes	*ecb_byte_at_a_time_breaker(const void *message,
 		    const void *key);
+
+/*
+ * ECB Encryption Oracle as described by Set 2 / Challenge 13.
+ *
+ * Returns a pointer to a newly allocated bytes struct that should passed to
+ * bytes_free(), or NULL if malloc(3) failed or if any given parameter is NULL.
+ */
+struct bytes	*ecb_cut_and_paste_profile_for(const char *email,
+		    const struct bytes *key);
+
+/*
+ * ECB Decryption Oracle as described by Set 2 / Challenge 13.
+ *
+ * Returns a pointer to a newly allocated cookie struct that should passed to
+ * cookie_free(), or NULL if the decryption failed, cookie decoding failed,
+ * malloc(3) failed, or if any given parameter is NULL.
+ */
+struct cookie	*ecb_cut_and_paste_profile(const struct bytes *ciphertext,
+		    const struct bytes *key);
+
+/*
+ * Admin profile generator using ecb_cut_and_paste_profile_for() as Oracle as
+ * described by Set 2 / Challenge 13.
+ *
+ * Returns a pointer to a newly allocated bytes struct that should passed to
+ * bytes_free(), or NULL if malloc(3) failed or the Oracle failed.
+ */
+struct bytes *ecb_cut_and_paste_profile_breaker(const void *key);
 
 #endif /* ndef BREAK_ECB_H */

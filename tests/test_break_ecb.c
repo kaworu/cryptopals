@@ -111,13 +111,81 @@ test_ecb_baat_breaker(const MunitParameter *params, void *data)
 }
 
 
+/* Testing the Set 2 / Challenge 13 Oracle */
+static MunitResult
+test_ecb_cnp_oracle(const MunitParameter *params, void *data)
+{
+	size_t count = 0;
+	struct cookie *profile = NULL;
+	const struct cookie_kv *kv = NULL;
+
+	const char *email = "foo@bar.com";
+	struct bytes *key = bytes_randomized(16);
+	if (key == NULL)
+		munit_error("bytes_randomized");
+	struct bytes *ciphertext = ecb_cut_and_paste_profile_for(email, key);
+	munit_assert_not_null(ciphertext);
+	profile = ecb_cut_and_paste_profile(ciphertext, key);
+
+	munit_assert_not_null(profile);
+	if (cookie_count(profile, &count) != 0)
+		munit_error("cookie_count");
+	munit_assert_size(count, ==, 3);
+
+	kv = cookie_at(profile, 0);
+	munit_assert_not_null(kv);
+	munit_assert_string_equal(cookie_kv_key(kv), "email");
+	munit_assert_string_equal(cookie_kv_value(kv), "foo@bar.com");
+
+	kv = cookie_at(profile, 1);
+	munit_assert_not_null(kv);
+	munit_assert_string_equal(cookie_kv_key(kv), "uid");
+	munit_assert_string_equal(cookie_kv_value(kv), "10");
+
+	kv = cookie_at(profile, 2);
+	munit_assert_not_null(kv);
+	munit_assert_string_equal(cookie_kv_key(kv), "role");
+	munit_assert_string_equal(cookie_kv_value(kv), "user");
+
+	cookie_free(profile);
+	bytes_free(ciphertext);
+	bytes_free(key);
+	return (MUNIT_OK);
+}
+
+
+/* Set 2 / Challenge 13 */
+static MunitResult
+test_ecb_cnp_breaker(const MunitParameter *params, void *data)
+{
+	struct bytes *key = bytes_randomized(16);
+	if (key == NULL)
+		munit_error("bytes_randomized");
+
+	struct bytes *ciphertext = ecb_cut_and_paste_profile_breaker(key);
+	munit_assert_not_null(ciphertext);
+	struct cookie *profile = ecb_cut_and_paste_profile(ciphertext, key);
+	munit_assert_not_null(profile);
+	const struct cookie_kv *kv = cookie_get(profile, "role");
+	munit_assert_not_null(kv);
+	munit_assert_string_equal(cookie_kv_value(kv), "admin");
+
+	cookie_free(profile);
+	bytes_free(ciphertext);
+	bytes_free(key);
+	return (MUNIT_OK);
+}
+
+
 /* The test suite. */
 MunitTest test_break_ecb_suite_tests[] = {
-	{ "ecb_detect-0",     test_ecb_detect_0,     NULL,        NULL, MUNIT_TEST_OPTION_NONE, NULL },
-	{ "ecb_detect-1",     test_ecb_detect_1,     NULL,        NULL, MUNIT_TEST_OPTION_NONE, NULL },
-	{ "ecb_cbc_detect-0", test_ecb_cbc_detect_0, NULL,        NULL, MUNIT_TEST_OPTION_NONE, NULL },
-	{ "ecb_cbc_detect-1", test_ecb_cbc_detect_1, srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
-	{ "ecb_baat_breaker", test_ecb_baat_breaker, srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "ecb_detect-0",        test_ecb_detect_0,     NULL,        NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "ecb_detect-1",        test_ecb_detect_1,     NULL,        NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "ecb_cbc_detect-0",    test_ecb_cbc_detect_0, NULL,        NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "ecb_cbc_detect-1",    test_ecb_cbc_detect_1, srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "ecb_byte_at_a_time",  test_ecb_baat_breaker, srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "ecb_cut_and_paste-0", test_ecb_cnp_oracle,   srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "ecb_cut_and_paste-1", test_ecb_cnp_breaker,  srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{
 		.name       = NULL,
 		.test       = NULL,
