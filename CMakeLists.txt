@@ -27,7 +27,6 @@ set(SRCS
     ${PROJECT_SOURCE_DIR}/src/break_repeating_key_xor.c
     ${PROJECT_SOURCE_DIR}/src/aes.c
     ${PROJECT_SOURCE_DIR}/src/break_ecb.c
-    ${PROJECT_SOURCE_DIR}/src/uri.c
     ${PROJECT_SOURCE_DIR}/src/cookie.c
 )
 include_directories("${PROJECT_SOURCE_DIR}/src")
@@ -78,7 +77,6 @@ set(TEST_SRCS
     ${PROJECT_SOURCE_DIR}/tests/test_break_repeating_key_xor.c
     ${PROJECT_SOURCE_DIR}/tests/test_aes.c
     ${PROJECT_SOURCE_DIR}/tests/test_break_ecb.c
-    ${PROJECT_SOURCE_DIR}/tests/test_uri.c
     ${PROJECT_SOURCE_DIR}/tests/test_cookie.c
     ${PROJECT_SOURCE_DIR}/tests/helpers.c
     ${PROJECT_SOURCE_DIR}/tests/main.c

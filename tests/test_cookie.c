@@ -27,10 +27,6 @@ test_cookie_decode_0(const MunitParameter *params, void *data)
 	munit_assert_null(cookie_decode(NULL));
 	/* when the encoded string has no k=v */
 	munit_assert_null(cookie_decode("foobar"));
-	/* `=' twice */
-	munit_assert_null(cookie_decode("foo=bar=baz"));
-	/* illegal character */
-	munit_assert_null(cookie_decode("foo=bar?"));
 
 	return (MUNIT_OK);
 }
@@ -68,16 +64,29 @@ test_cookie_decode_2(const MunitParameter *params, void *data)
 {
 	size_t count = 0;
 	struct cookie *decoded = NULL;
+	const struct cookie_kv *kv = NULL;
 
-	decoded = cookie_decode("foo%3d=%3Dbar%26");
+	decoded = cookie_decode("email=foo@bar.com&uid=10&role=user");
 	munit_assert_not_null(decoded);
 	if (cookie_count(decoded, &count) != 0)
 		munit_error("cookie_count");
-	munit_assert_size(count, ==, 1);
-	const struct cookie_kv *kv = cookie_at(decoded, 0);
+
+	munit_assert_size(count, ==, 3);
+
+	kv = cookie_at(decoded, 0);
 	munit_assert_not_null(kv);
-	munit_assert_string_equal(cookie_kv_key(kv), "foo=");
-	munit_assert_string_equal(cookie_kv_value(kv), "=bar&");
+	munit_assert_string_equal(cookie_kv_key(kv), "email");
+	munit_assert_string_equal(cookie_kv_value(kv), "foo@bar.com");
+
+	kv = cookie_at(decoded, 1);
+	munit_assert_not_null(kv);
+	munit_assert_string_equal(cookie_kv_key(kv), "uid");
+	munit_assert_string_equal(cookie_kv_value(kv), "10");
+
+	kv = cookie_at(decoded, 2);
+	munit_assert_not_null(kv);
+	munit_assert_string_equal(cookie_kv_key(kv), "role");
+	munit_assert_string_equal(cookie_kv_value(kv), "user");
 
 	cookie_free(decoded);
 	return (MUNIT_OK);
@@ -287,6 +296,7 @@ static MunitResult
 test_cookie_encode_2(const MunitParameter *params, void *data)
 {
 	char *encoded = NULL;
+	const char *expected = NULL;
 	struct cookie *cookie = NULL;
 
 	cookie = cookie_alloc();
@@ -297,11 +307,24 @@ test_cookie_encode_2(const MunitParameter *params, void *data)
 	encoded = cookie_encode(cookie);
 	munit_assert_not_null(encoded);
 	/* workaround https://github.com/nemequ/munit/pull/42 */
-	const char *expected = "role%3Dadmin=";
+	expected = "roleadmin=";
 	munit_assert_string_equal(encoded, expected);
-
 	free(encoded);
 	cookie_free(cookie);
+
+	cookie = cookie_alloc();
+	if (cookie == NULL)
+		munit_error("cookie_alloc");
+	if (cookie_append(cookie, "role", "user&role=admin") != 0)
+		munit_error("cookie_append");
+	encoded = cookie_encode(cookie);
+	munit_assert_not_null(encoded);
+	/* workaround https://github.com/nemequ/munit/pull/42 */
+	expected = "role=userroleadmin";
+	munit_assert_string_equal(encoded, expected);
+	free(encoded);
+	cookie_free(cookie);
+
 	return (MUNIT_OK);
 }
 

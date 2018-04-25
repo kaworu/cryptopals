@@ -7,7 +7,6 @@
 #include <string.h>
 
 #include "compat.h"
-#include "uri.h"
 #include "cookie.h"
 
 
@@ -22,6 +21,30 @@ struct cookie {
 	struct cookie_kv *head;
 	struct cookie_kv *tail;
 };
+
+
+static char *
+cookie_escape(const char *src)
+{
+	char *escaped = NULL;
+
+	/* sanity check */
+	if (src == NULL)
+		return (NULL);
+
+	const size_t len = strlen(src);
+	escaped = calloc(len + 1, sizeof(char));
+	if (escaped == NULL)
+		return (NULL);
+
+	char *dest = escaped;
+	for (const char *p = src; *p != '\0'; p++) {
+		if (*p != '&' && *p != '=')
+			*dest++ = *p;
+	}
+
+	return (escaped);
+}
 
 
 struct cookie *
@@ -57,12 +80,9 @@ cookie_decode(const char *s)
 		if (eq == NULL)
 			goto cleanup;
 		*eq = '\0';
-		char *key   = uri_decode(p);
-		char *value = uri_decode(eq + 1);
-		const int ret = cookie_append(decoded, key, value);
-		freezero(value, value == NULL ? 0 : strlen(value));
-		freezero(key,   key == NULL ? 0 : strlen(key));
-		if (ret != 0)
+		char *key   = p;
+		char *value = eq + 1;
+		if (cookie_append(decoded, key, value) != 0)
 			goto cleanup;
 	}
 
@@ -183,20 +203,14 @@ cookie_encode(const struct cookie *cookie)
 		/* account for the joining `&' if needed */
 		if (kv != cookie->head)
 			siz += 1;
-		/* key length computation */
-		size_t len = 0;
-		if (uri_encode_len(kv->key, &len) != 0)
-			goto cleanup;
-		siz += len;
+		/* key */
+		siz += strlen(kv->key);
 		/* account for the joining `=' */
 		siz += 1;
-		/* value length computation */
-		if (uri_encode_len(kv->value, &len) != 0)
-			goto cleanup;
-		siz += len;
+		siz += strlen(kv->value);
 	}
-
 	siz += 1; /* trailing NUL */
+
 	encoded = calloc(siz, sizeof(char));
 	if (encoded == NULL)
 		goto cleanup;
@@ -208,7 +222,7 @@ cookie_encode(const struct cookie *cookie)
 				goto cleanup;
 		}
 		/* key encoding */
-		char *s = uri_encode(kv->key);
+		char *s = cookie_escape(kv->key);
 		if (s == NULL)
 			goto cleanup;
 		size_t ret = strlcat(encoded, s, siz);
@@ -219,7 +233,7 @@ cookie_encode(const struct cookie *cookie)
 		if (strlcat(encoded, "=", siz) >= siz)
 			goto cleanup;
 		/* value encoding */
-		s = uri_encode(kv->value);
+		s = cookie_escape(kv->value);
 		if (s == NULL)
 			goto cleanup;
 		ret = strlcat(encoded, s, siz);
