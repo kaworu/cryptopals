@@ -60,8 +60,8 @@ cookie_decode(const char *s)
 		char *key   = uri_decode(p);
 		char *value = uri_decode(eq + 1);
 		const int ret = cookie_append(decoded, key, value);
-		free(value);
-		free(key);
+		freezero(value, value == NULL ? 0 : strlen(value));
+		freezero(key,   key == NULL ? 0 : strlen(key));
 		if (ret != 0)
 			goto cleanup;
 	}
@@ -69,7 +69,7 @@ cookie_decode(const char *s)
 	success = 1;
 	/* FALLTHROUGH */
 cleanup:
-	free(cpy);
+	freezero(cpy, cpy == NULL ? 0 : strlen(cpy));
 	if (!success) {
 		cookie_free(decoded);
 		decoded = NULL;
@@ -158,8 +158,8 @@ cookie_append(struct cookie *cookie, const char *key, const char *value)
 cleanup:
 	if (!success) {
 		freezero(kv, sizeof(struct cookie_kv));
-		free(k);
-		free(v);
+		freezero(k, k == NULL ? 0 : strlen(k));
+		freezero(v, v == NULL ? 0 : strlen(v));
 		kv = NULL;
 	}
 	return (success ? 0 : -1);
@@ -212,7 +212,7 @@ cookie_encode(const struct cookie *cookie)
 		if (s == NULL)
 			goto cleanup;
 		size_t ret = strlcat(encoded, s, siz);
-		free(s);
+		freezero(s, strlen(s));
 		if (ret >= siz)
 			goto cleanup;
 		/* joining `=' */
@@ -223,7 +223,7 @@ cookie_encode(const struct cookie *cookie)
 		if (s == NULL)
 			goto cleanup;
 		ret = strlcat(encoded, s, siz);
-		free(s);
+		freezero(s, strlen(s));
 		if (ret >= siz)
 			goto cleanup;
 	}
