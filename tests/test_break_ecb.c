@@ -90,8 +90,9 @@ test_ecb_cbc_detect_1(const MunitParameter *params, void *data)
 
 /* Set 2 / Challenge 12 */
 static MunitResult
-test_ecb_baat_breaker(const MunitParameter *params, void *data)
+test_ecb_baat_breaker12(const MunitParameter *params, void *data)
 {
+	struct bytes *recovered = NULL;
 	struct bytes *key = bytes_randomized(16);
 	if (key == NULL)
 		munit_error("bytes_randomized");
@@ -99,7 +100,7 @@ test_ecb_baat_breaker(const MunitParameter *params, void *data)
 	if (message == NULL)
 		munit_error("bytes_from_base64");
 
-	struct bytes *recovered = ecb_byte_at_a_time_breaker(message, key);
+	recovered = ecb_byte_at_a_time_breaker12(message, key);
 	munit_assert_not_null(recovered);
 	munit_assert_size(recovered->len, ==, message->len);
 	munit_assert_memory_equal(message->len, message->data, recovered->data);
@@ -177,15 +178,43 @@ test_ecb_cnp_breaker(const MunitParameter *params, void *data)
 }
 
 
+/* Set 2 / Challenge 14 */
+static MunitResult
+test_ecb_baat_breaker14(const MunitParameter *params, void *data)
+{
+
+	struct bytes *recovered = NULL;
+	struct bytes *key = bytes_randomized(16);
+	struct bytes *prefix = bytes_randomized(munit_rand_int_range(16, 16 * 64));
+	if (key == NULL || prefix == NULL)
+		munit_error("bytes_randomized");
+	struct bytes *message = bytes_from_base64(s2c12_message_base64);
+	if (message == NULL)
+		munit_error("bytes_from_base64");
+
+	recovered = ecb_byte_at_a_time_breaker14(prefix, message, key);
+	munit_assert_not_null(recovered);
+	munit_assert_size(recovered->len, ==, message->len);
+	munit_assert_memory_equal(message->len, message->data, recovered->data);
+
+	bytes_free(recovered);
+	bytes_free(message);
+	bytes_free(prefix);
+	bytes_free(key);
+	return (MUNIT_OK);
+}
+
+
 /* The test suite. */
 MunitTest test_break_ecb_suite_tests[] = {
-	{ "ecb_detect-0",        test_ecb_detect_0,     NULL,        NULL, MUNIT_TEST_OPTION_NONE, NULL },
-	{ "ecb_detect-1",        test_ecb_detect_1,     NULL,        NULL, MUNIT_TEST_OPTION_NONE, NULL },
-	{ "ecb_cbc_detect-0",    test_ecb_cbc_detect_0, NULL,        NULL, MUNIT_TEST_OPTION_NONE, NULL },
-	{ "ecb_cbc_detect-1",    test_ecb_cbc_detect_1, srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
-	{ "ecb_byte_at_a_time",  test_ecb_baat_breaker, srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
-	{ "ecb_cut_and_paste-0", test_ecb_cnp_oracle,   srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
-	{ "ecb_cut_and_paste-1", test_ecb_cnp_breaker,  srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "ecb_detect-0",              test_ecb_detect_0,       NULL,        NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "ecb_detect-1",              test_ecb_detect_1,       NULL,        NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "ecb_cbc_detect-0",          test_ecb_cbc_detect_0,   NULL,        NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "ecb_cbc_detect-1",          test_ecb_cbc_detect_1,   srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "ecb_byte_at_a_time-simple", test_ecb_baat_breaker12, srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "ecb_cut_and_paste-0",       test_ecb_cnp_oracle,     srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "ecb_cut_and_paste-1",       test_ecb_cnp_breaker,    srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "ecb_byte_at_a_time-harder", test_ecb_baat_breaker14, srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{
 		.name       = NULL,
 		.test       = NULL,

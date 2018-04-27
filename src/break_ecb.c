@@ -169,142 +169,29 @@ cleanup:
 
 
 struct bytes *
-ecb_byte_at_a_time_oracle(
+ecb_byte_at_a_time_oracle12(
 		    const struct bytes *payload,
 		    const struct bytes *message,
 		    const struct bytes *key)
 {
-	struct bytes *input = NULL, *output = NULL;
-	int success = 0;
+	struct bytes *prefix, *result;
 
-	/* sanity checks */
-	if (payload == NULL || message == NULL || key == NULL)
-		goto cleanup;
-
-	const struct bytes *const parts[] = { payload, message };
-	input = bytes_joined_const(parts, sizeof(parts) / sizeof(*parts));
-
-	output = aes_128_ecb_encrypt(input, key);
-	if (output == NULL)
-		goto cleanup;
-
-	success = 1;
-	/* FALLTHROUGH */
-cleanup:
-	bytes_free(input);
-	if (!success) {
-		bytes_free(output);
-		output = NULL;
-	}
-	return (output);
+	prefix = bytes_from_str("");
+	result = ecb_byte_at_a_time_oracle14(prefix, payload, message, key);
+	bytes_free(prefix);
+	return (result);
 }
 
 
 struct bytes *
-ecb_byte_at_a_time_breaker(const void *message, const void *key)
+ecb_byte_at_a_time_breaker12(const void *message, const void *key)
 {
-#define oracle(x)	ecb_byte_at_a_time_oracle((x), message, key)
-	const EVP_CIPHER *cipher = EVP_aes_128_ecb();
-	const size_t expected_blocksize = EVP_CIPHER_block_size(cipher);
-	size_t blocksize = 0, msglen = 0;
-	struct bytes *payload = NULL, *ciphertext = NULL;
-	struct bytes *attempt = NULL, *recovered = NULL;
-	int success = 0;
+	struct bytes *prefix, *result;
 
-	/* find the blocksize and the message's length */
-	size_t prevsize = 0;
-	for (size_t i = 0; i <= expected_blocksize && blocksize == 0; i++) {
-		payload = bytes_repeated(i, (uint8_t)'A');
-		ciphertext = oracle(payload);
-		bytes_free(payload);
-		if (ciphertext == NULL)
-			goto cleanup;
-		if (!prevsize) {
-			prevsize = ciphertext->len;
-		} else if (prevsize < ciphertext->len) {
-			blocksize = ciphertext->len - prevsize;
-			/* ciphertext is [m . p . p'] where m is the message,
-			   p the payload and p' a full block of padding. */
-			msglen = ciphertext->len - i - blocksize;
-		}
-		bytes_free(ciphertext);
-	}
-	if (blocksize != expected_blocksize)
-		goto cleanup;
-
-	/* detect ECB */
-	double score = -1;
-	payload = bytes_zeroed(3 * blocksize);
-	ciphertext = oracle(payload);
-	/* in ECB mode, the three first blocks should be the same */
-	struct bytes *head = bytes_slice(ciphertext, 0, 3 * blocksize);
-	bytes_free(payload);
-	bytes_free(ciphertext);
-	const int ret = ecb_detect(head, &score);
-	bytes_free(head);
-	if (ret != 0 || score != 1.0)
-		goto cleanup;
-
-	/* allocate the recovered message, initially filled with 0 */
-	recovered = bytes_zeroed(msglen);
-	if (recovered == NULL)
-		goto cleanup;
-
-	/* count of block needed to hold the full message */
-	const size_t nblock = msglen / blocksize + 1;
-	/* a buffer holding our attempt at cracking the message bytes */
-	attempt = bytes_zeroed(nblock * blocksize);
-	if (attempt == NULL)
-		goto cleanup;
-	/* offset of the last block, the one holding the byte we are guessing */
-	const size_t boffset = (nblock - 1) * blocksize;
-	/* processing loop, breaking one message byte at a time */
-	for (size_t i = 1; i <= msglen; i++) {
-		struct bytes *pre, *ct, *iblock;
-		/* the index of the byte we are breaking in this iteration in
-		   the ciphertext given by the oracle */
-		const size_t index = nblock * blocksize - i;
-		/* pad the start of the choosen plaintext so that the byte at
-		   index is at the very end of the block at boffset */
-		pre = bytes_repeated(index, (uint8_t)'A');
-		ct = oracle(pre);
-		/* retrieve the block holding the byte we are guessing */
-		iblock = bytes_slice(ct, boffset, blocksize);
-		bytes_free(ct);
-		/*
-		 * Our guess attempt is of the form [pre . guessed . guess].
-		 * Just like for iblock `pre' is leading, `guessed' are the byte
-		 * we already know and `guess' is our try for the byte at index.
-		 */
-		(void)bytes_put(attempt, 0, pre);
-		(void)bytes_sput(attempt, index, recovered, 0, i);
-		/* try each possible value for the byte until we find a match */
-		for (uint16_t byte = 0; byte <= UINT8_MAX; byte++) {
-			attempt->data[index + i - 1] = (uint8_t)byte;
-			ct = oracle(attempt);
-			struct bytes *block = bytes_slice(ct, boffset, blocksize);
-			bytes_free(ct);
-			const int found = (bytes_bcmp(block, iblock) == 0);
-			bytes_free(block);
-			if (found) {
-				recovered->data[i - 1] = (uint8_t)byte;
-				break;
-			}
-		}
-		bytes_free(iblock);
-		bytes_free(pre);
-	}
-
-	success = 1;
-	/* FALLTHROUGH */
-cleanup:
-	bytes_free(attempt);
-	if (!success) {
-		bytes_free(recovered);
-		recovered = NULL;
-	}
-	return (recovered);
-#undef oracle
+	prefix = bytes_from_str("");
+	result = ecb_byte_at_a_time_breaker14(prefix, message, key);
+	bytes_free(prefix);
+	return (result);
 }
 
 
@@ -435,5 +322,256 @@ cleanup:
 		admin = NULL;
 	}
 	return (admin);
+#undef oracle
+}
+
+
+struct bytes *
+ecb_byte_at_a_time_oracle14(
+		    const struct bytes *prefix,
+		    const struct bytes *payload,
+		    const struct bytes *message,
+		    const struct bytes *key)
+{
+	struct bytes *input = NULL, *output = NULL;
+	int success = 0;
+
+	/* sanity checks */
+	if (prefix == NULL || payload == NULL || message == NULL || key == NULL)
+		goto cleanup;
+
+	const struct bytes *const parts[] = { prefix, payload, message };
+	input = bytes_joined_const(parts, sizeof(parts) / sizeof(*parts));
+
+	output = aes_128_ecb_encrypt(input, key);
+	if (output == NULL)
+		goto cleanup;
+
+	success = 1;
+	/* FALLTHROUGH */
+cleanup:
+	bytes_free(input);
+	if (!success) {
+		bytes_free(output);
+		output = NULL;
+	}
+	return (output);
+}
+
+
+struct bytes *
+ecb_byte_at_a_time_breaker14(
+		    const void *prefix,
+		    const void *message,
+		    const void *key)
+{
+#define oracle(x)	ecb_byte_at_a_time_oracle14(prefix, (x), message, key)
+	const EVP_CIPHER *cipher = EVP_aes_128_ecb();
+	const size_t expected_blocksize = EVP_CIPHER_block_size(cipher);
+	size_t blocksize = 0;
+	size_t totallen = 0, prefixlen = 0, msglen = 0;
+	struct bytes *payload = NULL, *ciphertext = NULL;
+	struct bytes *recovered = NULL;
+	int success = 0;
+
+	/*
+	 * find the blocksize and the "total length"
+	 * (i.e. the prefix length + the message length)
+	 */
+
+	size_t prevsize = 0;
+	for (size_t i = 0; i <= expected_blocksize && blocksize == 0; i++) {
+		payload = bytes_repeated(i, (uint8_t)'A');
+		ciphertext = oracle(payload);
+		bytes_free(payload);
+		if (ciphertext == NULL)
+			goto cleanup;
+		if (!prevsize) {
+			prevsize = ciphertext->len;
+		} else if (prevsize < ciphertext->len) {
+			blocksize = ciphertext->len - prevsize;
+			/* ciphertext is [p . p' . m . p''] where p is the
+			   prefix, p' is the the payload, m is the message, and
+			   p'' a full block of padding. */
+			totallen = ciphertext->len - i - blocksize;
+		}
+		bytes_free(ciphertext);
+	}
+	if (blocksize != expected_blocksize)
+		goto cleanup;
+
+	/*
+	 * detect ECB mode, finding the prefix block count on the way.
+	 */
+
+	/* generate 4 blocks of payload, so that we would find at least three
+	   full blocks intact as the first one may be "mixed" with the prefix */
+	payload = bytes_zeroed(4 * blocksize);
+	ciphertext = oracle(payload);
+	bytes_free(payload);
+	if (ciphertext == NULL)
+		goto cleanup;
+	int ecb_found = 0;
+	for (size_t i = 0; i < ciphertext->len && !ecb_found; i += blocksize) {
+		double score = -1;
+		struct bytes *chunk = bytes_slice(ciphertext, i, 3 * blocksize);
+		const int ret = ecb_detect(chunk, &score);
+		bytes_free(chunk);
+		if (ret != 0) {
+			break;
+		} else if (score == 1.0) {
+			prefixlen = i;
+			ecb_found = 1;
+		}
+	}
+	bytes_free(ciphertext);
+	if (!ecb_found)
+		goto cleanup;
+	/*
+	 * Here we know that the prefix fit in `prefixlen', a multiple of
+	 * the blocksize for now.
+	 */
+	if (prefixlen == 0) {
+		/* the prefix is empty, skip the prefixlen detection codepath */
+		goto recover;
+	}
+
+	/*
+	 * prefix length detection.
+	 *
+	 * We study the last prefix block "padded" with our payload decreasingly
+	 * bytes by bytes. Initally, the last block having part of the prefix
+	 * (p) is of the form
+	 *
+	 *     [p . 0x0*]
+	 *
+	 * where 0x0* our payload (zeros repeated). We use this block as
+	 * reference (ref0). Once the payload is "small enough", the first byte
+	 * of the message (m0) join the party in the block, yielding the form
+	 *
+	 *     [p . 0x0* . m0]
+	 *
+	 * At that point we should see a difference with ref0. The caveat is
+	 * that we won't see a difference with ref0 if m0 == 0x0, so we
+	 * duplicate the tests with 0x1 (arbitrarily, any other value than 0x0
+	 * would do). That way at least one of them will change when m0 join the
+	 * block.
+	 */
+	/* build ref0 and ref1 */
+	const size_t off = prefixlen - blocksize;
+	payload = bytes_repeated(blocksize, 0x0);
+	ciphertext = oracle(payload);
+	bytes_free(payload);
+	struct bytes *ref0 = bytes_slice(ciphertext, off, blocksize);
+	bytes_free(ciphertext);
+	if (ref0 == NULL)
+		goto cleanup;
+	payload = bytes_repeated(blocksize, 0x1);
+	ciphertext = oracle(payload);
+	bytes_free(payload);
+	struct bytes *ref1 = bytes_slice(ciphertext, off, blocksize);
+	bytes_free(ciphertext);
+	if (ref1 == NULL)
+		goto cleanup;
+	/* decrease the payload one byte at a time */
+	for (size_t i = 1; i <= blocksize; i++) {
+		payload = bytes_repeated(blocksize - i, 0x0);
+		ciphertext = oracle(payload);
+		bytes_free(payload);
+		struct bytes *block0 = bytes_slice(ciphertext, off, blocksize);
+		bytes_free(ciphertext);
+		payload = bytes_repeated(blocksize - i, 0x1);
+		ciphertext = oracle(payload);
+		bytes_free(payload);
+		struct bytes *block1 = bytes_slice(ciphertext, off, blocksize);
+		bytes_free(ciphertext);
+		if (block0 == NULL || block1 == NULL) {
+			bytes_free(block1);
+			bytes_free(block0);
+			bytes_free(ref1);
+			bytes_free(ref0);
+			goto cleanup;
+		}
+		const int cmp0 = bytes_bcmp(ref0, block0);
+		const int cmp1 = bytes_bcmp(ref1, block1);
+		bytes_free(block0);
+		bytes_free(block1);
+		if (cmp0 != 0 || cmp1 != 0) {
+			prefixlen = prefixlen - blocksize + i - 1;
+			break;
+		}
+	}
+	bytes_free(ref1);
+	bytes_free(ref0);
+
+	/* FALLTHROUGH */
+recover:
+	/* now that we know both the (prefix + message) length and the prefix
+	   length, we can easily compute the exact message length */
+	msglen = totallen - prefixlen;
+	/* allocate the recovered message, initially filled with 0 */
+	recovered = bytes_zeroed(msglen);
+	if (recovered == NULL)
+		goto cleanup;
+	/* count of bytes to ignore, basically the prefix + prefix padding */
+	const size_t ignblock = prefixlen / blocksize + 1;
+	/* the length of the prefix padding we need to generate */
+	const size_t prefixpadlen = ignblock * blocksize - prefixlen;
+	/* count of block needed to hold the full message */
+	const size_t nblocks = msglen / blocksize + 1;
+	/* a buffer holding our attempt at cracking the message bytes */
+	payload = bytes_zeroed(prefixpadlen + nblocks * blocksize);
+	if (payload == NULL)
+		goto cleanup;
+	/* offset of the last block in the cipertexts, the one holding the byte
+	   we are guessing */
+	const size_t coffset = (ignblock + nblocks - 1) * blocksize;
+	/* processing loop, breaking one message byte at a time */
+	for (size_t i = 1; i <= msglen; i++) {
+		struct bytes *pre, *ct, *iblock;
+		/* the index of the byte we are breaking in this iteration in
+		   the ciphertext given by the oracle */
+		const size_t index = prefixpadlen + nblocks * blocksize - i;
+		/* pad the start of the choosen plaintext so that the byte at
+		   index is at the very end of the block at coffset */
+		pre = bytes_repeated(index, (uint8_t)'A');
+		ct = oracle(pre);
+		/* retrieve the block holding the byte we are guessing */
+		iblock = bytes_slice(ct, coffset, blocksize);
+		bytes_free(ct);
+		/*
+		 * Our guess payload is of the form [pre . guessed . guess].
+		 * Just like for iblock `pre' is leading, `guessed' are the byte
+		 * we already know and `guess' is our try for the byte at index.
+		 */
+		(void)bytes_put(payload, 0, pre);
+		(void)bytes_sput(payload, index, recovered, 0, i);
+		/* try each possible value for the byte until we find a match */
+		for (uint16_t byte = 0; byte <= UINT8_MAX; byte++) {
+			struct bytes *block;
+			payload->data[index + i - 1] = (uint8_t)byte;
+			ct = oracle(payload);
+			block = bytes_slice(ct, coffset, blocksize);
+			bytes_free(ct);
+			const int found = (bytes_bcmp(block, iblock) == 0);
+			bytes_free(block);
+			if (found) {
+				recovered->data[i - 1] = (uint8_t)byte;
+				break;
+			}
+		}
+		bytes_free(iblock);
+		bytes_free(pre);
+	}
+	bytes_free(payload);
+
+	success = 1;
+	/* FALLTHROUGH */
+cleanup:
+	if (!success) {
+		bytes_free(recovered);
+		recovered = NULL;
+	}
+	return (recovered);
 #undef oracle
 }

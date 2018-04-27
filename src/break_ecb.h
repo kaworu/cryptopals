@@ -51,7 +51,8 @@ int	ecb_cbc_detect(const struct bytes *buf);
  * Returns a pointer to a newly allocated bytes struct that should passed to
  * bytes_free(), or NULL if malloc(3) failed or if any given parameter is NULL.
  */
-struct bytes	*ecb_byte_at_a_time_oracle(const struct bytes *payload,
+struct bytes	*ecb_byte_at_a_time_oracle12(
+		    const struct bytes *payload,
 		    const struct bytes *message,
 		    const struct bytes *key);
 
@@ -61,7 +62,7 @@ struct bytes	*ecb_byte_at_a_time_oracle(const struct bytes *payload,
  * Returns a pointer to a newly allocated bytes struct that should passed to
  * bytes_free(), or NULL if malloc(3) failed or if any given parameter is NULL.
  */
-struct bytes	*ecb_byte_at_a_time_breaker(const void *message,
+struct bytes	*ecb_byte_at_a_time_breaker12(const void *message,
 		    const void *key);
 
 /*
@@ -91,5 +92,28 @@ struct cookie	*ecb_cut_and_paste_profile(const struct bytes *ciphertext,
  * bytes_free(), or NULL if malloc(3) failed or the Oracle failed.
  */
 struct bytes *ecb_cut_and_paste_profile_breaker(const void *key);
+
+/*
+ * ECB Encryption Oracle as described by Set 2 / Challenge 14.
+ *
+ * Returns a pointer to a newly allocated bytes struct that should passed to
+ * bytes_free(), or NULL if malloc(3) failed or if any given parameter is NULL.
+ */
+struct bytes	*ecb_byte_at_a_time_oracle14(
+		    const struct bytes *prefix,
+		    const struct bytes *payload,
+		    const struct bytes *message,
+		    const struct bytes *key);
+
+/*
+ * ECB Decryption Oracle as described by Set 2 / Challenge 14.
+ *
+ * Returns a pointer to a newly allocated bytes struct that should passed to
+ * bytes_free(), or NULL if malloc(3) failed or if any given parameter is NULL.
+ */
+struct bytes	*ecb_byte_at_a_time_breaker14(
+		    const void *prefix,
+		    const void *message,
+		    const void *key);
 
 #endif /* ndef BREAK_ECB_H */
