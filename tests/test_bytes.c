@@ -377,6 +377,60 @@ test_bytes_pkcs7_padded(const MunitParameter *params, void *data)
 }
 
 
+/* Set 2 / Challenge 15 */
+static MunitResult
+test_bytes_pkcs7_unpadded(const MunitParameter *params, void *data)
+{
+	const struct {
+		char *input;
+		char *expected;
+	} vectors[] = {
+		{ .input = "ICE ICE BABY\x04\x04\x04\x04", .expected = "ICE ICE BABY" },
+		{ .input = "ICE ICE BABY\x05\x05\x05\x05", .expected = NULL },
+		{ .input = "ICE ICE BABY\x01\x02\x03\x04", .expected = NULL },
+	};
+
+	for (size_t i = 0; i < (sizeof(vectors) / sizeof(*vectors)); i++) {
+		const char *input    = vectors[i].input;
+		const char *expected = vectors[i].expected;
+		struct bytes *buf = bytes_from_str(input);
+		if (buf == NULL)
+			munit_error("bytes_from_str");
+
+		struct bytes *unpadded = bytes_pkcs7_unpadded(buf);
+		if (expected == NULL) {
+			munit_assert_null(unpadded);
+		} else {
+			munit_assert_not_null(unpadded);
+			munit_assert_size(unpadded->len, ==, strlen(expected));
+			munit_assert_memory_equal(unpadded->len, unpadded->data, expected);
+		}
+
+		bytes_free(unpadded);
+		bytes_free(buf);
+	}
+
+	/* when NULL is given */
+	munit_assert_null(bytes_pkcs7_unpadded(NULL));
+
+	/* when an empty buffer is given */
+	struct bytes *empty = bytes_from_str("");
+	if (empty == NULL)
+		munit_error("bytes_from_str");
+	munit_assert_null(bytes_pkcs7_unpadded(empty));
+
+	/* when the buffer length is to short */
+	struct bytes *buf = bytes_from_str("foobar\x08");
+	if (buf == NULL)
+		munit_error("bytes_from_str");
+	munit_assert_null(bytes_pkcs7_unpadded(buf));
+
+	bytes_free(empty);
+	bytes_free(buf);
+	return (MUNIT_OK);
+}
+
+
 static MunitResult
 test_bytes_joined(const MunitParameter *params, void *data)
 {
@@ -842,6 +896,7 @@ MunitTest test_bytes_suite_tests[] = {
 	{ "bytes_bcmp",             test_bytes_bcmp,             NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bytes_timingsafe_bcmp",  test_bytes_timingsafe_bcmp,  NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bytes_pkcs7_padded",     test_bytes_pkcs7_padded,     NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "bytes_pkcs7_unpadded",   test_bytes_pkcs7_unpadded,   NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bytes_joined",           test_bytes_joined,           NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bytes_put",              test_bytes_put,              NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bytes_sput",             test_bytes_sput,             NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },

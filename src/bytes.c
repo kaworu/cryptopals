@@ -447,6 +447,27 @@ bytes_pkcs7_padded(const struct bytes *src, uint8_t k)
 
 
 struct bytes *
+bytes_pkcs7_unpadded(const struct bytes *src)
+{
+	/* sanity check */
+	if (src == NULL || src->len < 1)
+		return (NULL);
+
+	const uint8_t n = src->data[src->len - 1];
+	if (src->len < n)
+		return (NULL);
+
+	int err = 0;
+	for (size_t i = 1; i <= n; i++)
+		err |= (n ^ src->data[src->len - i]);
+	if (err)
+		return (NULL);
+
+	return (bytes_slice(src, 0, src->len - n));
+}
+
+
+struct bytes *
 bytes_joined(struct bytes *const *parts, size_t count)
 {
 	const struct bytes *const *parts_c = (const struct bytes *const *)parts;

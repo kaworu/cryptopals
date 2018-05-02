@@ -171,6 +171,15 @@ intmax_t	bytes_hamming_distance(const struct bytes *l,
 struct bytes	*bytes_pkcs7_padded(const struct bytes *src, uint8_t k);
 
 /*
+ * Returns a copy of the provided PCSK#7 padded buffer with the padding removed.
+ *
+ * Returns a pointer to a newly allocated bytes struct that should passed to
+ * bytes_free(). Returns NULL if the given pointer is NULL, or the padding was
+ * invalid, or malloc(3) failed.
+ */
+struct bytes	*bytes_pkcs7_unpadded(const struct bytes *src);
+
+/*
  * Create a new buffer that is the concatenation of all the provided buffers (in
  * order). Note that `parts' is not modified.
  *
