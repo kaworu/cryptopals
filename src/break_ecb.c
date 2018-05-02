@@ -523,7 +523,7 @@ recover:
 	payload = bytes_zeroed(prefixpadlen + nblocks * blocksize);
 	if (payload == NULL)
 		goto cleanup;
-	/* offset of the last block in the cipertexts, the one holding the byte
+	/* offset of the last block in the ciphertext, the one holding the byte
 	   we are guessing */
 	const size_t coffset = (ignblock + nblocks - 1) * blocksize;
 	/* processing loop, breaking one message byte at a time */
