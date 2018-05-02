@@ -145,12 +145,7 @@ aes_128_cbc_decrypt(const struct bytes *ciphertext,
 		goto cleanup;
 
 	/* remove padding */
-	if (padded->len == 0)
-		goto cleanup;
-	const uint8_t padding = padded->data[padded->len - 1];
-	if (padding > padded->len)
-		goto cleanup;
-	plaintext = bytes_slice(padded, /* offset */0, padded->len - padding);
+	plaintext = bytes_pkcs7_unpadded(padded);
 
 	success = 1;
 	/* FALLTHROUGH */
