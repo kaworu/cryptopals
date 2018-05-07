@@ -397,7 +397,7 @@ ecb_byte_at_a_time_breaker14(
 		}
 		bytes_free(ciphertext);
 	}
-	if (blocksize != expected_blocksize)
+	if (blocksize == 0 || blocksize != expected_blocksize)
 		goto cleanup;
 
 	/*
