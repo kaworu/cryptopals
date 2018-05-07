@@ -8,13 +8,14 @@
 
 /* stuff from other test files */
 extern MunitTest test_bytes_suite_tests[];
+extern MunitTest test_cookie_suite_tests[];
 extern MunitTest test_xor_suite_tests[];
 extern MunitTest test_break_plaintext_suite_tests[];
 extern MunitTest test_break_single_byte_xor_suite_tests[];
 extern MunitTest test_break_repeating_key_xor_suite_tests[];
 extern MunitTest test_aes_suite_tests[];
 extern MunitTest test_break_ecb_suite_tests[];
-extern MunitTest test_cookie_suite_tests[];
+extern MunitTest test_break_cbc_suite_tests[];
 
 static MunitSuite all_test_suites[] = {
 	{ "bytes/",  test_bytes_suite_tests,                   NULL, 1, MUNIT_SUITE_OPTION_NONE },
@@ -25,6 +26,7 @@ static MunitSuite all_test_suites[] = {
 	{ "rkx/",    test_break_repeating_key_xor_suite_tests, NULL, 1, MUNIT_SUITE_OPTION_NONE },
 	{ "aes/",    test_aes_suite_tests,                     NULL, 1, MUNIT_SUITE_OPTION_NONE },
 	{ "ecb/",    test_break_ecb_suite_tests,               NULL, 1, MUNIT_SUITE_OPTION_NONE },
+	{ "cbc/",    test_break_cbc_suite_tests,               NULL, 1, MUNIT_SUITE_OPTION_NONE },
 	{
 		.prefix     = NULL,
 		.tests      = NULL,
