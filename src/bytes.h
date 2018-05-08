@@ -162,7 +162,7 @@ intmax_t	bytes_hamming_distance(const struct bytes *l,
 		    const struct bytes *r);
 
 /*
- * Returns a copy of the provided buffer padded to `k' using PCSK#7.
+ * Returns a copy of the provided buffer padded to `k' using PKCS#7.
  *
  * Returns a pointer to a newly allocated bytes struct that should passed to
  * bytes_free(). Returns NULL if the given pointer is NULL, or k is zero, or
@@ -171,7 +171,7 @@ intmax_t	bytes_hamming_distance(const struct bytes *l,
 struct bytes	*bytes_pkcs7_padded(const struct bytes *src, uint8_t k);
 
 /*
- * Returns a copy of the provided PCSK#7 padded buffer with the padding removed.
+ * Returns a copy of the provided PKCS#7 padded buffer with the padding removed.
  *
  * Returns a pointer to a newly allocated bytes struct that should passed to
  * bytes_free(). Returns NULL if the given pointer is NULL, or the padding was
