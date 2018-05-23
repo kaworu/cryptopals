@@ -8,6 +8,7 @@
 
 /*
  * Taken from https://github.com/NetBSD/src/blob/0bff031265b50be8e8b7719aed82212928d6c1df/common/lib/libc/string/explicit_memset.c
+ * XXX: http://www.daemonology.net/blog/2014-09-05-erratum.html
  *
  * Written by Matthias Drochner <drochner@NetBSD.org>.
  * Public domain.
