@@ -446,24 +446,39 @@ bytes_pkcs7_padded(const struct bytes *src, uint8_t k)
 }
 
 
-struct bytes *
-bytes_pkcs7_unpadded(const struct bytes *src)
+int
+bytes_pkcs7_padding(const struct bytes *src, uint8_t *padding_p)
 {
-	/* sanity check */
+	/* sanity checks */
 	if (src == NULL || src->len < 1)
-		return (NULL);
+		return (-1);
 
 	const uint8_t n = src->data[src->len - 1];
 	if (src->len < n)
-		return (NULL);
+		return (1);
 
 	int err = 0;
 	for (size_t i = 1; i <= n; i++)
 		err |= (n ^ src->data[src->len - i]);
 	if (err)
-		return (NULL);
+		return (1);
 
-	return (bytes_slice(src, 0, src->len - n));
+	if (padding_p != NULL)
+		*padding_p = n;
+	return (0);
+}
+
+
+struct bytes *
+bytes_pkcs7_unpadded(const struct bytes *src)
+{
+	struct bytes *unpadded = NULL;
+	uint8_t padding = 0;
+
+	if (bytes_pkcs7_padding(src, &padding) == 0)
+		unpadded = bytes_slice(src, 0, src->len - padding);
+
+	return (unpadded);
 }
 
 

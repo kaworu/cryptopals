@@ -171,6 +171,15 @@ intmax_t	bytes_hamming_distance(const struct bytes *l,
 struct bytes	*bytes_pkcs7_padded(const struct bytes *src, uint8_t k);
 
 /*
+ * Compute the padding length of the provided buffer.
+ *
+ * Returns -1 if src is NULL or is empty, 0 if the given buffer is PKCS#7
+ * padded, 1 otherwise. When padding_p is not NULL and 0 is returned, padding_p
+ * is set to the computed padding.
+ */
+int	bytes_pkcs7_padding(const struct bytes *src, uint8_t *padding_p);
+
+/*
  * Returns a copy of the provided PKCS#7 padded buffer with the padding removed.
  *
  * Returns a pointer to a newly allocated bytes struct that should passed to

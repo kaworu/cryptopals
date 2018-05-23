@@ -377,6 +377,59 @@ test_bytes_pkcs7_padded(const MunitParameter *params, void *data)
 }
 
 
+static MunitResult
+test_bytes_pkcs7_padding(const MunitParameter *params, void *data)
+{
+	const struct {
+		char *input;
+		int padded;
+		uint8_t expected;
+	} vectors[] = {
+		{ .input = "ICE ICE BABY\x01",             .padded = 1, .expected = 1 },
+		{ .input = "ICE ICE BABY\x02\x02",         .padded = 1, .expected = 2 },
+		{ .input = "ICE ICE BABY\x03\x03\x03",     .padded = 1, .expected = 3 },
+		{ .input = "ICE ICE BABY\x04\x04\x04\x04", .padded = 1, .expected = 4 },
+		{ .input = "ICE ICE BABY\x05\x05\x05\x05", .padded = 0, .expected = 0 },
+		{ .input = "ICE ICE BABY\x01\x02\x03\x04", .padded = 0, .expected = 0 },
+	};
+
+	uint8_t padding = 0;
+	for (size_t i = 0; i < (sizeof(vectors) / sizeof(*vectors)); i++) {
+		const char *input      = vectors[i].input;
+		const int padded       = vectors[i].padded;
+		const uint8_t expected = vectors[i].expected;
+		struct bytes *buf = bytes_from_str(input);
+		if (buf == NULL)
+			munit_error("bytes_from_str");
+
+		const int ret = bytes_pkcs7_padding(buf, &padding);
+		if (padded == 0) {
+			munit_assert_int(ret, ==, 1);
+		} else {
+			munit_assert_int(ret, ==, 0);
+			munit_assert_uint8(padding, ==, expected);
+		}
+		munit_assert_int(bytes_pkcs7_padding(buf, NULL), ==, ret);
+
+		bytes_free(buf);
+	}
+
+	/* when NULL is given */
+	munit_assert_int(bytes_pkcs7_padding(NULL, &padding), ==, -1);
+	munit_assert_int(bytes_pkcs7_padding(NULL, NULL),     ==, -1);
+
+	/* when an empty buffer is given */
+	struct bytes *empty = bytes_from_str("");
+	if (empty == NULL)
+		munit_error("bytes_from_str");
+	munit_assert_int(bytes_pkcs7_padding(empty, &padding), ==, -1);
+	munit_assert_int(bytes_pkcs7_padding(empty, NULL),     ==, -1);
+
+	bytes_free(empty);
+	return (MUNIT_OK);
+}
+
+
 /* Set 2 / Challenge 15 */
 static MunitResult
 test_bytes_pkcs7_unpadded(const MunitParameter *params, void *data)
@@ -896,6 +949,7 @@ MunitTest test_bytes_suite_tests[] = {
 	{ "bytes_bcmp",             test_bytes_bcmp,             NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bytes_timingsafe_bcmp",  test_bytes_timingsafe_bcmp,  NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bytes_pkcs7_padded",     test_bytes_pkcs7_padded,     NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "bytes_pkcs7_padding",    test_bytes_pkcs7_padding,    NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bytes_pkcs7_unpadded",   test_bytes_pkcs7_unpadded,   NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bytes_joined",           test_bytes_joined,           NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bytes_put",              test_bytes_put,              NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
