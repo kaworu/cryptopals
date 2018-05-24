@@ -92,23 +92,28 @@ int
 cbc_bitflipping_verifier(const struct bytes *ciphertext,
 		    const struct bytes *key, const struct bytes *iv)
 {
-	struct bytes *plaintext = NULL;
-	char *s = NULL;
-	int success = 0;
-	int admin = 0;
+	struct bytes *plaintext = NULL, *target = NULL;
+	int success = 0, admin = -1;
 
+	target = bytes_from_str(";admin=true;");
 	plaintext = aes_128_cbc_decrypt(ciphertext, key, iv);
-	s = bytes_to_str(plaintext);
-	if (s == NULL)
-		goto cleanup;
 
-	admin = (strstr(s, ";admin=true;") != NULL);
+	switch (bytes_find(plaintext, target, NULL)) {
+	case 0:
+		admin = 1;
+		break;
+	case 1:
+		admin = 0;
+		break;
+	default:
+		goto cleanup;
+	}
 
 	success = 1;
 	/* FALLTHROUGH */
 cleanup:
-	freezero(s, s == NULL ? 0 : strlen(s));
 	bytes_free(plaintext);
+	bytes_free(target);
 	return (success ? admin : -1);
 }
 
