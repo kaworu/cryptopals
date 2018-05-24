@@ -33,4 +33,21 @@ int		cbc_bitflipping_verifier(const struct bytes *ciphertext,
  */
 struct bytes	*cbc_bitflipping_breaker(const void *key, const void *iv);
 
+/*
+ * CBC Decryption Oracle as described by Set 3 / Challenge 17.
+ *
+ * Returns 0 if the padding is valid, 1 if the padding is invalid, -1 on error.
+ */
+int	cbc_padding_oracle(const struct bytes *ciphertext,
+	    const struct bytes *key, const struct bytes *iv);
+
+/*
+ * CBC Attack as described by Set 3 / Challenge 17.
+ *
+ * Returns a pointer to a newly allocated bytes struct that should passed to
+ * bytes_free(), or NULL if malloc(3) failed or if any given parameter is NULL.
+ */
+struct bytes	*cbc_padding_breaker(const struct bytes *ciphertext,
+		    const void *key, const struct bytes *iv);
+
 #endif /* ndef BREAK_CBC_H */
