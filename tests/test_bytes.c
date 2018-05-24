@@ -325,6 +325,69 @@ test_bytes_timingsafe_bcmp(const MunitParameter *params, void *data)
 	return (MUNIT_OK);
 }
 
+static MunitResult
+test_bytes_find(const MunitParameter *params, void *data)
+{
+	const struct {
+		char *needle;
+		char *haystack;
+	} vectors[] = {
+		{ .needle = "foobar", .haystack = "foobar" },
+		{ .needle = "foo",    .haystack = "foobar" },
+		{ .needle = "oo",     .haystack = "foobar" },
+		{ .needle = "o",      .haystack = "foobar" },
+		{ .needle = "bar",    .haystack = "foobar" },
+		{ .needle = "r",      .haystack = "foobar" },
+		{ .needle = "a",      .haystack = "foobar" },
+	};
+
+	size_t index = 0;
+	for (size_t i = 0; i < (sizeof(vectors) / sizeof(*vectors)); i++) {
+		const char *needle   = vectors[i].needle;
+		const char *haystack = vectors[i].haystack;
+		const char *p = strstr(haystack, needle);
+		struct bytes *needle_b   = bytes_from_str(needle);
+		struct bytes *haystack_b = bytes_from_str(haystack);
+		if (needle_b == NULL || haystack_b == NULL)
+			munit_error("bytes_from_str");
+
+		const int ret  = bytes_find(haystack_b, needle_b, &index);
+		const int nret = bytes_find(haystack_b, needle_b, NULL);
+		munit_assert_int(ret, ==, nret);
+
+		if (p == NULL) {
+			munit_assert_int(ret, ==, 1);
+		} else {
+			munit_assert_int(ret, ==, 0);
+			const size_t expected = p - haystack;
+			munit_assert_int(index, ==, expected);
+		}
+
+		bytes_free(haystack_b);
+		bytes_free(needle_b);
+	}
+
+	/* when NULL is given */
+	struct bytes *buf = bytes_from_str("foobar");
+	if (buf == NULL)
+		munit_error("bytes_from_str");
+	munit_assert_int(bytes_find(NULL, buf, NULL),   ==, -1);
+	munit_assert_int(bytes_find(NULL, buf, &index), ==, -1);
+	munit_assert_int(bytes_find(buf, NULL, NULL),   ==, -1);
+	munit_assert_int(bytes_find(buf, NULL, &index), ==, -1);
+
+	/* when an empty buffer is given */
+	struct bytes *empty = bytes_from_str("");
+	if (empty == NULL)
+		munit_error("bytes_from_str");
+	munit_assert_int(bytes_find(buf, empty, NULL),   ==, -1);
+	munit_assert_int(bytes_find(buf, empty, &index), ==, -1);
+
+	bytes_free(empty);
+	bytes_free(buf);
+	return (MUNIT_OK);
+}
+
 
 /* Set 2 / Challenge 9 */
 static MunitResult
@@ -948,6 +1011,7 @@ MunitTest test_bytes_suite_tests[] = {
 	{ "bytes_dup",              test_bytes_dup,              NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bytes_bcmp",             test_bytes_bcmp,             NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bytes_timingsafe_bcmp",  test_bytes_timingsafe_bcmp,  NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "bytes_find",             test_bytes_find,             NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bytes_pkcs7_padded",     test_bytes_pkcs7_padded,     NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bytes_pkcs7_padding",    test_bytes_pkcs7_padding,    NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bytes_pkcs7_unpadded",   test_bytes_pkcs7_unpadded,   NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },

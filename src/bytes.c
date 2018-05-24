@@ -340,6 +340,41 @@ bytes_timingsafe_bcmp(const struct bytes *a, const struct bytes *b)
 }
 
 
+int
+bytes_find(const struct bytes *haystack, const struct bytes *needle,
+		    size_t *index_p)
+{
+	int found = -1;
+	int success = 0;
+
+	if (needle == NULL || haystack == NULL)
+		goto cleanup;
+	if (needle->len == 0)
+		goto cleanup;
+
+	size_t i;
+	for (i = 0; i < haystack->len; i++) {
+		if (haystack->data[i] != needle->data[0])
+			continue;
+		if (i + needle->len > haystack->len)
+			continue;
+		if (memcmp(haystack->data + i, needle->data, needle->len) == 0)
+			break;
+	}
+	found = (i < haystack->len);
+
+	if (found && index_p != NULL)
+		*index_p = i;
+
+	success = 1;
+	/* FALLTHROUGH */
+cleanup:
+	if (!success)
+		return (-1);
+	return (found ? 0 : -1);
+}
+
+
 struct bytes *
 bytes_slice(const struct bytes *src, size_t offset, size_t len)
 {

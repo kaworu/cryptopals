@@ -118,6 +118,16 @@ int	bytes_bcmp(const struct bytes *a, const struct bytes *b);
 int	bytes_timingsafe_bcmp(const struct bytes *a, const struct bytes *b);
 
 /*
+ * Find the byte sequence from needle in haystack.
+ *
+ * Returns 0 on success and set index_p to the index of the first matching byte
+ * in haystack, 1 if needle was not found in haystack, -1 either needle or
+ * haystack is NULL or if needle is empty.
+ */
+int	bytes_find(const struct bytes *haystack, const struct bytes *needle,
+		    size_t *index_p);
+
+/*
  * Create a bytes struct from a slice of another source bytes struct.
  *
  * Returns a pointer to a newly allocated bytes struct that should passed to
