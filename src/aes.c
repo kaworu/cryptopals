@@ -190,6 +190,8 @@ aes_128_ecb_crypt(const struct bytes *in, const struct bytes *key, int enc,
 		goto cleanup;
 	if (EVP_CipherInit_ex(ctx, NULL, NULL, key->data, NULL, -1) != 1)
 		goto cleanup;
+
+	/* setup the context cipher padding */
 	if (EVP_CIPHER_CTX_set_padding(ctx, padding) != 1)
 		goto cleanup;
 
