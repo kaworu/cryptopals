@@ -478,6 +478,13 @@ test_bytes_pkcs7_padding(const MunitParameter *params, void *data)
 		bytes_free(buf);
 	}
 
+	/* when a buffer with 0x0 at the end is given */
+	struct bytes *buf = bytes_from_raw("ICE ICE BABY\x00", 13);
+	if (buf == NULL)
+		munit_error("bytes_from_raw");
+	munit_assert_int(bytes_pkcs7_padding(buf, &padding), ==, 1);
+	munit_assert_int(bytes_pkcs7_padding(buf, NULL),     ==, 1);
+
 	/* when NULL is given */
 	munit_assert_int(bytes_pkcs7_padding(NULL, &padding), ==, -1);
 	munit_assert_int(bytes_pkcs7_padding(NULL, NULL),     ==, -1);
@@ -490,6 +497,7 @@ test_bytes_pkcs7_padding(const MunitParameter *params, void *data)
 	munit_assert_int(bytes_pkcs7_padding(empty, NULL),     ==, -1);
 
 	bytes_free(empty);
+	bytes_free(buf);
 	return (MUNIT_OK);
 }
 

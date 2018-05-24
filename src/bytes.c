@@ -489,7 +489,7 @@ bytes_pkcs7_padding(const struct bytes *src, uint8_t *padding_p)
 		return (-1);
 
 	const uint8_t n = src->data[src->len - 1];
-	if (src->len < n)
+	if (n == 0 || src->len < n)
 		return (1);
 
 	int err = 0;
