@@ -128,18 +128,18 @@ cbc_bitflipping_breaker(const void *key, const void *iv)
 	const size_t prefixlen = strlen(CBC_BITFLIPPING_PREFIX);
 	const size_t padlen = prefixlen % blocksize == 0 ? 0 :
 		    blocksize - strlen(CBC_BITFLIPPING_PREFIX) % blocksize;
-	pad = bytes_repeated(padlen, (uint8_t)'A');
+	pad = bytes_repeated(padlen, 'A');
 
 	/* generate a full block on which we will hack the bytes in order to
 	   bitflip the block right after it */
 	const size_t sblock = (prefixlen + padlen) / blocksize;
-	scrambled = bytes_repeated(blocksize, 0x0);
+	scrambled = bytes_repeated(blocksize, 'X');
 
 	/* the admin=true payload. We use a comma (,), dash (-), to be flipped
 	   into a semi-colon (;), respectively equal (=). */
-	const size_t sci = sblock * blocksize + 1;
-	const size_t eqi = sblock * blocksize + 7;
-	admin = bytes_from_str("X,admin-true");
+	const size_t sci = sblock * blocksize + 0;
+	const size_t eqi = sblock * blocksize + 6;
+	admin = bytes_from_str(",admin-true");
 
 	/* generate the ciphertext using the oracle */
 	const struct bytes *const parts[] = { pad, scrambled, admin };
