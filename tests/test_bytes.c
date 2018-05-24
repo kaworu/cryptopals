@@ -339,6 +339,7 @@ test_bytes_find(const MunitParameter *params, void *data)
 		{ .needle = "bar",    .haystack = "foobar" },
 		{ .needle = "r",      .haystack = "foobar" },
 		{ .needle = "a",      .haystack = "foobar" },
+		{ .needle = "nope",   .haystack = "foobar" },
 	};
 
 	size_t index = 0;

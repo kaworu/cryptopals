@@ -371,7 +371,7 @@ bytes_find(const struct bytes *haystack, const struct bytes *needle,
 cleanup:
 	if (!success)
 		return (-1);
-	return (found ? 0 : -1);
+	return (found ? 0 : 1);
 }
 
 
