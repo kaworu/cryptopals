@@ -25,6 +25,7 @@ set(SRCS
     ${PROJECT_SOURCE_DIR}/src/break_plaintext.c
     ${PROJECT_SOURCE_DIR}/src/break_single_byte_xor.c
     ${PROJECT_SOURCE_DIR}/src/break_repeating_key_xor.c
+    ${PROJECT_SOURCE_DIR}/src/nope.c
     ${PROJECT_SOURCE_DIR}/src/aes.c
     ${PROJECT_SOURCE_DIR}/src/break_ecb.c
     ${PROJECT_SOURCE_DIR}/src/break_cbc.c
@@ -76,6 +77,7 @@ set(TEST_SRCS
     ${PROJECT_SOURCE_DIR}/tests/test_break_plaintext.c
     ${PROJECT_SOURCE_DIR}/tests/test_break_single_byte_xor.c
     ${PROJECT_SOURCE_DIR}/tests/test_break_repeating_key_xor.c
+    ${PROJECT_SOURCE_DIR}/tests/test_nope.c
     ${PROJECT_SOURCE_DIR}/tests/test_aes.c
     ${PROJECT_SOURCE_DIR}/tests/test_break_ecb.c
     ${PROJECT_SOURCE_DIR}/tests/test_break_cbc.c
