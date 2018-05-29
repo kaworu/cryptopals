@@ -658,10 +658,6 @@ test_bytes_put(const MunitParameter *params, void *data)
 	munit_assert_int(bytes_put(dest, 1, src), ==, -1);
 	munit_assert_size(dest->len, ==, strlen("foobar"));
 	munit_assert_memory_equal(dest->len, dest->data, "foobar");
-	/* same dest and src */
-	munit_assert_int(bytes_put(dest, 0, dest), ==, -1);
-	munit_assert_size(dest->len, ==, strlen("foobar"));
-	munit_assert_memory_equal(dest->len, dest->data, "foobar");
 
 	bytes_free(dest);
 	bytes_free(src);
@@ -725,10 +721,6 @@ test_bytes_sput(const MunitParameter *params, void *data)
 	munit_assert_memory_equal(dest->len, dest->data, "foobar");
 	/* off-by-one offset / soffset / src length */
 	munit_assert_int(bytes_sput(dest, 2, src, 1, dest->len), ==, -1);
-	munit_assert_size(dest->len, ==, strlen("foobar"));
-	munit_assert_memory_equal(dest->len, dest->data, "foobar");
-	/* same dest and src */
-	munit_assert_int(bytes_sput(dest, 0, dest, 0, dest->len), ==, -1);
 	munit_assert_size(dest->len, ==, strlen("foobar"));
 	munit_assert_memory_equal(dest->len, dest->data, "foobar");
 

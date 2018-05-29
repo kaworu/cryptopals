@@ -211,16 +211,16 @@ struct bytes	*bytes_joined_const(const struct bytes *const *parts, size_t count)
 /*
  * Copy all the bytes from src into dest starting at a given offset.
  *
- * Returns 0 on succes, -1 if either argument is NULL, dest and src are the
- * same buffer, or if the copy would result in an out-of-bound write.
+ * Returns 0 on succes, -1 if either argument is NULL or if the copy would
+ * result in an out-of-bound write.
  */
 int	bytes_put(struct bytes *dest, size_t offset, const struct bytes *src);
 
 /*
  * Copy a slice from src into dest starting at a given offset.
  *
- * Returns 0 on succes, -1 if either argument is NULL, dest and src are the
- * same buffer, or if the copy would result in an out-of-bound read or write.
+ * Returns 0 on succes, -1 if either argument is NULL or if the copy would
+ * result in an out-of-bound read or write.
  */
 int	bytes_sput(struct bytes *dest, size_t offset,
 		    const struct bytes *src, size_t soffset, size_t slen);

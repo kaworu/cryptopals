@@ -581,14 +581,14 @@ bytes_sput(struct bytes *dest, size_t offset,
 		    const struct bytes *src, size_t soffset, size_t slen)
 {
 	/* sanity checks */
-	if (dest == NULL || src == NULL || dest == src)
+	if (dest == NULL || src == NULL)
 		return (-1);
 	if (soffset + slen > src->len)
 		return (-1);
 	if (offset + slen > dest->len)
 		return (-1);
 
-	(void)memcpy(dest->data + offset, src->data + soffset, slen);
+	(void)memmove(dest->data + offset, src->data + soffset, slen);
 	return (0);
 }
 
