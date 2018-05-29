@@ -10,11 +10,6 @@
 
 
 /*
- * Returns a copy of the provided input, regardless of the given key.
- */
-struct bytes	*nope_crypt(const struct bytes *input, const struct bytes *key);
-
-/*
  * Returns this block cipher key length in bytes, zero.
  */
 size_t	nope_keylength(void);
@@ -24,15 +19,20 @@ size_t	nope_keylength(void);
  */
 size_t	nope_blocksize(void);
 
+/*
+ * Returns a copy of the provided input, regardless of the given key.
+ */
+struct bytes	*nope_crypt(const struct bytes *input, const struct bytes *key);
+
 
 /*
  * expose the nope routines as a block cipher
  */
 static const struct block_cipher nope = {
+	.keylength = nope_keylength,
+	.blocksize = nope_blocksize,
 	.encrypt   = nope_crypt,
 	.decrypt   = nope_crypt,
-	.blocksize = nope_blocksize,
-	.keylength = nope_keylength,
 };
 
 #endif /* ndef NOPE_H */

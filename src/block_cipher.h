@@ -13,10 +13,10 @@
  * operation.
  */
 struct block_cipher {
-	/* this block cipher's block size in bytes */
-	size_t	(*blocksize)(void);
 	/* this block cipher's expected key length in bytes */
 	size_t	(*keylength)(void);
+	/* this block cipher's block size in bytes */
+	size_t	(*blocksize)(void);
 	/* primitive routine used for encrypting */
 	struct bytes	*(*encrypt)(const struct bytes *input, const struct bytes *key);
 	/* primitive routine used for decrypting */

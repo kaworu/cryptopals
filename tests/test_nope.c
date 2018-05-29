@@ -6,6 +6,24 @@
 #include "nope.h"
 
 
+static MunitResult
+test_nope_keylength(const MunitParameter *params, void *data)
+{
+	const size_t len = nope_keylength();
+	munit_assert_size(len, ==, 0);
+	return (MUNIT_OK);
+}
+
+
+static MunitResult
+test_nope_blocksize(const MunitParameter *params, void *data)
+{
+	const size_t len = nope_blocksize();
+	munit_assert_size(len, ==, 16);
+	return (MUNIT_OK);
+}
+
+
 /* Error conditions */
 static MunitResult
 test_nope_crypt_0(const MunitParameter *params, void *data)
@@ -56,24 +74,6 @@ test_nope_crypt_1(const MunitParameter *params, void *data)
 
 	bytes_free(key);
 	bytes_free(plaintext);
-	return (MUNIT_OK);
-}
-
-
-static MunitResult
-test_nope_keylength(const MunitParameter *params, void *data)
-{
-	const size_t len = nope_keylength();
-	munit_assert_size(len, ==, 0);
-	return (MUNIT_OK);
-}
-
-
-static MunitResult
-test_nope_blocksize(const MunitParameter *params, void *data)
-{
-	const size_t len = nope_blocksize();
-	munit_assert_size(len, ==, 16);
 	return (MUNIT_OK);
 }
 
