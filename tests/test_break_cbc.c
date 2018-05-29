@@ -3,7 +3,7 @@
  */
 #include "munit.h"
 #include "helpers.h"
-#include "aes.h"
+#include "cbc.h"
 #include "break_cbc.h"
 #include "test_break_cbc.h"
 

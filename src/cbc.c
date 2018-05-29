@@ -1,9 +1,10 @@
 /*
- * ecb.c
+ * cbc.c
  *
- * Electronic Codebook mode of operation.
+ * Cipher Block Chaining mode of operation.
  */
-#include "ecb.h"
+#include "xor.h"
+#include "cbc.h"
 #include "nope.h"
 #include "aes.h"
 
@@ -11,55 +12,64 @@
 /*
  * Encrypt the given plaintext under the provided key.
  */
-struct bytes	*ecb_encrypt(const struct block_cipher *impl,
-		    const struct bytes *plaintext, const struct bytes *key);
+struct bytes	*cbc_encrypt(const struct block_cipher *impl,
+		    const struct bytes *plaintext, const struct bytes *key,
+		    const struct bytes *iv);
 
 /*
  * Decrypt the given ciphertext using the provided key.
  */
-struct bytes	*ecb_decrypt(const struct block_cipher *impl,
-		    const struct bytes *ciphertext, const struct bytes *key);
+struct bytes	*cbc_decrypt(const struct block_cipher *impl,
+		    const struct bytes *ciphertext, const struct bytes *key,
+		    const struct bytes *iv);
 
 
 struct bytes *
-nope_ecb_encrypt(const struct bytes *plaintext, const struct bytes *key)
+nope_cbc_encrypt(const struct bytes *plaintext, const struct bytes *key,
+		    const struct bytes *iv)
 {
-	return (ecb_encrypt(&nope, plaintext, key));
+	return (cbc_encrypt(&nope, plaintext, key, iv));
 }
 
 
 struct bytes *
-nope_ecb_decrypt(const struct bytes *ciphertext, const struct bytes *key)
+nope_cbc_decrypt(const struct bytes *ciphertext, const struct bytes *key,
+		    const struct bytes *iv)
 {
-	return (ecb_decrypt(&nope, ciphertext, key));
+	return (cbc_decrypt(&nope, ciphertext, key, iv));
 }
 
 
 struct bytes *
-aes_128_ecb_encrypt(const struct bytes *plaintext, const struct bytes *key)
+aes_128_cbc_encrypt(const struct bytes *plaintext, const struct bytes *key,
+		    const struct bytes *iv)
 {
-	return (ecb_encrypt(&aes_128, plaintext, key));
+	return (cbc_encrypt(&aes_128, plaintext, key, iv));
 }
 
 
 struct bytes *
-aes_128_ecb_decrypt(const struct bytes *ciphertext, const struct bytes *key)
+aes_128_cbc_decrypt(const struct bytes *ciphertext, const struct bytes *key,
+		    const struct bytes *iv)
 {
-	return (ecb_decrypt(&aes_128, ciphertext, key));
+	return (cbc_decrypt(&aes_128, ciphertext, key, iv));
 }
 
 
 struct bytes *
-ecb_encrypt(const struct block_cipher *impl, const struct bytes *plaintext,
-		    const struct bytes *key)
+cbc_encrypt(const struct block_cipher *impl, const struct bytes *plaintext,
+		    const struct bytes *key, const struct bytes *iv)
 {
-	struct bytes *padded = NULL, *ciphertext = NULL;
+	struct bytes *prevblock = NULL, *padded = NULL, *ciphertext = NULL;
 	int success = 0;
 
-	if (impl == NULL || plaintext == NULL)
+	if (impl == NULL || plaintext == NULL || iv == NULL)
 		goto cleanup;
 
 	const size_t blocksize = impl->blocksize();
+	if (iv->len != blocksize)
+		goto cleanup;
+
 	/* pad the plaintext to the cipher block size */
 	padded = bytes_pkcs7_padded(plaintext, blocksize);
 	if (padded == NULL)
@@ -78,11 +88,17 @@ ecb_encrypt(const struct block_cipher *impl, const struct bytes *plaintext,
 		const size_t offset = i * blocksize;
 		/* get the current plaintext block */
 		ptblock = bytes_slice(padded, offset, blocksize);
-		/* the ciphertext block is the plaintext block encrypted */
+		/* add the previous block (the iv on the first iteration) to
+		   the plaintext block */
+		err |= bytes_xor(ptblock, i == 0 ? iv : prevblock);
+		/* the ciphertext block is the xored block encrypted */
 		ctblock = impl->encrypt(ptblock, key);
 		bytes_free(ptblock);
+		/* add the computed block to to the ciphertext */
 		err |= bytes_put(ciphertext, offset, ctblock);
-		bytes_free(ctblock);
+		/* save the current ciphertext block for the next iteration */
+		bytes_free(prevblock);
+		prevblock = ctblock;
 	}
 	if (err)
 		goto cleanup;
@@ -90,6 +106,7 @@ ecb_encrypt(const struct block_cipher *impl, const struct bytes *plaintext,
 	success = 1;
 	/* FALLTHROUGH */
 cleanup:
+	bytes_free(prevblock);
 	bytes_free(padded);
 	if (!success) {
 		bytes_free(ciphertext);
@@ -100,10 +117,10 @@ cleanup:
 
 
 struct bytes *
-ecb_decrypt(const struct block_cipher *impl, const struct bytes *ciphertext,
-		    const struct bytes *key)
+cbc_decrypt(const struct block_cipher *impl, const struct bytes *ciphertext,
+		    const struct bytes *key, const struct bytes *iv)
 {
-	struct bytes *plaintext = NULL, *unpadded = NULL;
+	struct bytes *prevblock = NULL, *plaintext = NULL, *unpadded = NULL;
 	int success = 0;
 
 	if (impl == NULL || ciphertext == NULL)
@@ -127,9 +144,14 @@ ecb_decrypt(const struct block_cipher *impl, const struct bytes *ciphertext,
 		const size_t offset = i * blocksize;
 		/* get the current ciphertext block */
 		ctblock = bytes_slice(ciphertext, offset, blocksize);
-		/* the plaintext block is the decrypted ciphertext block */
+		/* decrypt it, the result is not the plaintext block yet */
 		ptblock = impl->decrypt(ctblock, key);
-		bytes_free(ctblock);
+		/* add the previous block (the iv on the first iteration) to
+		   the decrypted one to find the plaintext block */
+		err |= bytes_xor(ptblock, i == 0 ? iv : prevblock);
+		/* save the current ciphertext block for the next iteration */
+		bytes_free(prevblock);
+		prevblock = ctblock;
 		/* populate the padded plaintext */
 		err |= bytes_put(plaintext, offset, ptblock);
 		bytes_free(ptblock);
@@ -145,6 +167,7 @@ ecb_decrypt(const struct block_cipher *impl, const struct bytes *ciphertext,
 	success = 1;
 	/* FALLTHROUGH */
 cleanup:
+	bytes_free(prevblock);
 	bytes_free(plaintext);
 	if (!success) {
 		bytes_free(unpadded);

@@ -11,14 +11,15 @@
 #include "compat.h"
 #include "cookie.h"
 #include "aes.h"
+#include "ecb.h"
+#include "cbc.h"
 #include "break_ecb.h"
 
 
 int
 ecb_detect(const struct bytes *buf, double *score_p)
 {
-	const EVP_CIPHER *cipher = EVP_aes_128_ecb();
-	const size_t blocksize = EVP_CIPHER_block_size(cipher);
+	const size_t blocksize = aes_128_blocksize();
 	size_t nmatch = 0;
 	int success = 0;
 
@@ -58,7 +59,6 @@ cleanup:
 struct bytes *
 ecb_cbc_encryption_oracle(const struct bytes *input, int *ecb)
 {
-	const EVP_CIPHER *cipher = EVP_aes_128_cbc();
 	struct bytes *random = NULL, *before = NULL, *after = NULL;
 	struct bytes *padded = NULL;
 	struct bytes *key = NULL, *iv = NULL, *output = NULL;
@@ -74,9 +74,9 @@ ecb_cbc_encryption_oracle(const struct bytes *input, int *ecb)
 		goto cleanup;
 
 	/* random key generation */
-	key = bytes_randomized((size_t)EVP_CIPHER_key_length(cipher));
+	key = bytes_randomized(aes_128_keylength());
 	/* random IV generation */
-	iv = bytes_randomized((size_t)EVP_CIPHER_iv_length(cipher));
+	iv = bytes_randomized(aes_128_blocksize());
 
 	/* leading pad */
 	before = bytes_randomized(5 + random->data[0] % 6);
@@ -118,8 +118,7 @@ cleanup:
 struct bytes *
 ecb_cbc_detect_input(void)
 {
-	const EVP_CIPHER *cipher = EVP_aes_128_ecb();
-	const size_t blocksize = EVP_CIPHER_block_size(cipher);
+	const size_t blocksize = aes_128_blocksize();
 
 	/*
 	 * The oracle will pad with 5 to 10 bytes. Thus, this first and last
@@ -135,8 +134,7 @@ ecb_cbc_detect_input(void)
 int
 ecb_cbc_detect(const struct bytes *buf)
 {
-	const EVP_CIPHER *cipher = EVP_aes_128_ecb();
-	const size_t blocksize = EVP_CIPHER_block_size(cipher);
+	const size_t blocksize = aes_128_blocksize();
 	struct bytes *blocks = NULL;
 	int ecb = -1;
 	int success = 0;
@@ -253,7 +251,7 @@ ecb_cut_and_paste_profile_breaker(const void *key)
 	 * We could find the blocksize, expansion length, and detect ECB here
 	 * just like in ecb_byte_at_a_time_breaker() but let's skip this part.
 	 */
-	const size_t blocksize = EVP_CIPHER_block_size(EVP_aes_128_ecb());
+	const size_t blocksize = aes_128_blocksize();
 	const size_t explen = strlen("email=&uid=??&role=user");
 
 	/*
@@ -366,8 +364,7 @@ ecb_byte_at_a_time_breaker14(
 		    const void *key)
 {
 #define oracle(x)	ecb_byte_at_a_time_oracle14(prefix, (x), message, key)
-	const EVP_CIPHER *cipher = EVP_aes_128_ecb();
-	const size_t expected_blocksize = EVP_CIPHER_block_size(cipher);
+	const size_t expected_blocksize = aes_128_blocksize();
 	size_t blocksize = 0;
 	size_t totallen = 0, prefixlen = 0, msglen = 0;
 	struct bytes *payload = NULL, *ciphertext = NULL;

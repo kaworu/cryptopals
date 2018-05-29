@@ -4,45 +4,36 @@
  * aes.h
  *
  * AES stuff for cryptopals.com challenges.
- *
- * Mosty just wrapping the OpenSSL API.
  */
 #include "bytes.h"
+#include "block_cipher.h"
 
 
 /*
- * Encrypt a given plaintext via AES-128 in ECB mode under the provided key.
- *
- * Returns the ciphertext or NULL on error.
+ * Encrypt/Decrypt the given input under the provided key.
  */
-struct bytes	*aes_128_ecb_encrypt(const struct bytes *plaintext,
-		    const struct bytes *key);
+struct bytes	*aes_128_encrypt(const struct bytes *input, const struct bytes *key);
+struct bytes	*aes_128_decrypt(const struct bytes *input, const struct bytes *key);
 
 /*
- * Decrypt a given ciphertext encrypted via AES-128 in ECB mode under the
- * provided key.
- *
- * Returns the plaintext or NULL on error.
+ * Returns this block cipher key length in bytes, 16.
  */
-struct bytes	*aes_128_ecb_decrypt(const struct bytes *ciphertext,
-		    const struct bytes *key);
+size_t	aes_128_keylength(void);
 
 /*
- * Encrypt a given plaintext via AES-128 in CBC mode under the provided key with
- * the given IV.
- *
- * Returns the ciphertext or NULL on error.
+ * Returns this block cipher block size in bytes, 16.
  */
-struct bytes	*aes_128_cbc_encrypt(const struct bytes *plaintext,
-		    const struct bytes *key, const struct bytes *iv);
+size_t	aes_128_blocksize(void);
+
 
 /*
- * Decrypt a given ciphertext encrypted via AES-128 in CBC mode under the
- * provided key with the given IV.
- *
- * Returns the plaintext or NULL on error.
+ * expose the aes_128 routines as a block cipher
  */
-struct bytes	*aes_128_cbc_decrypt(const struct bytes *ciphertext,
-		    const struct bytes *key, const struct bytes *iv);
+static const struct block_cipher aes_128 = {
+	.encrypt   = aes_128_encrypt,
+	.decrypt   = aes_128_decrypt,
+	.blocksize = aes_128_blocksize,
+	.keylength = aes_128_keylength,
+};
 
 #endif /* ndef AES_H */

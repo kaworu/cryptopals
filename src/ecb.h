@@ -17,4 +17,10 @@ struct bytes	*nope_ecb_encrypt(const struct bytes *plaintext,
 struct bytes	*nope_ecb_decrypt(const struct bytes *ciphertext,
 		    const struct bytes *key);
 
+/* AES-128 */
+struct bytes	*aes_128_ecb_encrypt(const struct bytes *plaintext,
+		    const struct bytes *key);
+struct bytes	*aes_128_ecb_decrypt(const struct bytes *ciphertext,
+		    const struct bytes *key);
+
 #endif /* ndef ECB_H */

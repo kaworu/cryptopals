@@ -11,6 +11,7 @@
 #include "compat.h"
 #include "xor.h"
 #include "aes.h"
+#include "cbc.h"
 #include "break_cbc.h"
 
 #define	CBC_BITFLIPPING_PREFIX	"comment1=cooking%20MCs;userdata="
@@ -123,8 +124,7 @@ struct bytes *
 cbc_bitflipping_breaker(const void *key, const void *iv)
 {
 #define oracle(x)	cbc_bitflipping_oracle((x), key, iv)
-	const EVP_CIPHER *cipher = EVP_aes_128_cbc();
-	const size_t blocksize = EVP_CIPHER_block_size(cipher);
+	const size_t blocksize = aes_128_blocksize();
 	struct bytes *pad = NULL, *scrambled = NULL;
 	struct bytes *admin = NULL, *payload = NULL, *ciphertext = NULL;
 	int success = 0;
@@ -259,8 +259,7 @@ cbc_padding_breaker(const struct bytes *ciphertext,
 		    const void *key, const struct bytes *iv)
 {
 #define oracle(x, iv)	cbc_padding_oracle((x), key, (iv))
-	const EVP_CIPHER *cipher = EVP_aes_128_cbc();
-	const size_t blocksize = EVP_CIPHER_block_size(cipher);
+	const size_t blocksize = aes_128_blocksize();
 	size_t nblocks = 0;
 	struct bytes *padded = NULL, *plaintext = NULL;
 	int success = 0;
