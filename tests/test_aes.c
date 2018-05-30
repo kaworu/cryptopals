@@ -121,19 +121,19 @@ test_aes_128_encrypt_0(const MunitParameter *params, void *data)
 	}
 
 	/* when NULL is given */
-	munit_assert_null(aes_128_encrypt(NULL,  NULL));
-	munit_assert_null(aes_128_encrypt(input, NULL));
-	munit_assert_null(aes_128_encrypt(NULL,  expkey));
+	munit_assert_int(aes_128_encrypt(NULL,  NULL), ==, -1);
+	munit_assert_int(aes_128_encrypt(input, NULL), ==, -1);
+	munit_assert_int(aes_128_encrypt(NULL,  expkey), ==, -1);
 
 	/* when the expanded key length is wrong */
-	munit_assert_null(aes_128_encrypt(input, empty));
-	munit_assert_null(aes_128_encrypt(input, short_expkey));
-	munit_assert_null(aes_128_encrypt(input, long_expkey));
+	munit_assert_int(aes_128_encrypt(input, empty), ==, -1);
+	munit_assert_int(aes_128_encrypt(input, short_expkey), ==, -1);
+	munit_assert_int(aes_128_encrypt(input, long_expkey), ==, -1);
 
 	/* when the input length is wrong */
-	munit_assert_null(aes_128_encrypt(empty, expkey));
-	munit_assert_null(aes_128_encrypt(short_input, expkey));
-	munit_assert_null(aes_128_encrypt(long_input, expkey));
+	munit_assert_int(aes_128_encrypt(empty, expkey), ==, -1);
+	munit_assert_int(aes_128_encrypt(short_input, expkey), ==, -1);
+	munit_assert_int(aes_128_encrypt(long_input, expkey), ==, -1);
 
 	munit_assert_int(aes_128_encrypt == aes_128.encrypt, ==, 1);
 
@@ -155,24 +155,23 @@ test_aes_128_encrypt_1(const MunitParameter *params, void *data)
 	 * see Appendix C.1 of
 	 * https://csrc.nist.gov/csrc/media/publications/fips/197/final/documents/fips-197.pdf
 	 */
-	struct bytes *plaintext = bytes_from_hex("00112233445566778899aabbccddeeff");
-	struct bytes *key       = bytes_from_hex("000102030405060708090a0b0c0d0e0f");
-	struct bytes *expected  = bytes_from_hex("69c4e0d86a7b0430d8cdb78070b4c55a");
+	struct bytes *block    = bytes_from_hex("00112233445566778899aabbccddeeff");
+	struct bytes *key      = bytes_from_hex("000102030405060708090a0b0c0d0e0f");
+	struct bytes *expected = bytes_from_hex("69c4e0d86a7b0430d8cdb78070b4c55a");
 
 	struct bytes *expkey = aes_128_expand_key(key);
 	if (expkey == NULL)
 		munit_error("aes_128_expand_key");
 
-	struct bytes *ciphertext = aes_128_encrypt(plaintext, expkey);
-	munit_assert_not_null(ciphertext);
-	munit_assert_size(ciphertext->len, ==, expected->len);
-	munit_assert_memory_equal(ciphertext->len, ciphertext->data, expected->data);
+	const int ret =  aes_128_encrypt(block, expkey);
+	munit_assert_int(ret, ==, 0);
+	munit_assert_size(block->len, ==, expected->len);
+	munit_assert_memory_equal(block->len, block->data, expected->data);
 
-	bytes_free(ciphertext);
 	bytes_free(expkey);
 	bytes_free(expected);
 	bytes_free(key);
-	bytes_free(plaintext);
+	bytes_free(block);
 
 	return (MUNIT_OK);
 }
@@ -196,19 +195,19 @@ test_aes_128_decrypt_0(const MunitParameter *params, void *data)
 	}
 
 	/* when NULL is given */
-	munit_assert_null(aes_128_decrypt(NULL,  NULL));
-	munit_assert_null(aes_128_decrypt(input, NULL));
-	munit_assert_null(aes_128_decrypt(NULL,  expkey));
+	munit_assert_int(aes_128_decrypt(NULL,  NULL), ==, -1);
+	munit_assert_int(aes_128_decrypt(input, NULL), ==, -1);
+	munit_assert_int(aes_128_decrypt(NULL,  expkey), ==, -1);
 
 	/* when the expanded key length is wrong */
-	munit_assert_null(aes_128_decrypt(input, empty));
-	munit_assert_null(aes_128_decrypt(input, short_expkey));
-	munit_assert_null(aes_128_decrypt(input, long_expkey));
+	munit_assert_int(aes_128_decrypt(input, empty), ==, -1);
+	munit_assert_int(aes_128_decrypt(input, short_expkey), ==, -1);
+	munit_assert_int(aes_128_decrypt(input, long_expkey), ==, -1);
 
 	/* when the input length is wrong */
-	munit_assert_null(aes_128_decrypt(empty, expkey));
-	munit_assert_null(aes_128_decrypt(short_input, expkey));
-	munit_assert_null(aes_128_decrypt(long_input, expkey));
+	munit_assert_int(aes_128_decrypt(empty, expkey), ==, -1);
+	munit_assert_int(aes_128_decrypt(short_input, expkey), ==, -1);
+	munit_assert_int(aes_128_decrypt(long_input, expkey), ==, -1);
 
 	munit_assert_int(aes_128_decrypt == aes_128.decrypt, ==, 1);
 
@@ -230,24 +229,23 @@ test_aes_128_decrypt_1(const MunitParameter *params, void *data)
 	 * see Appendix C.1 of
 	 * https://csrc.nist.gov/csrc/media/publications/fips/197/final/documents/fips-197.pdf
 	 */
-	struct bytes *ciphertext = bytes_from_hex("69c4e0d86a7b0430d8cdb78070b4c55a");
-	struct bytes *key        = bytes_from_hex("000102030405060708090a0b0c0d0e0f");
-	struct bytes *expected   = bytes_from_hex("00112233445566778899aabbccddeeff");
+	struct bytes *block     = bytes_from_hex("69c4e0d86a7b0430d8cdb78070b4c55a");
+	struct bytes *key       = bytes_from_hex("000102030405060708090a0b0c0d0e0f");
+	struct bytes *expected  = bytes_from_hex("00112233445566778899aabbccddeeff");
 
 	struct bytes *expkey = aes_128_expand_key(key);
 	if (expkey == NULL)
 		munit_error("aes_128_expand_key");
 
-	struct bytes *plaintext = aes_128_decrypt(ciphertext, expkey);
-	munit_assert_not_null(plaintext);
-	munit_assert_size(plaintext->len, ==, expected->len);
-	munit_assert_memory_equal(plaintext->len, plaintext->data, expected->data);
+	const int ret = aes_128_decrypt(block, expkey);
+	munit_assert_int(ret, ==, 0);
+	munit_assert_size(block->len, ==, expected->len);
+	munit_assert_memory_equal(block->len, block->data, expected->data);
 
-	bytes_free(plaintext);
 	bytes_free(expkey);
 	bytes_free(expected);
 	bytes_free(key);
-	bytes_free(ciphertext);
+	bytes_free(block);
 
 	return (MUNIT_OK);
 }

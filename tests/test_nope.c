@@ -103,19 +103,19 @@ test_nope_crypt_0(const MunitParameter *params, void *data)
 	}
 
 	/* when NULL is given */
-	munit_assert_null(nope_crypt(NULL,  NULL));
-	munit_assert_null(nope_crypt(input, NULL));
-	munit_assert_null(nope_crypt(NULL,  expkey));
+	munit_assert_int(nope_crypt(NULL,  NULL), ==, -1);
+	munit_assert_int(nope_crypt(input, NULL), ==, -1);
+	munit_assert_int(nope_crypt(NULL,  expkey), ==, -1);
 
 	/* when the expanded key length is wrong */
-	munit_assert_null(nope_crypt(input, empty));
-	munit_assert_null(nope_crypt(input, short_expkey));
-	munit_assert_null(nope_crypt(input, long_expkey));
+	munit_assert_int(nope_crypt(input, empty), ==, -1);
+	munit_assert_int(nope_crypt(input, short_expkey), ==, -1);
+	munit_assert_int(nope_crypt(input, long_expkey), ==, -1);
 
 	/* when the input length is wrong */
-	munit_assert_null(nope_crypt(empty, expkey));
-	munit_assert_null(nope_crypt(short_input, expkey));
-	munit_assert_null(nope_crypt(long_input, expkey));
+	munit_assert_int(nope_crypt(empty, expkey), ==, -1);
+	munit_assert_int(nope_crypt(short_input, expkey), ==, -1);
+	munit_assert_int(nope_crypt(long_input, expkey), ==, -1);
 
 	munit_assert_int(nope_crypt == nope.encrypt, ==, 1);
 	munit_assert_int(nope_crypt == nope.decrypt, ==, 1);
@@ -134,8 +134,9 @@ test_nope_crypt_0(const MunitParameter *params, void *data)
 static MunitResult
 test_nope_crypt_1(const MunitParameter *params, void *data)
 {
-	struct bytes *plaintext = bytes_from_str("YELLOW SUBMARINE");
-	if (plaintext == NULL)
+	const char *plaintext = "YELLOW SUBMARINE";
+	struct bytes *block = bytes_from_str(plaintext);
+	if (block == NULL)
 		munit_error("bytes_from_str");
 	struct bytes *key = bytes_randomized(nope_keylength());
 	if (key == NULL)
@@ -144,15 +145,14 @@ test_nope_crypt_1(const MunitParameter *params, void *data)
 	if (expkey == NULL)
 		munit_error("nope_expand_key");
 
-	struct bytes *ciphertext = nope_crypt(plaintext, expkey);
-	munit_assert_not_null(ciphertext);
-	munit_assert_size(ciphertext->len, ==, plaintext->len);
-	munit_assert_memory_equal(plaintext->len, ciphertext->data, plaintext->data);
+	const int ret = nope_crypt(block, expkey);
+	munit_assert_int(ret, ==, 0);
+	munit_assert_size(block->len, ==, strlen(plaintext));
+	munit_assert_memory_equal(block->len, block->data, plaintext);
 
-	bytes_free(ciphertext);
 	bytes_free(expkey);
 	bytes_free(key);
-	bytes_free(plaintext);
+	bytes_free(block);
 	return (MUNIT_OK);
 }
 

@@ -55,14 +55,14 @@ cleanup:
 }
 
 
-struct bytes *
-nope_crypt(const struct bytes *input, const struct bytes *expkey)
+int
+nope_crypt(struct bytes *block, const struct bytes *expkey)
 {
 	/* sanity checks */
-	if (input == NULL || input->len != nope_blocksize())
-		return (NULL);
+	if (block == NULL || block->len != nope_blocksize())
+		return (-1);
 	if (expkey == NULL || expkey->len != nope_expkeylength())
-		return (NULL);
+		return (-1);
 
-	return (bytes_dup(input));
+	return (0);
 }

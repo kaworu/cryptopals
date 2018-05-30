@@ -33,12 +33,11 @@ size_t	aes_128_blocksize(void);
 struct bytes	*aes_128_expand_key(const struct bytes *key);
 
 /*
- * Encrypt/Decrypt the given input under the provided expanded key.
+ * Encrypt/Decrypt the given block under the provided expanded key. Returns 0 on
+ * success and -1 on failure.
  */
-struct bytes	*aes_128_encrypt(const struct bytes *input,
-		    const struct bytes *expkey);
-struct bytes	*aes_128_decrypt(const struct bytes *input,
-		    const struct bytes *expkey);
+int	aes_128_encrypt(struct bytes *block, const struct bytes *expkey);
+int	aes_128_decrypt(struct bytes *block, const struct bytes *expkey);
 
 
 /*

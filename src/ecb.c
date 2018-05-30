@@ -79,15 +79,14 @@ ecb_encrypt(const struct block_cipher *impl, const struct bytes *plaintext,
 	/* main encryption loop, process each block in order. */
 	int err = 0;
 	for (size_t i = 0; i < nblock; i++) {
-		struct bytes *ptblock, *ctblock;
 		const size_t offset = i * blocksize;
 		/* get the current plaintext block */
-		ptblock = bytes_slice(padded, offset, blocksize);
-		/* the ciphertext block is the plaintext block encrypted */
-		ctblock = impl->encrypt(ptblock, expkey);
-		bytes_free(ptblock);
-		err |= bytes_put(ciphertext, offset, ctblock);
-		bytes_free(ctblock);
+		struct bytes *block = bytes_slice(padded, offset, blocksize);
+		/* encrypt it */
+		err |= impl->encrypt(block, expkey);
+		/* add the encrypted block to the ciphertext */
+		err |= bytes_put(ciphertext, offset, block);
+		bytes_free(block);
 	}
 	if (err)
 		goto cleanup;
@@ -134,16 +133,15 @@ ecb_decrypt(const struct block_cipher *impl, const struct bytes *ciphertext,
 	/* main decryption loop, process each block in order. */
 	int err = 0;
 	for (size_t i = 0; i < nblock; i++) {
-		struct bytes *ctblock, *ptblock;
+		struct bytes *block;
 		const size_t offset = i * blocksize;
 		/* get the current ciphertext block */
-		ctblock = bytes_slice(ciphertext, offset, blocksize);
-		/* the plaintext block is the decrypted ciphertext block */
-		ptblock = impl->decrypt(ctblock, expkey);
-		bytes_free(ctblock);
+		block = bytes_slice(ciphertext, offset, blocksize);
+		/* decrypt the block */
+		err |= impl->decrypt(block, expkey);
 		/* populate the padded plaintext */
-		err |= bytes_put(plaintext, offset, ptblock);
-		bytes_free(ptblock);
+		err |= bytes_put(plaintext, offset, block);
+		bytes_free(block);
 	}
 	if (err)
 		goto cleanup;

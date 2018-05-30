@@ -22,9 +22,9 @@ struct block_cipher {
 	/* perform the key expansion */
 	struct bytes	*(*expand_key)(const struct bytes *key);
 	/* primitive routine used for encrypting */
-	struct bytes	*(*encrypt)(const struct bytes *input, const struct bytes *expkey);
+	int	(*encrypt)(struct bytes *block, const struct bytes *expkey);
 	/* primitive routine used for decrypting */
-	struct bytes	*(*decrypt)(const struct bytes *input, const struct bytes *expkey);
+	int	(*decrypt)(struct bytes *block, const struct bytes *expkey);
 };
 
 #endif /* ndef BLOCK_CIPHER_H */

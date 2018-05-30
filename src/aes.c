@@ -289,22 +289,17 @@ cleanup:
 }
 
 
-struct bytes *
-aes_128_encrypt(const struct bytes *input, const struct bytes *expkey)
+int
+aes_128_encrypt(struct bytes *block, const struct bytes *expkey)
 {
+	struct bytes *state = block;
 	size_t round = 0;
-	struct bytes *state = NULL;
 	int success = 0;
 
 	/* sanity checks */
-	if (input == NULL || input->len != aes_128_blocksize())
+	if (state == NULL || state->len != aes_128_blocksize())
 		goto cleanup;
 	if (expkey == NULL || expkey->len != aes_128_expkeylength())
-		goto cleanup;
-
-	/* FIXME: use only one state, refactor ecb, cbc, and nope */
-	state = bytes_dup(input);
-	if (state == NULL)
 		goto cleanup;
 
 	aes_add_round_key(state, expkey, round);
@@ -322,30 +317,21 @@ aes_128_encrypt(const struct bytes *input, const struct bytes *expkey)
 	success = 1;
 	/* FALLTHROUGH */
 cleanup:
-	if (!success) {
-		bytes_free(state);
-		state = NULL;
-	}
-	return (state);
+	return (success ? 0 : -1);
 }
 
 
-struct bytes *
-aes_128_decrypt(const struct bytes *input, const struct bytes *expkey)
+int
+aes_128_decrypt(struct bytes *block, const struct bytes *expkey)
 {
+	struct bytes *state = block;
 	size_t round = aes_128_rounds();
-	struct bytes *state = NULL;
 	int success = 0;
 
 	/* sanity checks */
-	if (input == NULL || input->len != aes_128_blocksize())
+	if (state == NULL || state->len != aes_128_blocksize())
 		goto cleanup;
 	if (expkey == NULL || expkey->len != aes_128_expkeylength())
-		goto cleanup;
-
-	/* FIXME: use only one state, refactor ecb, cbc, and nope */
-	state = bytes_dup(input);
-	if (state == NULL)
 		goto cleanup;
 
 	aes_add_round_key(state, expkey, round);
@@ -362,11 +348,7 @@ aes_128_decrypt(const struct bytes *input, const struct bytes *expkey)
 	success = 1;
 	/* FALLTHROUGH */
 cleanup:
-	if (!success) {
-		bytes_free(state);
-		state = NULL;
-	}
-	return (state);
+	return (success ? 0 : -1);
 }
 
 

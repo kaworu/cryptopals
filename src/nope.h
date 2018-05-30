@@ -33,9 +33,10 @@ size_t	nope_blocksize(void);
 struct bytes	*nope_expand_key(const struct bytes *key);
 
 /*
- * Returns a copy of the provided input, regardless of the given expanded key.
+ * Do nothing beside checking the argument lengths. Returns 0 on success and -1
+ * on failure.
  */
-struct bytes	*nope_crypt(const struct bytes *input, const struct bytes *expkey);
+int	nope_crypt(struct bytes *block, const struct bytes *expkey);
 
 
 /*
