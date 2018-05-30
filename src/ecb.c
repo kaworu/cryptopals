@@ -53,10 +53,15 @@ struct bytes *
 ecb_encrypt(const struct block_cipher *impl, const struct bytes *plaintext,
 		    const struct bytes *key)
 {
-	struct bytes *padded = NULL, *ciphertext = NULL;
+	struct bytes *expkey = NULL, *padded = NULL, *ciphertext = NULL;
 	int success = 0;
 
+	/* sanity checks */
 	if (impl == NULL || plaintext == NULL)
+		goto cleanup;
+
+	expkey = impl->expand_key(key);
+	if (expkey == NULL)
 		goto cleanup;
 
 	const size_t blocksize = impl->blocksize();
@@ -79,7 +84,7 @@ ecb_encrypt(const struct block_cipher *impl, const struct bytes *plaintext,
 		/* get the current plaintext block */
 		ptblock = bytes_slice(padded, offset, blocksize);
 		/* the ciphertext block is the plaintext block encrypted */
-		ctblock = impl->encrypt(ptblock, key);
+		ctblock = impl->encrypt(ptblock, expkey);
 		bytes_free(ptblock);
 		err |= bytes_put(ciphertext, offset, ctblock);
 		bytes_free(ctblock);
@@ -90,6 +95,7 @@ ecb_encrypt(const struct block_cipher *impl, const struct bytes *plaintext,
 	success = 1;
 	/* FALLTHROUGH */
 cleanup:
+	bytes_free(expkey);
 	bytes_free(padded);
 	if (!success) {
 		bytes_free(ciphertext);
@@ -103,10 +109,15 @@ struct bytes *
 ecb_decrypt(const struct block_cipher *impl, const struct bytes *ciphertext,
 		    const struct bytes *key)
 {
-	struct bytes *plaintext = NULL, *unpadded = NULL;
+	struct bytes *expkey = NULL, *plaintext = NULL, *unpadded = NULL;
 	int success = 0;
 
+	/* sanity checks */
 	if (impl == NULL || ciphertext == NULL)
+		goto cleanup;
+
+	expkey = impl->expand_key(key);
+	if (expkey == NULL)
 		goto cleanup;
 
 	const size_t blocksize = impl->blocksize();
@@ -128,7 +139,7 @@ ecb_decrypt(const struct block_cipher *impl, const struct bytes *ciphertext,
 		/* get the current ciphertext block */
 		ctblock = bytes_slice(ciphertext, offset, blocksize);
 		/* the plaintext block is the decrypted ciphertext block */
-		ptblock = impl->decrypt(ctblock, key);
+		ptblock = impl->decrypt(ctblock, expkey);
 		bytes_free(ctblock);
 		/* populate the padded plaintext */
 		err |= bytes_put(plaintext, offset, ptblock);
@@ -145,6 +156,7 @@ ecb_decrypt(const struct block_cipher *impl, const struct bytes *ciphertext,
 	success = 1;
 	/* FALLTHROUGH */
 cleanup:
+	bytes_free(expkey);
 	bytes_free(plaintext);
 	if (!success) {
 		bytes_free(unpadded);

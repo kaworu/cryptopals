@@ -189,6 +189,7 @@ static const uint8_t rgf_14[256] = {
 
 
 /* AES round helpers */
+static size_t	aes_128_rounds(void);
 static void	aes_add_round_key(struct bytes *state, const struct bytes *expkey, size_t round);
 static void	aes_shift_rows(uint8_t *p);
 static void	aes_inv_shift_rows(uint8_t *p);
@@ -207,103 +208,16 @@ aes_128_keylength(void)
 
 
 size_t
-aes_128_blocksize(void)
+aes_128_expkeylength(void)
 {
-	return (16);
-}
-
-
-struct bytes *
-aes_128_encrypt(const struct bytes *input, const struct bytes *key)
-{
-	size_t round = 0;
-	struct bytes *state = NULL, *expkey = NULL;
-	int success = 0;
-
-	if (input == NULL || input->len != aes_128_blocksize())
-		goto cleanup;
-
-	/* FIXME: extract the key expansion to be done by the mode */
-	expkey = aes_128_expand_key(key);
-	if (expkey == NULL)
-		goto cleanup;
-
-	/* FIXME: use only one state, refactor ecb, cbc, and nope */
-	state = bytes_dup(input);
-	if (state == NULL)
-		goto cleanup;
-
-	aes_add_round_key(state, expkey, round);
-	const size_t nrounds = aes_128_rounds();
-	for (round = 1; round < nrounds; round++) {
-		aes_substitute(state->data, state->len, sbox);
-		aes_shift_rows(state->data);
-		aes_mix_columns(state->data);
-		aes_add_round_key(state, expkey, round);
-	}
-	aes_substitute(state->data, state->len, sbox);
-	aes_shift_rows(state->data);
-	aes_add_round_key(state, expkey, round);
-
-	success = 1;
-	/* FALLTHROUGH */
-cleanup:
-	bytes_free(expkey);
-	if (!success) {
-		bytes_free(state);
-		state = NULL;
-	}
-	return (state);
-}
-
-
-struct bytes *
-aes_128_decrypt(const struct bytes *input, const struct bytes *key)
-{
-	size_t round = aes_128_rounds();
-	struct bytes *state = NULL, *expkey = NULL;
-	int success = 0;
-
-	if (input == NULL || input->len != aes_128_blocksize())
-		goto cleanup;
-
-	/* FIXME: extract the key expansion to be done by the mode */
-	expkey = aes_128_expand_key(key);
-	if (expkey == NULL)
-		goto cleanup;
-
-	/* FIXME: use only one state, refactor ecb, cbc, and nope */
-	state = bytes_dup(input);
-	if (state == NULL)
-		goto cleanup;
-
-	aes_add_round_key(state, expkey, round);
-	for (round = round - 1; round > 0; round--) {
-		aes_inv_shift_rows(state->data);
-		aes_substitute(state->data, state->len, inv_sbox);
-		aes_add_round_key(state, expkey, round);
-		aes_inv_mix_columns(state->data);
-	}
-	aes_inv_shift_rows(state->data);
-	aes_substitute(state->data, state->len, inv_sbox);
-	aes_add_round_key(state, expkey, round);
-
-	success = 1;
-	/* FALLTHROUGH */
-cleanup:
-	bytes_free(expkey);
-	if (!success) {
-		bytes_free(state);
-		state = NULL;
-	}
-	return (state);
+	return (176);
 }
 
 
 size_t
-aes_128_rounds(void)
+aes_128_blocksize(void)
 {
-	return (10);
+	return (16);
 }
 
 
@@ -318,6 +232,7 @@ aes_128_expand_key(const struct bytes *key)
 	int success = 0;
 	size_t len = 0;
 
+	/* sanity checks */
 	if (key == NULL || key->len != aes_128_keylength())
 		goto cleanup;
 
@@ -371,6 +286,94 @@ cleanup:
 		expanded = NULL;
 	}
 	return (expanded);
+}
+
+
+struct bytes *
+aes_128_encrypt(const struct bytes *input, const struct bytes *expkey)
+{
+	size_t round = 0;
+	struct bytes *state = NULL;
+	int success = 0;
+
+	/* sanity checks */
+	if (input == NULL || input->len != aes_128_blocksize())
+		goto cleanup;
+	if (expkey == NULL || expkey->len != aes_128_expkeylength())
+		goto cleanup;
+
+	/* FIXME: use only one state, refactor ecb, cbc, and nope */
+	state = bytes_dup(input);
+	if (state == NULL)
+		goto cleanup;
+
+	aes_add_round_key(state, expkey, round);
+	const size_t nrounds = aes_128_rounds();
+	for (round = 1; round < nrounds; round++) {
+		aes_substitute(state->data, state->len, sbox);
+		aes_shift_rows(state->data);
+		aes_mix_columns(state->data);
+		aes_add_round_key(state, expkey, round);
+	}
+	aes_substitute(state->data, state->len, sbox);
+	aes_shift_rows(state->data);
+	aes_add_round_key(state, expkey, round);
+
+	success = 1;
+	/* FALLTHROUGH */
+cleanup:
+	if (!success) {
+		bytes_free(state);
+		state = NULL;
+	}
+	return (state);
+}
+
+
+struct bytes *
+aes_128_decrypt(const struct bytes *input, const struct bytes *expkey)
+{
+	size_t round = aes_128_rounds();
+	struct bytes *state = NULL;
+	int success = 0;
+
+	/* sanity checks */
+	if (input == NULL || input->len != aes_128_blocksize())
+		goto cleanup;
+	if (expkey == NULL || expkey->len != aes_128_expkeylength())
+		goto cleanup;
+
+	/* FIXME: use only one state, refactor ecb, cbc, and nope */
+	state = bytes_dup(input);
+	if (state == NULL)
+		goto cleanup;
+
+	aes_add_round_key(state, expkey, round);
+	for (round = round - 1; round > 0; round--) {
+		aes_inv_shift_rows(state->data);
+		aes_substitute(state->data, state->len, inv_sbox);
+		aes_add_round_key(state, expkey, round);
+		aes_inv_mix_columns(state->data);
+	}
+	aes_inv_shift_rows(state->data);
+	aes_substitute(state->data, state->len, inv_sbox);
+	aes_add_round_key(state, expkey, round);
+
+	success = 1;
+	/* FALLTHROUGH */
+cleanup:
+	if (!success) {
+		bytes_free(state);
+		state = NULL;
+	}
+	return (state);
+}
+
+
+static size_t
+aes_128_rounds(void)
+{
+	return (10);
 }
 
 

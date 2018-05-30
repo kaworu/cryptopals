@@ -60,10 +60,15 @@ struct bytes *
 cbc_encrypt(const struct block_cipher *impl, const struct bytes *plaintext,
 		    const struct bytes *key, const struct bytes *iv)
 {
-	struct bytes *prevblock = NULL, *padded = NULL, *ciphertext = NULL;
+	struct bytes *expkey = NULL, *prevblock = NULL, *padded = NULL,
+		     *ciphertext = NULL;
 	int success = 0;
 
 	if (impl == NULL || plaintext == NULL || iv == NULL)
+		goto cleanup;
+
+	expkey = impl->expand_key(key);
+	if (expkey == NULL)
 		goto cleanup;
 
 	const size_t blocksize = impl->blocksize();
@@ -92,7 +97,7 @@ cbc_encrypt(const struct block_cipher *impl, const struct bytes *plaintext,
 		   the plaintext block */
 		err |= bytes_xor(ptblock, i == 0 ? iv : prevblock);
 		/* the ciphertext block is the xored block encrypted */
-		ctblock = impl->encrypt(ptblock, key);
+		ctblock = impl->encrypt(ptblock, expkey);
 		bytes_free(ptblock);
 		/* add the computed block to to the ciphertext */
 		err |= bytes_put(ciphertext, offset, ctblock);
@@ -106,6 +111,7 @@ cbc_encrypt(const struct block_cipher *impl, const struct bytes *plaintext,
 	success = 1;
 	/* FALLTHROUGH */
 cleanup:
+	bytes_free(expkey);
 	bytes_free(prevblock);
 	bytes_free(padded);
 	if (!success) {
@@ -120,10 +126,15 @@ struct bytes *
 cbc_decrypt(const struct block_cipher *impl, const struct bytes *ciphertext,
 		    const struct bytes *key, const struct bytes *iv)
 {
-	struct bytes *prevblock = NULL, *plaintext = NULL, *unpadded = NULL;
+	struct bytes *expkey = NULL, *prevblock = NULL, *plaintext = NULL,
+		     *unpadded = NULL;
 	int success = 0;
 
 	if (impl == NULL || ciphertext == NULL)
+		goto cleanup;
+
+	expkey = impl->expand_key(key);
+	if (expkey == NULL)
 		goto cleanup;
 
 	const size_t blocksize = impl->blocksize();
@@ -145,7 +156,7 @@ cbc_decrypt(const struct block_cipher *impl, const struct bytes *ciphertext,
 		/* get the current ciphertext block */
 		ctblock = bytes_slice(ciphertext, offset, blocksize);
 		/* decrypt it, the result is not the plaintext block yet */
-		ptblock = impl->decrypt(ctblock, key);
+		ptblock = impl->decrypt(ctblock, expkey);
 		/* add the previous block (the iv on the first iteration) to
 		   the decrypted one to find the plaintext block */
 		err |= bytes_xor(ptblock, i == 0 ? iv : prevblock);
@@ -167,6 +178,7 @@ cbc_decrypt(const struct block_cipher *impl, const struct bytes *ciphertext,
 	success = 1;
 	/* FALLTHROUGH */
 cleanup:
+	bytes_free(expkey);
 	bytes_free(prevblock);
 	bytes_free(plaintext);
 	if (!success) {

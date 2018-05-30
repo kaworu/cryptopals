@@ -65,15 +65,8 @@ test_nope_cbc_encrypt_1(const MunitParameter *params, void *data)
 	munit_assert_size(ciphertext->len, ==, expected->len);
 	munit_assert_memory_equal(ciphertext->len, ciphertext->data,
 		    expected->data);
-	bytes_free(ciphertext);
-	/* with NULL as key */
-	ciphertext = nope_cbc_encrypt(plaintext, NULL, iv);
-	munit_assert_not_null(ciphertext);
-	munit_assert_size(ciphertext->len, ==, expected->len);
-	munit_assert_memory_equal(ciphertext->len, ciphertext->data,
-		    expected->data);
-	bytes_free(ciphertext);
 
+	bytes_free(ciphertext);
 	bytes_free(key);
 	bytes_free(expected);
 	bytes_free(plaintext);
@@ -138,15 +131,8 @@ test_nope_cbc_decrypt_1(const MunitParameter *params, void *data)
 	munit_assert_size(plaintext->len, ==, expected->len);
 	munit_assert_memory_equal(plaintext->len, plaintext->data,
 		    expected->data);
-	bytes_free(plaintext);
-	/* with NULL as key */
-	plaintext = nope_cbc_decrypt(ciphertext, NULL, iv);
-	munit_assert_not_null(plaintext);
-	munit_assert_size(plaintext->len, ==, expected->len);
-	munit_assert_memory_equal(plaintext->len, plaintext->data,
-		    expected->data);
-	bytes_free(plaintext);
 
+	bytes_free(plaintext);
 	bytes_free(key);
 	bytes_free(expected);
 	bytes_free(ciphertext);

@@ -40,18 +40,12 @@ test_nope_ecb_encrypt_1(const MunitParameter *params, void *data)
 		if (expected == NULL || expected->len % blocksize != 0)
 			munit_error("bytes_pkcs7_padded");
 
-		struct bytes *ciphertext = nope_ecb_encrypt(plaintext, NULL);
+		struct bytes *ciphertext = nope_ecb_encrypt(plaintext, key);
 		munit_assert_not_null(ciphertext);
 		munit_assert_size(ciphertext->len, ==, expected->len);
 		munit_assert_memory_equal(ciphertext->len, ciphertext->data, expected->data);
-		bytes_free(ciphertext);
 
-		ciphertext = nope_ecb_encrypt(plaintext, key);
-		munit_assert_not_null(ciphertext);
-		munit_assert_size(ciphertext->len, ==, expected->len);
-		munit_assert_memory_equal(ciphertext->len, ciphertext->data, expected->data);
 		bytes_free(ciphertext);
-
 		bytes_free(expected);
 		bytes_free(plaintext);
 		bytes_free(key);
@@ -102,18 +96,12 @@ test_nope_ecb_decrypt_1(const MunitParameter *params, void *data)
 		if (ciphertext == NULL || ciphertext->len % blocksize != 0)
 			munit_error("bytes_pkcs7_padded");
 
-		struct bytes *plaintext = nope_ecb_decrypt(ciphertext, NULL);
+		struct bytes *plaintext = nope_ecb_decrypt(ciphertext, key);
 		munit_assert_not_null(plaintext);
 		munit_assert_size(plaintext->len, ==, expected->len);
 		munit_assert_memory_equal(plaintext->len, plaintext->data, expected->data);
-		bytes_free(plaintext);
 
-		plaintext = nope_ecb_decrypt(ciphertext, key);
-		munit_assert_not_null(plaintext);
-		munit_assert_size(plaintext->len, ==, expected->len);
-		munit_assert_memory_equal(plaintext->len, plaintext->data, expected->data);
 		bytes_free(plaintext);
-
 		bytes_free(ciphertext);
 		bytes_free(expected);
 		bytes_free(key);
