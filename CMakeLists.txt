@@ -32,6 +32,7 @@ set(SRCS
     ${PROJECT_SOURCE_DIR}/src/ctr.c
     ${PROJECT_SOURCE_DIR}/src/break_ecb.c
     ${PROJECT_SOURCE_DIR}/src/break_cbc.c
+    ${PROJECT_SOURCE_DIR}/src/break_ctr.c
     ${PROJECT_SOURCE_DIR}/src/cookie.c
 )
 include_directories("${PROJECT_SOURCE_DIR}/src")
@@ -87,6 +88,7 @@ set(TEST_SRCS
     ${PROJECT_SOURCE_DIR}/tests/test_ctr.c
     ${PROJECT_SOURCE_DIR}/tests/test_break_ecb.c
     ${PROJECT_SOURCE_DIR}/tests/test_break_cbc.c
+    ${PROJECT_SOURCE_DIR}/tests/test_break_ctr.c
     ${PROJECT_SOURCE_DIR}/tests/test_cookie.c
     ${PROJECT_SOURCE_DIR}/tests/helpers.c
     ${PROJECT_SOURCE_DIR}/tests/main.c
