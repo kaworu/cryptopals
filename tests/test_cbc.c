@@ -21,13 +21,13 @@ test_nope_cbc_encrypt_0(const MunitParameter *params, void *data)
 		munit_error("bytes_randomized");
 
 	/* when NULL is given */
-	munit_assert_null(aes_128_cbc_encrypt(NULL, key, iv));
-	munit_assert_null(aes_128_cbc_encrypt(NULL, NULL, iv));
-	munit_assert_null(aes_128_cbc_encrypt(plaintext, key, NULL));
-	munit_assert_null(aes_128_cbc_encrypt(plaintext, NULL, NULL));
+	munit_assert_null(nope_cbc_encrypt(NULL, key, iv));
+	munit_assert_null(nope_cbc_encrypt(NULL, NULL, iv));
+	munit_assert_null(nope_cbc_encrypt(plaintext, key, NULL));
+	munit_assert_null(nope_cbc_encrypt(plaintext, NULL, NULL));
 	/* when the iv has not a valid length */
-	munit_assert_null(aes_128_cbc_encrypt(plaintext, key, one_byte));
-	munit_assert_null(aes_128_cbc_encrypt(plaintext, NULL, one_byte));
+	munit_assert_null(nope_cbc_encrypt(plaintext, key, one_byte));
+	munit_assert_null(nope_cbc_encrypt(plaintext, NULL, one_byte));
 
 	bytes_free(iv);
 	bytes_free(one_byte);
@@ -87,13 +87,13 @@ test_nope_cbc_decrypt_0(const MunitParameter *params, void *data)
 		munit_error("bytes_randomized");
 
 	/* when NULL is given */
-	munit_assert_null(aes_128_cbc_decrypt(NULL, key, iv));
-	munit_assert_null(aes_128_cbc_decrypt(NULL, NULL, iv));
-	munit_assert_null(aes_128_cbc_decrypt(ciphertext, key, NULL));
-	munit_assert_null(aes_128_cbc_decrypt(ciphertext, NULL, NULL));
+	munit_assert_null(nope_cbc_decrypt(NULL, key, iv));
+	munit_assert_null(nope_cbc_decrypt(NULL, NULL, iv));
+	munit_assert_null(nope_cbc_decrypt(ciphertext, key, NULL));
+	munit_assert_null(nope_cbc_decrypt(ciphertext, NULL, NULL));
 	/* when the iv has not a valid length */
-	munit_assert_null(aes_128_cbc_decrypt(ciphertext, key, one_byte));
-	munit_assert_null(aes_128_cbc_decrypt(ciphertext, NULL, one_byte));
+	munit_assert_null(nope_cbc_decrypt(ciphertext, key, one_byte));
+	munit_assert_null(nope_cbc_decrypt(ciphertext, NULL, one_byte));
 
 	bytes_free(iv);
 	bytes_free(one_byte);
