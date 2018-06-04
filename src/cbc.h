@@ -6,7 +6,6 @@
  * Cipher Block Chaining mode of operation.
  */
 #include "bytes.h"
-#include "block_cipher.h"
 
 /* per block cipher implementation routines */
 

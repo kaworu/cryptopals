@@ -35,7 +35,7 @@ set(SRCS
     ${PROJECT_SOURCE_DIR}/src/cookie.c
 )
 include_directories("${PROJECT_SOURCE_DIR}/src")
-# compat stuff.
+# compat stuff, should be prefix scoped if this was a real library.
 set(COMPAT_DIR ${PROJECT_SOURCE_DIR}/src/compat)
 check_library_exists(c explicit_memset "string.h" HAVE_EXPLICIT_MEMSET)
 if (NOT HAVE_EXPLICIT_MEMSET)
