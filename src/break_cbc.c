@@ -349,7 +349,7 @@ cbc_padding_breaker(const struct bytes *ciphertext,
 			/* `altered' and `istate' point to the target byte */
 
 			int found = 0;
-			for (uint16_t byte = 0; byte < UINT8_MAX; byte++) {
+			for (uint16_t byte = 0; byte <= UINT8_MAX; byte++) {
 				*altered = *original ^ (uint8_t)byte;
 				if (oracle(c1, alblock) != 0)
 					continue;
