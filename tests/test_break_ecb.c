@@ -182,7 +182,6 @@ test_ecb_cnp_breaker(const MunitParameter *params, void *data)
 static MunitResult
 test_ecb_baat_breaker14(const MunitParameter *params, void *data)
 {
-
 	struct bytes *recovered = NULL;
 	struct bytes *key = bytes_randomized(16);
 	struct bytes *prefix = bytes_randomized(munit_rand_int_range(16, 16 * 64));

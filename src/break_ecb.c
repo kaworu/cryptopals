@@ -4,9 +4,6 @@
  * ECB analysis stuff for cryptopals.com challenges.
  */
 #include <string.h>
-#include <openssl/conf.h>
-#include <openssl/err.h>
-#include <openssl/evp.h>
 
 #include "compat.h"
 #include "cookie.h"
@@ -401,26 +398,52 @@ ecb_byte_at_a_time_breaker14(
 	 * detect ECB mode, finding the prefix block count on the way.
 	 */
 
-	/* generate 4 blocks of payload, so that we would find at least three
-	   full blocks intact as the first one may be "mixed" with the prefix */
-	payload = bytes_zeroed(4 * blocksize);
+	/*
+	 * Generate 4 blocks of payload, so that we would find at least three
+	 * full blocks intact as the first one may be "mixed" with the prefix.
+	 */
+	payload = bytes_repeated(4 * blocksize, 0x0);
 	ciphertext = oracle(payload);
 	bytes_free(payload);
 	if (ciphertext == NULL)
 		goto cleanup;
+	/*
+	 * build a confirmation ciphertext, so that part of the prefix or
+	 * message cannot be misinterpreted as part of our payload
+	 */
+	payload = bytes_repeated(4 * blocksize, 0x1);
+	struct bytes *confirm = oracle(payload);
+	bytes_free(payload);
+	if (confirm == NULL) {
+		bytes_free(ciphertext);
+		goto cleanup;
+	}
 	int ecb_found = 0;
 	for (size_t i = 0; i < ciphertext->len && !ecb_found; i += blocksize) {
 		double score = -1;
 		struct bytes *chunk = bytes_slice(ciphertext, i, 3 * blocksize);
-		const int ret = ecb_detect(chunk, &score);
+		int ret = ecb_detect(chunk, &score);
 		bytes_free(chunk);
-		if (ret != 0) {
+		if (ret != 0)
 			break;
-		} else if (score == 1.0) {
-			prefixlen = i;
-			ecb_found = 1;
-		}
+		if (score != 1.0)
+			continue;
+		/*
+		 * here we have a detected our payload, check for a
+		 * confirmation.
+		 */
+		chunk = bytes_slice(confirm, i, 3 * blocksize);
+		ret = ecb_detect(chunk, &score);
+		bytes_free(chunk);
+		if (ret != 0)
+			break;
+		if (score != 1.0)
+			continue;
+		/* success */
+		prefixlen = i;
+		ecb_found = 1;
 	}
+	bytes_free(confirm);
 	bytes_free(ciphertext);
 	if (!ecb_found)
 		goto cleanup;
