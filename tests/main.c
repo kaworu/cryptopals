@@ -17,6 +17,7 @@ extern MunitTest test_nope_suite_tests[];
 extern MunitTest test_aes_suite_tests[];
 extern MunitTest test_ecb_suite_tests[];
 extern MunitTest test_cbc_suite_tests[];
+extern MunitTest test_ctr_suite_tests[];
 extern MunitTest test_break_ecb_suite_tests[];
 extern MunitTest test_break_cbc_suite_tests[];
 
@@ -31,6 +32,7 @@ static MunitSuite all_test_suites[] = {
 	{ "aes/",       test_aes_suite_tests,                     NULL, 1, MUNIT_SUITE_OPTION_NONE },
 	{ "ecb/",       test_ecb_suite_tests,                     NULL, 1, MUNIT_SUITE_OPTION_NONE },
 	{ "cbc/",       test_cbc_suite_tests,                     NULL, 1, MUNIT_SUITE_OPTION_NONE },
+	{ "ctr/",       test_ctr_suite_tests,                     NULL, 1, MUNIT_SUITE_OPTION_NONE },
 	{ "break-ecb/", test_break_ecb_suite_tests,               NULL, 1, MUNIT_SUITE_OPTION_NONE },
 	{ "break-cbc/", test_break_cbc_suite_tests,               NULL, 1, MUNIT_SUITE_OPTION_NONE },
 	{
