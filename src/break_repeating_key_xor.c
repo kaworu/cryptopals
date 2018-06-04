@@ -19,7 +19,8 @@ struct keysize_distance {
 
 
 /*
- * Comparing function for qsort(3).
+ * Comparing function for qsort(3). Sort keysize_distance based on their
+ * distance in ascending order.
  */
 static int	keysize_distance_cmp(const void *, const void *);
 
