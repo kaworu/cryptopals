@@ -31,3 +31,12 @@ srand_reset(const MunitParameter *params, void *user_data)
 	srand(seed);
 	return (NULL);
 }
+
+
+uint64_t
+rand_uint64(void)
+{
+	uint64_t lo = munit_rand_uint32();
+	uint64_t hi = munit_rand_uint32();
+	return ((hi << 32) | lo);
+}

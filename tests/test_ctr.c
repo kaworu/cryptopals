@@ -17,10 +17,7 @@ test_aes_128_ctr_encrypt_0(const MunitParameter *params, void *data)
 	struct bytes *one_byte = bytes_from_str("x");
 	if (plaintext == NULL || key == NULL || one_byte == NULL)
 		munit_error("bytes_from_str");
-
-	uint64_t nonce = munit_rand_uint32();
-	nonce <<= 32;
-	nonce |= munit_rand_uint32();
+	const uint64_t nonce = rand_uint64();
 
 	/* when NULL is given */
 	munit_assert_null(aes_128_ctr_encrypt(NULL, key, nonce));
@@ -72,10 +69,7 @@ test_aes_128_ctr_decrypt_0(const MunitParameter *params, void *data)
 	struct bytes *ciphertext = bytes_from_base64(s3c18_ciphertext_base64);
 	if (ciphertext == NULL)
 		munit_error("bytes_from_base64");
-
-	uint64_t nonce = munit_rand_uint32();
-	nonce <<= 32;
-	nonce |= munit_rand_uint32();
+	const uint64_t nonce = rand_uint64();
 
 	/* when NULL is given */
 	munit_assert_null(aes_128_ctr_decrypt(NULL, key, nonce));
