@@ -28,8 +28,6 @@ break_single_byte_xor(const struct bytes *ciphertext,
 	if (decrypted == NULL)
 		goto cleanup;
 
-	/* previous key used */
-	uint8_t pk = 0;
 	/* go through each possible byte and find the one most likely to yield
 	   english text */
 	for (uint16_t k = 0; k <= UINT8_MAX; k++) {
@@ -37,7 +35,7 @@ break_single_byte_xor(const struct bytes *ciphertext,
 		   key, so that we undo the last encrypt iteration and encrypt
 		   for the current iteration at once.  */
 		for (size_t i = 0; i < decrypted->len; i++)
-			decrypted->data[i] ^= ((uint8_t)k ^ pk);
+			decrypted->data[i] = (uint8_t)k ^ ciphertext->data[i];
 		/* run the analysis on the "decrypted" buffer */
 		double s = 0;
 		if (method(decrypted, &s) != 0)
@@ -47,16 +45,12 @@ break_single_byte_xor(const struct bytes *ciphertext,
 			guess = (uint8_t)k;
 			score = s;
 		}
-		/* setup the previous key to be the current one for the next
-		   iteration */
-		pk = k;
 	}
 
 	/* here `guess' is our guessed key and `score' the probability that is
-	   this the correct one. The working buffer is encrypted with `pk' from
-	   the last loop iteration */
+	   this the correct one. */
 	for (size_t i = 0; i < decrypted->len; i++)
-		decrypted->data[i] ^= (guess ^ pk);
+		decrypted->data[i] = (uint8_t)guess ^ ciphertext->data[i];
 
 	/* set `key_p' and `score_p' if needed */
 	if (key_p != NULL) {
