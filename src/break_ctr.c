@@ -59,7 +59,7 @@ break_ctr_fixed_nonce(struct bytes **ciphertexts, size_t count)
 
 		/* attempt to guess the ith keystream byte */
 		struct bytes *result = break_single_byte_xor(
-			    buf, english_char_freq, &key, NULL);
+			    buf, looks_like_shuffled_english, &key, NULL);
 		bytes_free(buf);
 		if (result == NULL)
 			goto cleanup;

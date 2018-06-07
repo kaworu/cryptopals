@@ -226,7 +226,7 @@ break_known_keysize(const struct bytes *ciphertext,
 		   here (e.g. english_word_lengths_freq()) because the selected
 		   bytes from the ciphertext are not adjacent. */
 		ikey_p = NULL;
-		ires = break_single_byte_xor(slices, english_char_freq, &ikey_p, NULL);
+		ires = break_single_byte_xor(slices, looks_like_shuffled_english, &ikey_p, NULL);
 		if (ires == NULL || ikey_p == NULL || ikey_p->len != 1) {
 			bytes_free(slices);
 			goto cleanup;
