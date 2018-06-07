@@ -64,6 +64,30 @@ cleanup:
 
 
 int
+looks_like_shuffled_english(const struct bytes *buf, double *score_p)
+{
+	double chars = 0, ascii = 0;
+	int success = 0;
+
+	/* sanity checks */
+	if (buf == NULL || score_p == NULL)
+		goto cleanup;
+
+	if (english_char_freq(buf, &chars) != 0)
+		goto cleanup;
+	if (mostly_ascii(buf, &ascii) != 0)
+		goto cleanup;
+
+	success = 1;
+	/* FALLTHROUGH */
+cleanup:
+	if (success)
+		*score_p = (chars * 0.5 + ascii * 0.5);
+	return (success ? 0 : -1);
+}
+
+
+int
 english_char_freq(const struct bytes *buf, double *score_p)
 {
 	/* Some english character frequency, taken from
@@ -131,6 +155,26 @@ english_word_lengths_freq(const struct bytes *buf, double *score_p)
 	};
 
 	return word_lengths_freq(buf, english_word_lengths_freq_table, score_p);
+}
+
+
+int
+mostly_ascii(const struct bytes *buf,  double *score_p)
+{
+	/* sanity checks */
+	if (buf == NULL || score_p == NULL)
+		return (-1);
+
+	double n = 0;
+	for (size_t i = 0; i < buf->len; i++) {
+		n += (buf->data[i] >= 0x20 && buf->data[i] <= 0x7e);
+		n += (buf->data[i] >= 'A' && buf->data[i] <= 'Z');
+		n += (buf->data[i] >= 'a' && buf->data[i] <= 'z');
+		n += (buf->data[i] == ' ');
+	}
+
+	*score_p = 500 * n / buf->len;
+	return (0);
 }
 
 

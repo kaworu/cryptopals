@@ -20,6 +20,12 @@ typedef int (break_plaintext_func_t)(const struct bytes *buf, double *score_p);
 int	looks_like_english(const struct bytes *buf, double *score_p);
 
 /*
+ * Provide the score of the given buffer as shuffled plaintext english
+ * (characters don't have to be in order).
+ */
+int	looks_like_shuffled_english(const struct bytes *buf, double *score_p);
+
+/*
  * Provide the score of the given buffer as having the same character frequency
  * than english plaintext.
  *
@@ -34,5 +40,12 @@ int	english_char_freq(const struct bytes *buf, double *score_p);
  * frequency as english plaintext.
  */
 int	english_word_lengths_freq(const struct bytes *buf, double *score_p);
+
+/*
+ * Provide the score of the given buffer as ascii plaintext.
+ *
+ * See https://en.wikipedia.org/wiki/ASCII#Printable_characters
+ */
+int	mostly_ascii(const struct bytes *buf, double *score_p);
 
 #endif /* ndef BREAK_PLAINTEXT_H */

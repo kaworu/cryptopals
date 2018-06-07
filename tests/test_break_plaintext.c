@@ -16,7 +16,7 @@ break_plaintext_test_helper(const MunitParameter *params, void *data,
 	if (english == NULL || german == NULL)
 		munit_error("bytes_from_str");
 	if (random == NULL)
-		munit_error("bytes_from_base64");
+		munit_error("bytes_from_raw");
 
 	double english_score = 0, german_score = 0, random_score = 0;
 	munit_assert_int(f(english, &english_score), ==, 0);
@@ -37,6 +37,22 @@ break_plaintext_test_helper(const MunitParameter *params, void *data,
 
 
 static MunitResult
+test_looks_like_english(const MunitParameter *params, void *data)
+{
+	return break_plaintext_test_helper(params, data,
+		    looks_like_english);
+}
+
+
+static MunitResult
+test_looks_like_shuffled_english(const MunitParameter *params, void *data)
+{
+	return break_plaintext_test_helper(params, data,
+		    looks_like_shuffled_english);
+}
+
+
+static MunitResult
 test_english_char_freq(const MunitParameter *params, void *data)
 {
 	return break_plaintext_test_helper(params, data,
@@ -53,10 +69,10 @@ test_english_word_lengths_freq(const MunitParameter *params, void *data)
 
 
 static MunitResult
-test_looks_like_english(const MunitParameter *params, void *data)
+test_mostly_ascii(const MunitParameter *params, void *data)
 {
 	return break_plaintext_test_helper(params, data,
-		    looks_like_english);
+		    mostly_ascii);
 }
 
 
@@ -85,9 +101,11 @@ tear_down(void *data)
 
 /* The test suite. */
 MunitTest test_break_plaintext_suite_tests[] = {
-	{ "english_char_freq",         test_english_char_freq,         setup, tear_down, MUNIT_TEST_OPTION_NONE, NULL },
-	{ "english_word_lengths_freq", test_english_word_lengths_freq, setup, tear_down, MUNIT_TEST_OPTION_NONE, NULL },
-	{ "looks_like_english",        test_looks_like_english,        setup, tear_down, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "looks_like_english",          test_looks_like_english,          setup, tear_down, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "looks_like_shuffled_english", test_looks_like_shuffled_english, setup, tear_down, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "english_char_freq",           test_english_char_freq,           setup, tear_down, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "english_word_lengths_freq",   test_english_word_lengths_freq,   setup, tear_down, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "mostly_ascii",                test_mostly_ascii,                setup, tear_down, MUNIT_TEST_OPTION_NONE, NULL },
 	{
 		.name       = NULL,
 		.test       = NULL,
