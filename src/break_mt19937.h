@@ -41,4 +41,12 @@ int	mt19937_time_seeder(struct mt19937_generator *gen,
 int	mt19937_time_seeder_breaker(uint32_t before, uint32_t after,
 		    uint32_t generated, uint32_t *seed_p);
 
+/*
+ * Return a generator that should produce the same random sequence as the given
+ * one, NULL on error. The provided generator should have been (re)seeded before
+ * calling mt19937_clone() without having generated any number in between, and
+ * will be advanced 624 times.
+ */
+struct mt19937_generator	*mt19937_clone(struct mt19937_generator *gen);
+
 #endif /* ndef BREAK_MT19937_H */

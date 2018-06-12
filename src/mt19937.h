@@ -21,6 +21,15 @@ struct mt19937_generator;
 struct mt19937_generator	*mt19937_init(uint32_t seed);
 
 /*
+ * Returns a new MT19937 generator initialized with the given internal state and
+ * index that should be passed to mt19937_free(), or NULL on failure.
+ *
+ * The provided state should be an array of 624 uint32_t values.
+ */
+struct mt19937_generator	*mt19937_from_state(
+		    const uint32_t *state, uint32_t index);
+
+/*
  * Reinitialize the given MT19937 generator with the provided seed value.
  * Returns 0 on success, -1 if gen is NULL.
  */

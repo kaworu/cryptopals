@@ -11,6 +11,14 @@
 #include "break_mt19937.h"
 
 
+/* undo the MT19937 tempering transform */
+static uint32_t	mt19937_untemper(uint32_t x);
+/* undo x >> (x & mask) */
+static uint32_t	unrshiftmaskxor(uint32_t x, uint32_t rshift, uint32_t mask);
+/* undo x << (x & mask) */
+static uint32_t	unlshiftmaskxor(uint32_t x, uint32_t lshift, uint32_t mask);
+
+
 int
 mt19937_time_seeder(struct mt19937_generator *gen,
 		    uint32_t *n_p, uint32_t *now_p, uint32_t *seed_p)
@@ -88,4 +96,63 @@ cleanup:
 	if (!success)
 		return (-1);
 	return (found ? 0 : 1);
+}
+
+
+struct mt19937_generator *
+mt19937_clone(struct mt19937_generator *gen)
+{
+	struct mt19937_generator *clone = NULL;
+	uint32_t state[624] = { 0 };
+	int success = 0;
+
+	size_t i;
+	for (i = 0; i < (sizeof(state) / sizeof(*state)); i++) {
+		uint32_t n = 0;
+		if (mt19937_next_uint32(gen, &n) != 0)
+			goto cleanup;
+		state[i] = mt19937_untemper(n);
+	}
+
+	clone = mt19937_from_state(state, i + 1);
+
+	success = 1;
+	/* FALLTHROUGH */
+cleanup:
+	if (!success) {
+		mt19937_free(clone);
+		clone = NULL;
+	}
+	return (clone);
+}
+
+
+static uint32_t
+mt19937_untemper(uint32_t x)
+{
+	x = unrshiftmaskxor(x, 18, 0xffffffff);
+	x = unlshiftmaskxor(x, 15, 0xefc60000);
+	x = unlshiftmaskxor(x,  7, 0x9d2c5680);
+	x = unrshiftmaskxor(x, 11, 0xffffffff);
+	return (x);
+}
+
+
+static uint32_t
+unrshiftmaskxor(uint32_t x, uint32_t rshift, uint32_t mask)
+{
+	/* naive bit by bit implementation */
+	for (uint32_t i = 0; i < (32 - rshift); i++)
+		x ^= ((x & (1UL << (31 - i))) >> rshift) & mask;
+	return (x);
+}
+
+
+static uint32_t
+unlshiftmaskxor(uint32_t x, uint32_t lshift, uint32_t mask)
+{
+	/* naive bit by bit implementation */
+	for (uint32_t i = 0; i < (32 - lshift); i++)
+		x ^= ((x & (1UL << i)) << lshift) & mask;
+	return (x);
 }

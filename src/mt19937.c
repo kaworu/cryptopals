@@ -6,6 +6,7 @@
  * We follow religiously the pseudo-code from Wikipedia.
  */
 #include <stdlib.h>
+#include <string.h>
 
 #include "compat.h"
 #include "mt19937.h"
@@ -30,7 +31,7 @@
 
 /* generator struct definition */
 struct mt19937_generator {
-	uint32_t state[624];
+	uint32_t state[n];
 	uint32_t index;
 };
 
@@ -110,6 +111,24 @@ void
 mt19937_free(struct mt19937_generator *gen)
 {
 	freezero(gen, sizeof(struct mt19937_generator));
+}
+
+
+struct mt19937_generator *
+mt19937_from_state(const uint32_t *state, uint32_t index)
+{
+	struct mt19937_generator *gen = NULL;
+
+	if (state == NULL)
+		return (NULL);
+
+	gen = malloc(sizeof(struct mt19937_generator));
+	if (gen != NULL) {
+		(void)memcpy(gen->state, state, n * sizeof(uint32_t));
+		gen->index = index;
+	}
+
+	return (gen);
 }
 
 
