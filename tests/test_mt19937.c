@@ -5,9 +5,24 @@
 #include "mt19937.h"
 
 
+/* Error conditions */
+static MunitResult
+test_mt19937_0(const MunitParameter *params, void *data)
+{
+	int ret;
+
+	ret = mt19937_next_uint32(NULL, NULL);
+	munit_assert_int(ret, ==, -1);
+	ret = mt19937_seed(NULL, 0);
+	munit_assert_int(ret, ==, -1);
+
+	return (MUNIT_OK);
+}
+
+
 /* Set 3 / Challenge 21 */
 static MunitResult
-test_mt19937(const MunitParameter *params, void *data)
+test_mt19937_1(const MunitParameter *params, void *data)
 {
 	/*
 	 * First 100 random numbers generated using the reference C
@@ -38,20 +53,36 @@ test_mt19937(const MunitParameter *params, void *data)
 		 893102645, 2348102761, 2438254339,  793943861,  134489564,
 	};
 
-	mt19937_seed(seed);
+	struct mt19937_generator *gen = mt19937_init(seed);
+	munit_assert_not_null(gen);
 	for (size_t i = 0; i < (sizeof(vectors) / sizeof(*vectors)); i++) {
+		uint32_t n = 0;
 		const uint32_t expected = vectors[i];
-		const uint32_t random = mt19937_random_uint32();
-		munit_assert_uint32(random, ==, expected);
+		const int ret = mt19937_next_uint32(gen, &n);
+		munit_assert_int(ret, ==, 0);
+		munit_assert_uint32(n, ==, expected);
 	}
 
+	/* test with re-seed */
+	const int ret = mt19937_seed(gen, seed);
+	munit_assert_int(ret, ==, 0);
+	for (size_t i = 0; i < (sizeof(vectors) / sizeof(*vectors)); i++) {
+		uint32_t n = 0;
+		const uint32_t expected = vectors[i];
+		const int ret = mt19937_next_uint32(gen, &n);
+		munit_assert_int(ret, ==, 0);
+		munit_assert_uint32(n, ==, expected);
+	}
+
+	mt19937_free(gen);
 	return (MUNIT_OK);
 }
 
 
 /* The test suite. */
 MunitTest test_mt19937_suite_tests[] = {
-	{ "mt19937", test_mt19937, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "mt19937-0", test_mt19937_0, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "mt19937-1", test_mt19937_1, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{
 		.name       = NULL,
 		.test       = NULL,

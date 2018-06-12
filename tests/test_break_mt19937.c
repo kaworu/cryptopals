@@ -9,26 +9,33 @@
 
 /* Set 3 / Challenge 22 */
 static MunitResult
-test_break_mt19937(const MunitParameter *params, void *data)
+test_break_time_seeder(const MunitParameter *params, void *data)
 {
 	const uint32_t before = time(NULL);
 	uint32_t after = before;
-	uint32_t seed = 0;
+	uint32_t seed = 0, n = 0, guess = 0;
 
-	const uint32_t rnd = mt19937_time_seed_oracle(&after, &seed);
+	struct mt19937_generator *gen = mt19937_init(0);
+	if (gen == NULL)
+		munit_error("mt19937_init");
+
+	int ret = mt19937_time_seeder(gen, &n, &after, &seed);
+	munit_assert_int(ret, ==, 0);
 	munit_assert_uint32(seed, >, before);
 	munit_assert_uint32(seed, <, after);
 
-	const uint32_t guess = mt19937_time_seed_breaker(before, after, rnd);
+	ret = mt19937_time_seeder_breaker(before, after, n, &guess);
+	munit_assert_int(ret, ==, 0);
 	munit_assert_uint32(guess, ==, seed);
 
+	mt19937_free(gen);
 	return (MUNIT_OK);
 }
 
 
 /* The test suite. */
 MunitTest test_break_mt19937_suite_tests[] = {
-	{ "break_mt19937", test_break_mt19937, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "time_seeder", test_break_time_seeder, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{
 		.name       = NULL,
 		.test       = NULL,

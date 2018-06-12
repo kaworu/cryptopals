@@ -36,7 +36,7 @@ static MunitSuite all_test_suites[] = {
 	{ "ecb/",       test_ecb_suite_tests,                     NULL, 1, MUNIT_SUITE_OPTION_NONE },
 	{ "cbc/",       test_cbc_suite_tests,                     NULL, 1, MUNIT_SUITE_OPTION_NONE },
 	{ "ctr/",       test_ctr_suite_tests,                     NULL, 1, MUNIT_SUITE_OPTION_NONE },
-	{ "prng/",      test_mt19937_suite_tests,                 NULL, 1, MUNIT_SUITE_OPTION_NONE },
+	{ "mt/",        test_mt19937_suite_tests,                 NULL, 1, MUNIT_SUITE_OPTION_NONE },
 	{ "break-ecb/", test_break_ecb_suite_tests,               NULL, 1, MUNIT_SUITE_OPTION_NONE },
 	{ "break-cbc/", test_break_cbc_suite_tests,               NULL, 1, MUNIT_SUITE_OPTION_NONE },
 	{ "break-ctr/", test_break_ctr_suite_tests,               NULL, 1, MUNIT_SUITE_OPTION_NONE },
