@@ -102,13 +102,15 @@ ctr_crypt(const struct block_cipher *impl, const struct bytes *input,
 		err |= impl->encrypt(stream, expkey);
 		if (stream->len > inlen) {
 			/*
-			 * truncate the stream block to the input block length.
+			 * Use a truncated version of the stream block to match
+			 * the input block length.
 			 */
-			struct bytes *stblock = stream;
-			stream = bytes_slice(stream, 0, inlen);
-			bytes_free(stblock);
+			struct bytes *truncated = bytes_slice(stream, 0, inlen);
+			err |= bytes_xor(block, truncated);
+			bytes_free(truncated);
+		} else {
+			err |= bytes_xor(block, stream);
 		}
-		err |= bytes_xor(block, stream);
 		/* populate the output */
 		err |= bytes_put(output, offset, block);
 		bytes_free(block);
