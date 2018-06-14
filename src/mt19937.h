@@ -42,6 +42,13 @@ int	mt19937_seed(struct mt19937_generator *gen, uint32_t seed);
 int	mt19937_next_uint32(struct mt19937_generator *gen, uint32_t *n_p);
 
 /*
+ * Encryption / Decryption stream cipher routines based on MT19937 as described
+ * in Set 3 / Challenge 24.
+ */
+struct bytes	*mt19937_encrypt(const struct bytes *plaintext,  uint32_t key);
+struct bytes	*mt19937_decrypt(const struct bytes *ciphertext, uint32_t key);
+
+/*
  * Free the resource associated with the given mt19937_generator struct.
  *
  * If not NULL, the generator state will be zero'd before freed.

@@ -7,6 +7,8 @@
 #include <time.h>
 #include <unistd.h>
 
+#include "compat.h"
+#include "xor.h"
 #include "mt19937.h"
 #include "break_mt19937.h"
 
@@ -45,12 +47,13 @@ mt19937_time_seeder(struct mt19937_generator *gen,
 	if (mt19937_seed(gen, seed) != 0)
 		goto cleanup;
 
-	/* get the first 32 bits of output */
-	if (mt19937_next_uint32(gen, &n) != 0)
-		goto cleanup;
-
-	if (n_p != NULL)
+	if (n_p != NULL) {
+		/* get the first 32 bits of output */
+		if (mt19937_next_uint32(gen, &n) != 0)
+			goto cleanup;
 		*n_p = n;
+	}
+
 	if (now_p != NULL)
 		*now_p = seed + after_delay;
 	if (seed_p != NULL)
@@ -124,6 +127,146 @@ cleanup:
 		clone = NULL;
 	}
 	return (clone);
+}
+
+
+int
+mt19937_encryption_breaker(const struct bytes *ciphertext,
+		    const struct bytes *known_plaintext, uint16_t *key_p)
+{
+	uint32_t seed = 0;
+	struct bytes *keystream = NULL, *mask = NULL;
+	struct mt19937_generator *gen = NULL;
+	uint32_t *seq = NULL;
+	size_t seqlen = 0;
+	int success = 0;
+
+	/* sanitity checks */
+	if (ciphertext == NULL || known_plaintext == NULL)
+		goto cleanup;
+	if (ciphertext->len < known_plaintext->len)
+		goto cleanup;
+
+	/* compute the prefix len and the ignore len. The ignore len is
+	   basically the prefix len congruent 4 we will try to match 32 bits
+	   values from the PRNG */
+	const size_t prefixlen = ciphertext->len - known_plaintext->len;
+	const size_t ignorelen = prefixlen +
+		    (prefixlen % 4 == 0 ? 0 : 4 - (prefixlen % 4));
+
+	/* we need at least 32 bits of ciphertext to match one uin32_t MT19937
+	   output */
+	if (ciphertext->len + 4 < ignorelen)
+		goto cleanup;
+
+	/* To find the keystream from the generator we need to xor the bytes of
+	   interest (i.e. thoses after ignorelen) of the ciphertext with the
+	   bytes of intereset from the known plaintext */
+	keystream = bytes_slice(ciphertext, ignorelen,
+		    ciphertext->len - ignorelen);
+	if (keystream == NULL)
+		goto cleanup;
+	mask = bytes_slice(known_plaintext, ignorelen - prefixlen,
+		    known_plaintext->len - (ignorelen - prefixlen));
+	if (mask == NULL)
+		goto cleanup;
+	if (bytes_xor(keystream, mask) != 0)
+		goto cleanup;
+
+	/* Now that we have a part of the keystream, convert it to 32 bits
+	   values so that they will be easy to compare with the PRNG output */
+	seqlen = keystream->len / 4;
+	seq = calloc(seqlen, sizeof(uint32_t));
+	if (seq == NULL)
+		goto cleanup;
+	for (size_t i = 0; i < seqlen; i++) {
+		/* NOTE: LSB first as the encryption does */
+		for (size_t qw = 0; qw < 4; qw++) {
+			const uint32_t shift = qw * 8;
+			const uint32_t byte = keystream->data[4 * i + qw];
+			seq[i] |= (byte << shift);
+		}
+	}
+
+	/* count of word to be ignored (thoses from the prefix) */
+	const size_t ignoredwords = ignorelen / 4;
+	/* brute-force the 16 bit space since it is practicaly small enough */
+	gen = mt19937_init(0);
+	for (seed = 0; seed <= UINT16_MAX; seed++) {
+		size_t i = 0;
+		/* seed the generator with the value from this iteration */
+		if (mt19937_seed(gen, seed) != 0)
+			goto cleanup;
+		/* skip the words from the prefix */
+		for (i = 0; i < ignoredwords; i++)
+			(void)mt19937_next_uint32(gen, NULL);
+		/* compare the PRNG output with our expected sequence */
+		for (i = 0; i < seqlen; i++) {
+			uint32_t n = 0;
+			if (mt19937_next_uint32(gen, &n) != 0)
+				goto cleanup;
+			if (n != seq[i])
+				break;
+		}
+		if (i == seqlen) {
+			/* here the PRNG output for this iteration's seed
+			   matches our expected sequence */
+			break;
+		}
+	}
+	if (seed > UINT16_MAX)
+		goto cleanup;
+
+	if (key_p != NULL)
+		*key_p = seed & 0xffff;
+
+	success = 1;
+	/* FALLTHROUGH */
+cleanup:
+	mt19937_free(gen);
+	freezero(seq, seqlen);
+	bytes_free(mask);
+	bytes_free(keystream);
+	return (success ? 0 : -1);
+}
+
+
+int
+mt19937_token_breaker(const uint32_t *token, size_t tokenlen)
+{
+	int success = 0;
+	int valid = 0;
+	const uint32_t now = time(NULL);
+	struct mt19937_generator *gen = NULL;
+
+	/* sanity check */
+	if (token == NULL)
+		goto cleanup;
+
+	gen = mt19937_init(0);
+	for (uint32_t seed = now - 60 * 60; seed <= now; seed++) {
+		if (mt19937_seed(gen, seed) != 0)
+			goto cleanup;
+		size_t i = 0;
+		for (i = 0; i < tokenlen; i++) {
+			uint32_t n = 0;
+			if (mt19937_next_uint32(gen, &n) != 0)
+				goto cleanup;
+			if (token[i] != n)
+				break;
+		}
+		valid = (i == tokenlen);
+		if (valid)
+			break;
+	}
+
+	success = 1;
+	/* FALLTHROUGH */
+cleanup:
+	mt19937_free(gen);
+	if (!success)
+		return (-1);
+	return (valid ? 0 : 1);
 }
 
 

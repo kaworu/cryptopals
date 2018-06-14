@@ -2,6 +2,7 @@
  * test_mt19937.c
  */
 #include "munit.h"
+#include "helpers.h"
 #include "mt19937.h"
 
 
@@ -79,10 +80,37 @@ test_mt19937_1(const MunitParameter *params, void *data)
 }
 
 
+/* Set 3 / Challenge 24 */
+static MunitResult
+test_mt19937_encryption(const MunitParameter *params, void *data)
+{
+	const uint16_t key = munit_rand_uint32() & 0xffff;
+	struct bytes *payload = bytes_randomized(munit_rand_int_range(1, 256));
+	if (payload == NULL)
+		munit_error("bytes_randomized");
+
+	struct bytes *ciphertext = mt19937_encrypt(payload, key);
+	munit_assert_not_null(ciphertext);
+	munit_assert_size(ciphertext->len, ==, payload->len);
+	munit_assert_memory_not_equal(payload->len, ciphertext->data, payload->data);
+
+	struct bytes *plaintext = mt19937_decrypt(ciphertext, key);
+	munit_assert_not_null(plaintext);
+	munit_assert_size(plaintext->len, ==, payload->len);
+	munit_assert_memory_equal(payload->len, plaintext->data, payload->data);
+
+	bytes_free(plaintext);
+	bytes_free(ciphertext);
+	bytes_free(payload);
+	return (MUNIT_OK);
+}
+
+
 /* The test suite. */
 MunitTest test_mt19937_suite_tests[] = {
-	{ "mt19937-0", test_mt19937_0, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
-	{ "mt19937-1", test_mt19937_1, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "mt19937-0",          test_mt19937_0,          NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "mt19937-1",          test_mt19937_1,          NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "mt19937_encryption", test_mt19937_encryption, srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{
 		.name       = NULL,
 		.test       = NULL,
