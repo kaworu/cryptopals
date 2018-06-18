@@ -6,6 +6,7 @@
 
 #include "compat.h"
 #include "xor.h"
+#include "ctr.h"
 #include "break_ctr.h"
 #include "break_single_byte_xor.h"
 
@@ -81,3 +82,78 @@ cleanup:
 	}
 	return (keystream);
 }
+
+
+struct bytes *
+aes_128_ctr_edit_oracle(const struct bytes *ciphertext,
+		    const struct bytes *key, uint64_t nonce,
+		    size_t offset, const struct bytes *replacement)
+{
+	struct bytes *zeroes = NULL, *keystream = NULL, *rkeystream = NULL;
+	struct bytes *before = NULL, *rct = NULL, *after = NULL, *output = NULL;
+	int success = 0;
+
+	/* sanity checks */
+	if (ciphertext == NULL || key == NULL || replacement == NULL)
+		goto cleanup;
+	if (offset > ciphertext->len)
+		goto cleanup;
+	if (ciphertext->len - offset < replacement->len)
+		goto cleanup;
+
+	/*
+	 * We build the output as:
+	 *
+	 *    before  offset  rct   bound  after
+	 *       v      |      v      |      v
+	 * [ ......... ][ .......... ][ .......... ]
+	 *
+	 * Here rct is the "replacement ciphertext", i.e. the encrypted version
+	 * of replacement. before and after are untouched slices of the original
+	 * ciphertext.
+	 */
+
+	const size_t bound = offset + replacement->len;
+
+	/* encrypt as many 0x0 as we need in order to get the keystream */
+	zeroes = bytes_zeroed(bound);
+	keystream = aes_128_ctr_encrypt(zeroes, key, nonce);
+	/* get the part of the keystream needed to encrypt the replacement */
+	rkeystream = bytes_slice(keystream, offset, replacement->len);
+	rct = bytes_dup(replacement);
+	if (bytes_xor(rct, rkeystream) != 0)
+		goto cleanup;
+
+	/* find the copied parts from the ciphertext before and after the
+	   replacement */
+	before = bytes_slice(ciphertext, 0, offset);
+	after = bytes_slice(ciphertext, bound, ciphertext->len - bound);
+	const struct bytes *const parts[] = { before, rct, after };
+	output = bytes_joined_const(parts, sizeof(parts) / sizeof(*parts));
+
+	success = 1;
+	/* FALLTHROUGH */
+cleanup:
+	bytes_free(after);
+	bytes_free(before);
+	bytes_free(rct);
+	bytes_free(rkeystream);
+	bytes_free(keystream);
+	bytes_free(zeroes);
+	if (!success) {
+		bytes_free(output);
+		output = NULL;
+	}
+	return (output);
+}
+
+
+struct bytes *
+aes_128_ctr_edit_breaker(const struct bytes *ciphertext,
+		    const struct bytes *key, const uint64_t nonce)
+#define oracle(ct, off, rep) \
+		aes_128_ctr_edit_oracle((ct), key, nonce, (off), (rep))
+{
+	return (oracle(ciphertext, 0, ciphertext));
+}
+#undef oracle

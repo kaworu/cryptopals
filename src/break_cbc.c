@@ -122,8 +122,8 @@ cleanup:
 
 struct bytes *
 cbc_bitflipping_breaker(const void *key, const void *iv)
-{
 #define oracle(x)	cbc_bitflipping_oracle((x), key, iv)
+{
 	const size_t blocksize = aes_128_blocksize();
 	struct bytes *pad = NULL, *scrambled = NULL;
 	struct bytes *admin = NULL, *payload = NULL, *ciphertext = NULL;
@@ -170,8 +170,8 @@ cleanup:
 		ciphertext = NULL;
 	}
 	return (ciphertext);
-#undef oracle
 }
+#undef oracle
 
 
 int
@@ -257,8 +257,8 @@ cleanup:
 struct bytes *
 cbc_padding_breaker(const struct bytes *ciphertext,
 		    const void *key, const struct bytes *iv)
-{
 #define oracle(x, iv)	cbc_padding_oracle((x), key, (iv))
+{
 	const size_t blocksize = aes_128_blocksize();
 	size_t nblocks = 0;
 	struct bytes *padded = NULL, *plaintext = NULL;
@@ -409,5 +409,5 @@ cleanup:
 		plaintext = NULL;
 	}
 	return (plaintext);
-#undef oracle
 }
+#undef oracle

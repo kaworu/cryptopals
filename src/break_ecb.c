@@ -239,8 +239,8 @@ ecb_cut_and_paste_profile(const struct bytes *ciphertext,
 
 struct bytes *
 ecb_cut_and_paste_profile_breaker(const void *key)
-{
 #define oracle(x)	ecb_cut_and_paste_profile_for((x), key);
+{
 	struct bytes *head = NULL, *tail = NULL, *admin = NULL;
 	int success = 0;
 
@@ -317,8 +317,8 @@ cleanup:
 		admin = NULL;
 	}
 	return (admin);
-#undef oracle
 }
+#undef oracle
 
 
 struct bytes *
@@ -359,8 +359,8 @@ ecb_byte_at_a_time_breaker14(
 		    const void *prefix,
 		    const void *message,
 		    const void *key)
-{
 #define oracle(x)	ecb_byte_at_a_time_oracle14(prefix, (x), message, key)
+{
 	const size_t expected_blocksize = aes_128_blocksize();
 	size_t blocksize = 0;
 	size_t totallen = 0, prefixlen = 0, msglen = 0;
@@ -593,5 +593,5 @@ cleanup:
 		recovered = NULL;
 	}
 	return (recovered);
-#undef oracle
 }
+#undef oracle

@@ -179,10 +179,42 @@ test_ctr_fixed_nonce_2(const MunitParameter *params, void *data)
 }
 
 
+/* Set 4 / Challenge 25 */
+static MunitResult
+test_aes_128_ctr_edit_breaker(const MunitParameter *params, void *data)
+{
+	struct bytes *plaintext = NULL, *key = NULL, *ciphertext = NULL,
+		     *recovered = NULL;
+
+	plaintext = bytes_from_str(s4c25_plaintext);
+	if (plaintext == NULL)
+		munit_error("bytes_from_str");
+	key = bytes_randomized(aes_128_keylength());
+	if (key == NULL)
+		munit_error("bytes_randomized");
+	const uint64_t nonce = rand_uint64();
+
+	ciphertext = aes_128_ctr_encrypt(plaintext, key, nonce);
+	if (ciphertext == NULL)
+		munit_error("aes_128_ctr_encrypt");
+	recovered = aes_128_ctr_edit_breaker(ciphertext, key, nonce);
+	munit_assert_not_null(recovered);
+	munit_assert_size(recovered->len, ==, plaintext->len);
+	munit_assert_memory_equal(recovered->len, recovered->data, plaintext->data);
+
+	bytes_free(recovered);
+	bytes_free(ciphertext);
+	bytes_free(key);
+	bytes_free(plaintext);
+	return (MUNIT_OK);
+}
+
+
 /* The test suite. */
 MunitTest test_break_ctr_suite_tests[] = {
-	{ "ctr_fixed_nonce-1", test_ctr_fixed_nonce_1, srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
-	{ "ctr_fixed_nonce-2", test_ctr_fixed_nonce_2, srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "ctr_fixed_nonce-1",    test_ctr_fixed_nonce_1, srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "ctr_fixed_nonce-2",    test_ctr_fixed_nonce_2, srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "ctr_random_access_rw", test_aes_128_ctr_edit_breaker, srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{
 		.name       = NULL,
 		.test       = NULL,

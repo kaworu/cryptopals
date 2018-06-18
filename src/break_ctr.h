@@ -18,4 +18,17 @@
  */
 struct bytes	*break_ctr_fixed_nonce(struct bytes **ciphertexts, size_t count);
 
+/*
+ * "edit" function from Set 4 / Challenge 25.
+ */
+struct bytes	*aes_128_ctr_edit_oracle(const struct bytes *ciphertext,
+		    const struct bytes *key, uint64_t nonce,
+		    size_t offset, const struct bytes *replacement);
+
+/*
+ * "recover" function from Set 4 / Challenge 25.
+ */
+struct bytes	*aes_128_ctr_edit_breaker(const struct bytes *ciphertext,
+		    const struct bytes *key, const uint64_t nonce);
+
 #endif /* ndef BREAK_CTR_H */
