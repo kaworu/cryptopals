@@ -2,8 +2,6 @@
  * aes.c
  *
  * AES stuff for cryptopals.com challenges.
- *
- * Mosty just wrapping the OpenSSL API.
  */
 #include "xor.h"
 #include "aes.h"
