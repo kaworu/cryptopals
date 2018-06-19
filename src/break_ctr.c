@@ -165,7 +165,7 @@ aes_128_ctr_edit_breaker(const struct bytes *ciphertext,
 
 
 struct bytes *
-ctr_bitflipping_oracle(const struct bytes *payload,
+ctr_bitflipping_encrypt(const struct bytes *payload,
 		    const struct bytes *key, uint64_t nonce)
 {
 	struct bytes *before = NULL, *after = NULL, *escaped = NULL;
@@ -237,7 +237,7 @@ cleanup:
 
 struct bytes *
 ctr_bitflipping_breaker(const void *key, uint64_t nonce)
-#define oracle(x)	ctr_bitflipping_oracle((x), key, nonce)
+#define encrypt(x)	ctr_bitflipping_encrypt((x), key, nonce)
 {
 	struct bytes *payload = NULL, *ciphertext = NULL;
 	int success = 0;
@@ -250,8 +250,8 @@ ctr_bitflipping_breaker(const void *key, uint64_t nonce)
 	const size_t eqi = prefixlen + 6;
 	payload = bytes_from_str(",admin-true");
 
-	/* generate the ciphertext using the oracle */
-	ciphertext = oracle(payload);
+	/* generate the ciphertext */
+	ciphertext = encrypt(payload);
 	if (ciphertext == NULL)
 		goto cleanup;
 
@@ -269,4 +269,4 @@ cleanup:
 	}
 	return (ciphertext);
 }
-#undef oracle
+#undef encrypt

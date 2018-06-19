@@ -53,7 +53,7 @@ test_cbc_bitflipping_0(const MunitParameter *params, void *data)
 	if (payload == NULL)
 		munit_error("bytes_from_str");
 
-	struct bytes *ciphertext = cbc_bitflipping_oracle(payload, key, iv);
+	struct bytes *ciphertext = cbc_bitflipping_encrypt(payload, key, iv);
 	munit_assert_not_null(ciphertext);
 
 	const int ret = cbc_bitflipping_verifier(ciphertext, key, iv);

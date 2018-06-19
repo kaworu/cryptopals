@@ -74,7 +74,7 @@ cleanup:
 
 
 struct bytes *
-cbc_bitflipping_oracle(const struct bytes *payload,
+cbc_bitflipping_encrypt(const struct bytes *payload,
 		    const struct bytes *key, const struct bytes *iv)
 {
 	struct bytes *before = NULL, *after = NULL, *escaped = NULL;
@@ -146,7 +146,7 @@ cleanup:
 
 struct bytes *
 cbc_bitflipping_breaker(const void *key, const void *iv)
-#define oracle(x)	cbc_bitflipping_oracle((x), key, iv)
+#define encrypt(x)	cbc_bitflipping_encrypt((x), key, iv)
 {
 	const size_t blocksize = aes_128_blocksize();
 	struct bytes *pad = NULL, *scrambled = NULL;
@@ -171,10 +171,10 @@ cbc_bitflipping_breaker(const void *key, const void *iv)
 	const size_t eqi = sblock * blocksize + 6;
 	admin = bytes_from_str(",admin-true");
 
-	/* generate the ciphertext using the oracle */
+	/* generate the ciphertext */
 	const struct bytes *const parts[] = { pad, scrambled, admin };
 	payload = bytes_joined_const(parts, sizeof(parts) / sizeof(*parts));
-	ciphertext = oracle(payload);
+	ciphertext = encrypt(payload);
 	if (ciphertext == NULL)
 		goto cleanup;
 
@@ -195,7 +195,7 @@ cleanup:
 	}
 	return (ciphertext);
 }
-#undef oracle
+#undef encrypt
 
 
 int

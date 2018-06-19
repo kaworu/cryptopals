@@ -222,7 +222,7 @@ test_ctr_bitflipping_0(const MunitParameter *params, void *data)
 	if (payload == NULL)
 		munit_error("bytes_from_str");
 
-	struct bytes *ciphertext = ctr_bitflipping_oracle(payload, key, nonce);
+	struct bytes *ciphertext = ctr_bitflipping_encrypt(payload, key, nonce);
 	munit_assert_not_null(ciphertext);
 
 	const int ret = ctr_bitflipping_verifier(ciphertext, key, nonce);

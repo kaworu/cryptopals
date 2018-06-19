@@ -8,12 +8,12 @@
 #include "bytes.h"
 
 /*
- * CBC Encryption Oracle as described by Set 2 / Challenge 16.
+ * CBC Encryption function as described by Set 2 / Challenge 16.
  *
  * Returns a pointer to a newly allocated bytes struct that should passed to
  * bytes_free(), or NULL if malloc(3) failed or if any given parameter is NULL.
  */
-struct bytes	*cbc_bitflipping_oracle(const struct bytes *payload,
+struct bytes	*cbc_bitflipping_encrypt(const struct bytes *payload,
 		    const struct bytes *key, const struct bytes *iv);
 
 /*

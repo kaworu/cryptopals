@@ -32,12 +32,12 @@ struct bytes	*aes_128_ctr_edit_breaker(const struct bytes *ciphertext,
 		    const struct bytes *key, const uint64_t nonce);
 
 /*
- * CTR Encryption Oracle as described by Set 4 / Challenge 26.
+ * CTR Encryption function as described by Set 4 / Challenge 26.
  *
  * Returns a pointer to a newly allocated bytes struct that should passed to
  * bytes_free(), or NULL if malloc(3) failed or if any given parameter is NULL.
  */
-struct bytes	*ctr_bitflipping_oracle(const struct bytes *payload,
+struct bytes	*ctr_bitflipping_encrypt(const struct bytes *payload,
 		    const struct bytes *key, uint64_t nonce);
 
 /*
