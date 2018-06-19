@@ -19,23 +19,21 @@
 
 
 struct bytes *
-cbc_bitflipping_oracle(const struct bytes *payload,
-		    const struct bytes *key, const struct bytes *iv)
+cbc_bitflipping_escape(const struct bytes *payload)
 {
-	struct bytes *before = NULL, *after = NULL, *quoted = NULL;
-	struct bytes *plaintext = NULL, *ciphertext = NULL;
+	struct bytes *escaped = NULL;
 	int success = 0;
 
-	/* sanity checks */
-	if (payload == NULL || key == NULL || iv == NULL)
+	/* sanity check */
+	if (payload == NULL)
 		goto cleanup;
 
-	/* compute the payload final length, since we need to quote out the ";"
+	/* compute the escaped final length, since we need to quote out the ";"
 	   and "=" characters. */
 	size_t len = 0;
 	for (size_t i = 0; i < payload->len; i++) {
 		switch (payload->data[i]) {
-		case '=':
+		case '=': /* FALLTHROUGH */
 		case ';':
 			len += 3;
 			break;
@@ -44,11 +42,11 @@ cbc_bitflipping_oracle(const struct bytes *payload,
 		}
 	}
 
-	/* build the quoted version of payload */
-	quoted = bytes_zeroed(len);
-	if (quoted == NULL)
+	/* build the escaped version of payload */
+	escaped = bytes_zeroed(len);
+	if (escaped == NULL)
 		goto cleanup;
-	uint8_t *p = quoted->data;
+	uint8_t *p = escaped->data;
 	for (size_t i = 0; i < payload->len; i++) {
 		switch (payload->data[i]) {
 		case '=':
@@ -64,10 +62,36 @@ cbc_bitflipping_oracle(const struct bytes *payload,
 		}
 	}
 
+	success = 1;
+	/* FALLTHROUGH */
+cleanup:
+	if (!success) {
+		bytes_free(escaped);
+		escaped = NULL;
+	}
+	return (escaped);
+}
+
+
+struct bytes *
+cbc_bitflipping_oracle(const struct bytes *payload,
+		    const struct bytes *key, const struct bytes *iv)
+{
+	struct bytes *before = NULL, *after = NULL, *escaped = NULL;
+	struct bytes *plaintext = NULL, *ciphertext = NULL;
+	int success = 0;
+
+	/* sanity checks */
+	if (payload == NULL || key == NULL || iv == NULL)
+		goto cleanup;
+
+	/* escape the special characters from the payload */
+	escaped = cbc_bitflipping_escape(payload);
+
 	/* build the full plaintext to encrypt */
 	before = bytes_from_str(CBC_BITFLIPPING_PREFIX);
 	after  = bytes_from_str(CBC_BITFLIPPING_SUFFIX);
-	const struct bytes *const parts[] = { before, quoted, after };
+	const struct bytes *const parts[] = { before, escaped, after };
 	plaintext = bytes_joined_const(parts, sizeof(parts) / sizeof(*parts));
 
 	/* encrypt the plaintext using AES-CBC */
@@ -81,7 +105,7 @@ cleanup:
 	bytes_free(plaintext);
 	bytes_free(after);
 	bytes_free(before);
-	bytes_free(quoted);
+	bytes_free(escaped);
 	if (!success) {
 		bytes_free(ciphertext);
 		ciphertext = NULL;

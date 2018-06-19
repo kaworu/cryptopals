@@ -8,6 +8,39 @@
 #include "test_break_cbc.h"
 
 
+/* Test that `=' and ';' cannot be injected */
+static MunitResult
+test_cbc_bitflipping_escape(const MunitParameter *params, void *data)
+{
+	const struct {
+		char *input;
+		char *expected;
+	} vectors[] = {
+		{ .input = "=", .expected = "%3D" },
+		{ .input = ";", .expected = "%3B" },
+		{ .input = "X;admin=true", .expected = "X%3Badmin%3Dtrue" },
+	};
+
+	for (size_t i = 0; i < (sizeof(vectors) / sizeof(*vectors)); i++) {
+		struct bytes *input = bytes_from_str(vectors[i].input);
+		if (input == NULL)
+			munit_error("bytes_from_str");
+		const char *expected = vectors[i].expected;
+		struct bytes *escaped = cbc_bitflipping_escape(input);
+		munit_assert_not_null(escaped);
+		munit_assert_size(escaped->len, ==, strlen(expected));
+		munit_assert_memory_equal(escaped->len, escaped->data, expected);
+		bytes_free(escaped);
+		bytes_free(input);
+	}
+
+	/* when NULL is given */
+	munit_assert_null(cbc_bitflipping_escape(NULL));
+
+	return (MUNIT_OK);
+}
+
+
 /* Test that admin=true cannot be injected */
 static MunitResult
 test_cbc_bitflipping_0(const MunitParameter *params, void *data)
@@ -93,9 +126,10 @@ test_cbc_padding(const MunitParameter *params, void *data)
 
 /* The test suite. */
 MunitTest test_break_cbc_suite_tests[] = {
-	{ "cbc_bitflipping-0", test_cbc_bitflipping_0, srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
-	{ "cbc_bitflipping-1", test_cbc_bitflipping_1, srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
-	{ "cbc_padding",       test_cbc_padding,       srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "cbc_bitflipping_escape", test_cbc_bitflipping_escape, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "cbc_bitflipping-0",      test_cbc_bitflipping_0,      srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "cbc_bitflipping-1",      test_cbc_bitflipping_1,      srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "cbc_padding",            test_cbc_padding,            srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{
 		.name       = NULL,
 		.test       = NULL,

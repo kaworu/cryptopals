@@ -26,6 +26,12 @@ int		cbc_bitflipping_verifier(const struct bytes *ciphertext,
 		    const struct bytes *key, const struct bytes *iv);
 
 /*
+ * Return the payload with `=' and `;' escaped as `%3D' respectively `%3B', or
+ * NULL if malloc(3) failed or the provided payload is NULL.
+ */
+struct bytes	*cbc_bitflipping_escape(const struct bytes *payload);
+
+/*
  * CBC Attack as described by Set 2 / Challenge 16.
  *
  * Returns a pointer to a newly allocated bytes struct that should passed to
