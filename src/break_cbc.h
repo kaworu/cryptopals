@@ -56,4 +56,19 @@ int	cbc_padding_oracle(const struct bytes *ciphertext,
 struct bytes	*cbc_padding_breaker(const struct bytes *ciphertext,
 		    const void *key, const struct bytes *iv);
 
+/*
+ * Decrypt the given ciphertext with the provided key/iv using AES128-CBC and
+ * Detect if the plaintext contains high ASCII.
+ *
+ * Returns -1 on error, 1 if at least one high ASCII byte is found, and 0
+ * otherwise.
+ *
+ * If error_p is not NULL, it is not modified when -1 is returned, set to the
+ * decrypted plaintext when 1 is returned and must be passed to bytes_free(3) by
+ * the caller, and set to NULL when 0 is returned.
+ */
+int	cbc_high_ascii_oracle(const struct bytes *ciphertext,
+		    const void *key, const struct bytes *iv,
+		    struct bytes **error_p);
+
 #endif /* ndef BREAK_CBC_H */

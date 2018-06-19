@@ -424,6 +424,7 @@ loop_cleanup:
 	}
 
 	plaintext = bytes_pkcs7_unpadded(padded);
+
 	success = 1;
 	/* FALLTHROUGH */
 cleanup:
@@ -435,3 +436,42 @@ cleanup:
 	return (plaintext);
 }
 #undef oracle
+
+
+int
+cbc_high_ascii_oracle(const struct bytes *ciphertext,
+		    const void *key, const struct bytes *iv,
+		    struct bytes **error_p)
+{
+	struct bytes *plaintext = NULL;
+	int success = 0;
+	int high_ascii_found = 0;
+
+	plaintext = aes_128_cbc_decrypt(ciphertext, key, iv);
+	if (plaintext == NULL)
+		goto cleanup;
+
+	for (size_t i = 0; i < plaintext->len; i++) {
+		if (plaintext->data[i] & 0x80) {
+			high_ascii_found = 1;
+			break;
+		}
+	}
+
+	if (error_p != NULL) {
+		if (high_ascii_found) {
+			*error_p = plaintext;
+			plaintext = NULL;
+		} else {
+			*error_p = NULL;
+		}
+	}
+
+	success = 1;
+	/* FALLTHROUGH */
+cleanup:
+	bytes_free(plaintext);
+	if (!success)
+		return (-1);
+	return (high_ascii_found ? 1 : 0);
+}
