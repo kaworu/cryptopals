@@ -163,6 +163,8 @@ test_cbc_high_ascii(const MunitParameter *params, void *data)
 			munit_assert_null(error);
 		}
 
+		bytes_free(error);
+		bytes_free(ciphertext);
 		bytes_free(input);
 	}
 
