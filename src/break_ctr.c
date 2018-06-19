@@ -3,12 +3,17 @@
  *
  * CTR analysis stuff for cryptopals.com challenges.
  */
+#include <string.h>
 
 #include "compat.h"
 #include "xor.h"
 #include "ctr.h"
+#include "break_cbc.h"
 #include "break_ctr.h"
 #include "break_single_byte_xor.h"
+
+#define	CTR_BITFLIPPING_PREFIX	"comment1=cooking%20MCs;userdata="
+#define	CTR_BITFLIPPING_SUFFIX	";comment2=%20like%20a%20pound%20of%20bacon"
 
 
 struct bytes *
@@ -155,5 +160,113 @@ aes_128_ctr_edit_breaker(const struct bytes *ciphertext,
 		aes_128_ctr_edit_oracle((ct), key, nonce, (off), (rep))
 {
 	return (oracle(ciphertext, 0, ciphertext));
+}
+#undef oracle
+
+
+struct bytes *
+ctr_bitflipping_oracle(const struct bytes *payload,
+		    const struct bytes *key, uint64_t nonce)
+{
+	struct bytes *before = NULL, *after = NULL, *escaped = NULL;
+	struct bytes *plaintext = NULL, *ciphertext = NULL;
+	int success = 0;
+
+	/* sanity checks */
+	if (payload == NULL || key == NULL)
+		goto cleanup;
+
+	/* escape the special characters from the payload */
+	escaped = cbc_bitflipping_escape(payload);
+
+	/* build the full plaintext to encrypt */
+	before = bytes_from_str(CTR_BITFLIPPING_PREFIX);
+	after  = bytes_from_str(CTR_BITFLIPPING_SUFFIX);
+	const struct bytes *const parts[] = { before, escaped, after };
+	plaintext = bytes_joined_const(parts, sizeof(parts) / sizeof(*parts));
+
+	/* encrypt the plaintext using AES-CTR */
+	ciphertext = aes_128_ctr_encrypt(plaintext, key, nonce);
+	if (ciphertext == NULL)
+		goto cleanup;
+
+	success = 1;
+	/* FALLTHROUGH */
+cleanup:
+	bytes_free(plaintext);
+	bytes_free(after);
+	bytes_free(before);
+	bytes_free(escaped);
+	if (!success) {
+		bytes_free(ciphertext);
+		ciphertext = NULL;
+	}
+	return (ciphertext);
+}
+
+
+int
+ctr_bitflipping_verifier(const struct bytes *ciphertext,
+		    const struct bytes *key, uint64_t nonce)
+{
+	struct bytes *plaintext = NULL, *target = NULL;
+	int success = 0, admin = -1;
+
+	target = bytes_from_str(";admin=true;");
+	plaintext = aes_128_ctr_decrypt(ciphertext, key, nonce);
+
+	switch (bytes_find(plaintext, target, NULL)) {
+	case 0:
+		admin = 1;
+		break;
+	case 1:
+		admin = 0;
+		break;
+	default:
+		goto cleanup;
+	}
+
+	success = 1;
+	/* FALLTHROUGH */
+cleanup:
+	bytes_free(plaintext);
+	bytes_free(target);
+	return (success ? admin : -1);
+}
+
+
+struct bytes *
+ctr_bitflipping_breaker(const void *key, uint64_t nonce)
+#define oracle(x)	ctr_bitflipping_oracle((x), key, nonce)
+{
+	struct bytes *payload = NULL, *ciphertext = NULL;
+	int success = 0;
+
+	const size_t prefixlen = strlen(CTR_BITFLIPPING_PREFIX);
+
+	/* the admin=true payload. We use a comma (,), dash (-), to be flipped
+	   into a semi-colon (;), respectively equal (=). */
+	const size_t sci = prefixlen + 0;
+	const size_t eqi = prefixlen + 6;
+	payload = bytes_from_str(",admin-true");
+
+	/* generate the ciphertext using the oracle */
+	ciphertext = oracle(payload);
+	if (ciphertext == NULL)
+		goto cleanup;
+
+	/* mess with the scrambled block */
+	ciphertext->data[sci] ^= (',' ^ ';');
+	ciphertext->data[eqi] ^= ('-' ^ '=');
+
+	success = 1;
+	/* FALLTHROUGH */
+cleanup:
+	bytes_free(payload);
+	if (!success) {
+		bytes_free(ciphertext);
+		ciphertext = NULL;
+	}
+	return (ciphertext);
 }
 #undef oracle

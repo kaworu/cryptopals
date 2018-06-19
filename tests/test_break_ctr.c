@@ -210,11 +210,59 @@ test_aes_128_ctr_edit_breaker(const MunitParameter *params, void *data)
 }
 
 
+/* Test that admin=true cannot be injected */
+static MunitResult
+test_ctr_bitflipping_0(const MunitParameter *params, void *data)
+{
+	struct bytes *key = bytes_randomized(aes_128_keylength());
+	if (key == NULL)
+		munit_error("bytes_randomized");
+	const uint64_t nonce = rand_uint64();
+	struct bytes *payload = bytes_from_str("X;admin=true");
+	if (payload == NULL)
+		munit_error("bytes_from_str");
+
+	struct bytes *ciphertext = ctr_bitflipping_oracle(payload, key, nonce);
+	munit_assert_not_null(ciphertext);
+
+	const int ret = ctr_bitflipping_verifier(ciphertext, key, nonce);
+	munit_assert_int(ret, ==, 0);
+
+	bytes_free(ciphertext);
+	bytes_free(payload);
+	bytes_free(key);
+	return (MUNIT_OK);
+}
+
+
+/* Set 4 / Challenge 26 */
+static MunitResult
+test_ctr_bitflipping_1(const MunitParameter *params, void *data)
+{
+	struct bytes *key = bytes_randomized(aes_128_keylength());
+	if (key == NULL)
+		munit_error("bytes_randomized");
+	const uint64_t nonce = rand_uint64();
+
+	struct bytes *ciphertext = ctr_bitflipping_breaker(key, nonce);
+	munit_assert_not_null(ciphertext);
+
+	const int ret = ctr_bitflipping_verifier(ciphertext, key, nonce);
+	munit_assert_int(ret, ==, 1);
+
+	bytes_free(ciphertext);
+	bytes_free(key);
+	return (MUNIT_OK);
+}
+
+
 /* The test suite. */
 MunitTest test_break_ctr_suite_tests[] = {
-	{ "ctr_fixed_nonce-1",    test_ctr_fixed_nonce_1, srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
-	{ "ctr_fixed_nonce-2",    test_ctr_fixed_nonce_2, srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "ctr_fixed_nonce-1",    test_ctr_fixed_nonce_1,        srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "ctr_fixed_nonce-2",    test_ctr_fixed_nonce_2,        srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "ctr_random_access_rw", test_aes_128_ctr_edit_breaker, srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "ctr_bitflipping-0",    test_ctr_bitflipping_0,        srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "ctr_bitflipping-1",    test_ctr_bitflipping_1,        srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{
 		.name       = NULL,
 		.test       = NULL,
