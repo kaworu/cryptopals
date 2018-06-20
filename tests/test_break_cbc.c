@@ -174,6 +174,35 @@ test_cbc_high_ascii(const MunitParameter *params, void *data)
 }
 
 
+/* Set 4 / Challenge 27 */
+static MunitResult
+test_cbc_key_as_iv(const MunitParameter *params, void *data)
+{
+	const size_t blocksize = aes_128_blocksize();
+	struct bytes *key = bytes_randomized(aes_128_keylength());
+	if (key == NULL)
+		munit_error("bytes_randomized");
+	struct bytes *payload = bytes_repeated(3 * blocksize, 'X');
+	if (payload == NULL)
+		munit_error("bytes_repeated");
+
+	struct bytes *ciphertext = cbc_bitflipping_encrypt(payload, key, key);
+	if (ciphertext == NULL)
+		munit_error("cbc_bitflipping_encrypt");
+
+	struct bytes *recovered = cbc_key_as_iv_breaker(ciphertext, key);
+	munit_assert_not_null(recovered);
+	munit_assert_size(recovered->len, ==, key->len);
+	munit_assert_memory_equal(recovered->len, recovered->data, key->data);
+
+	bytes_free(recovered);
+	bytes_free(ciphertext);
+	bytes_free(payload);
+	bytes_free(key);
+	return (MUNIT_OK);
+}
+
+
 /* The test suite. */
 MunitTest test_break_cbc_suite_tests[] = {
 	{ "cbc_bitflipping_escape", test_cbc_bitflipping_escape, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
@@ -181,6 +210,7 @@ MunitTest test_break_cbc_suite_tests[] = {
 	{ "cbc_bitflipping-1",      test_cbc_bitflipping_1,      srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "cbc_padding",            test_cbc_padding,            srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "cbc_high_ascii",         test_cbc_high_ascii,         srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "cbc_key_as_iv",          test_cbc_key_as_iv,          srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{
 		.name       = NULL,
 		.test       = NULL,

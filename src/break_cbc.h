@@ -71,4 +71,12 @@ int	cbc_high_ascii_oracle(const struct bytes *ciphertext,
 		    const void *key, const struct bytes *iv,
 		    struct bytes **error_p);
 
+/*
+ * Recover function from Set 4 / Challenge 27.
+ *
+ * Returns the recovered key or NULL on error.
+ */
+struct bytes	*cbc_key_as_iv_breaker(const struct bytes *ciphertext,
+		    const void *key_iv);
+
 #endif /* ndef BREAK_CBC_H */

@@ -475,3 +475,59 @@ cleanup:
 		return (-1);
 	return (high_ascii_found ? 1 : 0);
 }
+
+
+struct bytes *
+cbc_key_as_iv_breaker(const struct bytes *ciphertext, const void *key_iv)
+#define oracle(x, e)	cbc_high_ascii_oracle((x), key_iv, key_iv, e)
+{
+	const size_t blocksize = aes_128_blocksize();
+	struct bytes *c1 = NULL, *zeroes = NULL, *rest = NULL, *error = NULL,
+		     *payload = NULL, *p1 = NULL, *p3 = NULL;
+	int success = 0;
+
+	/* sanity checks */
+	if (ciphertext == NULL || ciphertext->len < 3 * blocksize)
+		goto cleanup;
+
+	/* C_1, C_2, C_3 -> C_1, 0, C_1 */
+	c1 = bytes_slice(ciphertext, 0, blocksize);
+	zeroes = bytes_zeroed(blocksize);
+	/* we need to append C_4, C_5, ... (aka the rest) to our crafter first
+	   three blocks of payload so that the plaintext will still be correctly
+	   padded */
+	const size_t restlen = ciphertext->len - 3 * blocksize;
+	rest = bytes_slice(ciphertext, 3 * blocksize, restlen);
+
+	/* construct the full payload */
+	const struct bytes *const parts[] = { c1, zeroes, c1, rest };
+	payload = bytes_joined_const(parts, sizeof(parts) / sizeof(*parts));
+
+	/* retrieve the plaintext by calling the oracle */
+	const int has_high_ascii = oracle(payload, &error);
+	if (has_high_ascii != 1)
+		goto cleanup;
+
+	/* The key is P'_1 XOR P'_3 */
+	p1 = bytes_slice(error, 0 * blocksize, blocksize);
+	p3 = bytes_slice(error, 2 * blocksize, blocksize);
+	if (bytes_xor(p1, p3) != 0)
+		goto cleanup;
+	/* p1 is now the recovered key/iv */
+
+	success = 1;
+	/* FALLTHROUGH */
+cleanup:
+	bytes_free(p3);
+	bytes_free(error);
+	bytes_free(payload);
+	bytes_free(rest);
+	bytes_free(zeroes);
+	bytes_free(c1);
+	if (!success) {
+		bytes_free(p1);
+		p1 = NULL;
+	}
+	return (p1);
+}
+#undef oracle
