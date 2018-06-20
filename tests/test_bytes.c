@@ -2,6 +2,7 @@
  * test_bytes.c
  */
 #include "munit.h"
+#include "helpers.h"
 #include "bytes.h"
 
 
@@ -1029,6 +1030,29 @@ test_bytes_hex_to_base64(const MunitParameter *params, void *data)
 }
 
 
+static MunitResult
+test_bytes_bzero(const MunitParameter *params, void *data)
+{
+	const size_t vectors[] = { 0, 1, 2, UINT8_MAX + 1 };
+
+	for (size_t i = 0; i < (sizeof(vectors) / sizeof(*vectors)); i++) {
+		const size_t len = vectors[i];
+
+		struct bytes *buf = bytes_randomized(len);
+		if (buf == NULL)
+			munit_error("bytes_randomized");
+		bytes_bzero(buf);
+		munit_assert_size(buf->len, ==, len);
+		for (size_t j = 0; j < len; j++)
+			munit_assert_uint8(buf->data[j], ==, 0);
+
+		bytes_free(buf);
+	}
+
+	return (MUNIT_OK);
+}
+
+
 /* The test suite. */
 MunitTest test_bytes_suite_tests[] = {
 	{ "bytes_zeroed",           test_bytes_zeroed,           NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
@@ -1056,6 +1080,7 @@ MunitTest test_bytes_suite_tests[] = {
 	{ "bytes_to_hex",           test_bytes_to_hex,           NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bytes_to_base64",        test_bytes_to_base64,        NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bytes_hex_to_base64",    test_bytes_hex_to_base64,    NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "bytes_bzero",            test_bytes_bzero,            srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{
 		.name       = NULL,
 		.test       = NULL,

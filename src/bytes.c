@@ -762,6 +762,14 @@ bytes_to_base64(const struct bytes *bytes)
 
 
 void
+bytes_bzero(struct bytes *bytes)
+{
+	if (bytes != NULL)
+		explicit_bzero(bytes->data, bytes->len * sizeof(uint8_t));
+}
+
+
+void
 bytes_free(struct bytes *victim)
 {
 	if (victim == NULL)

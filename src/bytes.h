@@ -264,6 +264,11 @@ char	*bytes_to_hex(const struct bytes *bytes);
 char	*bytes_to_base64(const struct bytes *bytes);
 
 /*
+ * Set all the data bytes to zero if not NULL.
+ */
+void	bytes_bzero(struct bytes *bytes);
+
+/*
  * Free the resource associated with the given bytes struct.
  *
  * If not NULL, the data will be zero'd before freed.
