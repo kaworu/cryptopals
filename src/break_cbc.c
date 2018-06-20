@@ -359,23 +359,23 @@ cbc_padding_breaker(const struct bytes *ciphertext,
 		for (size_t pad = 1; pad <= blocksize; pad++) {
 			/* here we aim for the block c1 to decrypt to a
 			   plaintext with a valid padding of value `pad' */
-			struct bytes *alblock = bytes_dup(c0);
-			if (alblock == NULL)
+			struct bytes *a0 = bytes_dup(c0);
+			if (a0 == NULL)
 				goto loop_cleanup;
 
 			/* setup padding bytes after the one we are cracking so
 			   that they decrypt to `pad' */
-			const uint8_t *original = c0->data + blocksize - pad;
-			uint8_t *altered = alblock->data + blocksize - 1;
-			uint8_t *istate  = i1->data      + blocksize - 1;
+			const uint8_t original = c0->data[blocksize - pad];
+			uint8_t *altered = a0->data + blocksize - 1;
+			uint8_t *istate  = i1->data + blocksize - 1;
 			for (size_t p = 1; p < pad; p++)
 				*altered-- = *istate-- ^ pad;
 			/* `altered' and `istate' point to the target byte */
 
 			int found = 0;
 			for (uint16_t byte = 0; byte <= UINT8_MAX; byte++) {
-				*altered = *original ^ (uint8_t)byte;
-				if (oracle(c1, alblock) != 0)
+				*altered = original ^ (uint8_t)byte;
+				if (oracle(c1, a0) != 0)
 					continue;
 				/*
 				 * If we flip something in the byte before the
@@ -383,23 +383,30 @@ cbc_padding_breaker(const struct bytes *ciphertext,
 				 * byte), the padding should be still correct.
 				 * If not, then the byte before the target byte
 				 * was "accidently" taken as part of the
-				 * padding.
+				 * padding. We only need to do this confirmation
+				 * check when the padding is 0x1.
 				 */
 				if (pad == 1) {
-					/* there is a byte before the padding */
-					*(altered - 1) += 1;
-					const int ret = oracle(c1, alblock);
-					*(altered - 1) -= 1;
-					if (ret != 0)
+					altered[-1] += 1;
+					const int ret = oracle(c1, a0);
+					altered[-1] -= 1;
+					if (ret != 0) {
+						/* the confirmation check
+						   failed. */
 						continue;
+					}
 				}
 				found = 1;
-				/* We've hacked `alblock' in a way that
-				   altered ^ istate == pad */
+				/*
+				 * We've hacked `a0' in a way yielding a valid
+				 * padding, in other words we have:
+				 *     altered ^ istate == pad
+				 * So we can recover the istate byte.
+				 */
 				*istate = *altered ^ pad;
 				break;
 			}
-			bytes_free(alblock);
+			bytes_free(a0);
 			if (!found)
 				goto loop_cleanup;
 		}
@@ -408,10 +415,8 @@ cbc_padding_breaker(const struct bytes *ciphertext,
 		   block using it. */
 		if (bytes_xor(i1, c0) != 0)
 			goto loop_cleanup;
-		if (bytes_put(padded, n * blocksize, i1) != 0) {
-			fprintf(stderr, "bytes_put at n=%zu\n", n);
+		if (bytes_put(padded, n * blocksize, i1) != 0)
 			goto loop_cleanup;
-		}
 
 		loop_success = 1;
 		/* FALLTHROUGH */
