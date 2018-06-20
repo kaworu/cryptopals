@@ -67,6 +67,35 @@ test_bytes_from_raw(const MunitParameter *params, void *data)
 	return (MUNIT_OK);
 }
 
+static MunitResult
+test_bytes_from_uint32_be(const MunitParameter *params, void *data)
+{
+	const uint32_t input[] = {
+		0x12345678,
+		0x00000001,
+		0x10000000,
+		0xff00ee00,
+	};
+	const uint8_t expected[] = {
+		0x12, 0x34, 0x56, 0x78,
+		0x00, 0x00, 0x00, 0x01,
+		0x10, 0x00, 0x00, 0x00,
+		0xff, 0x00, 0xee, 0x00,
+	};
+	const size_t count = sizeof(input) / sizeof(*input);
+
+	struct bytes *buf = bytes_from_uint32_be(input, count);
+	munit_assert_not_null(buf);
+	munit_assert_size(buf->len, ==, 4 * count);
+	munit_assert_memory_equal(buf->len, buf->data, expected);
+
+	/* when NULL is given */
+	munit_assert_null(bytes_from_uint32_be(NULL, 1));
+
+	bytes_free(buf);
+	return (MUNIT_OK);
+}
+
 
 static MunitResult
 test_bytes_from_single(const MunitParameter *params, void *data)
@@ -1005,6 +1034,7 @@ MunitTest test_bytes_suite_tests[] = {
 	{ "bytes_zeroed",           test_bytes_zeroed,           NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bytes_repeated",         test_bytes_repeated,         NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bytes_from_raw",         test_bytes_from_raw,         NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "bytes_from_uint32_be",   test_bytes_from_uint32_be,   NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bytes_from_single",      test_bytes_from_single,      NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bytes_from_str",         test_bytes_from_str,         NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bytes_from_hex",         test_bytes_from_hex,         NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },

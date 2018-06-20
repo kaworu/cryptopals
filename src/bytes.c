@@ -120,6 +120,32 @@ bytes_from_raw(const void *p, size_t len)
 
 
 struct bytes *
+bytes_from_uint32_be(const uint32_t *words, size_t count)
+{
+	struct bytes *buf = NULL;
+
+	/* sanity check */
+	if (words == NULL)
+		return (NULL);
+
+	buf = bytes_alloc(4 * count);
+	if (buf == NULL)
+		return (NULL);
+
+	for (size_t i = 0; i < count; i++) {
+		const uint32_t word = words[i];
+		/* NOTE: big endian, most significant byte first */
+		buf->data[4 * i + 0] = (word >> 24) & 0xff;
+		buf->data[4 * i + 1] = (word >> 16) & 0xff;
+		buf->data[4 * i + 2] = (word >>  8) & 0xff;
+		buf->data[4 * i + 3] = (word >>  0) & 0xff;
+	}
+
+	return (buf);
+}
+
+
+struct bytes *
 bytes_from_single(uint8_t byte)
 {
 	return (bytes_from_raw(&byte, 1));

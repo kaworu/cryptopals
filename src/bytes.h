@@ -44,6 +44,16 @@ struct bytes	*bytes_repeated(size_t len, uint8_t byte);
 struct bytes	*bytes_from_raw(const void *p, size_t len);
 
 /*
+ * Create a bytes struct from an array of 32-bits values, most significant byte
+ * first (aka "big endian").
+ *
+ * Returns a pointer to a newly allocated bytes struct that should passed to
+ * bytes_free(). Returns NULL if the given buffer pointer is NULL, or malloc(3)
+ * failed.
+ */
+struct bytes	*bytes_from_uint32_be(const uint32_t *p, size_t count);
+
+/*
  * Create a bytes struct from a single given byte.
  *
  * Returns a pointer to a newly allocated bytes struct that should passed to
