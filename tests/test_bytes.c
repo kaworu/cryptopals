@@ -1049,6 +1049,9 @@ test_bytes_bzero(const MunitParameter *params, void *data)
 		bytes_free(buf);
 	}
 
+	/* should be fine when NULL is given */
+	bytes_bzero(NULL);
+
 	return (MUNIT_OK);
 }
 
