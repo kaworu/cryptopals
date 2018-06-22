@@ -619,6 +619,33 @@ bytes_sput(struct bytes *dest, size_t offset,
 }
 
 
+uint32_t *
+bytes_to_uint32_be(const struct bytes *bytes, size_t *count_p)
+{
+	uint32_t *words = NULL;
+
+	if (bytes == NULL || (bytes->len % 4) != 0)
+		return (NULL);
+
+	const size_t count = bytes->len / 4;
+	words = calloc(count, sizeof(uint32_t));
+	if (words == NULL)
+		return (NULL);
+
+	for (size_t i = 0; i < count; i++) {
+		const uint32_t hh = bytes->data[4 * i + 0];
+		const uint32_t hl = bytes->data[4 * i + 1];
+		const uint32_t lh = bytes->data[4 * i + 2];
+		const uint32_t ll = bytes->data[4 * i + 3];
+		words[i] = (hh << 24) | (hl << 16) | (lh << 8) | ll;
+	}
+
+	if (count_p != NULL)
+		*count_p = count;
+	return (words);
+}
+
+
 char *
 bytes_to_str(const struct bytes *bytes)
 {

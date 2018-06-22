@@ -236,6 +236,18 @@ int	bytes_sput(struct bytes *dest, size_t offset,
 		    const struct bytes *src, size_t soffset, size_t slen);
 
 /*
+ * Create an array of 32-bits values from a bytes struct, most significant byte
+ * first (aka "big endian").
+ *
+ * Returns a pointer to a newly allocated pointer that should be passed to
+ * free(). Returns NULL if the given buffer pointer is NULL, its length is not
+ * congruent modulo 4, or malloc(3) failed.
+ *
+ * if count_p is not NULL, it is set to the count of 32-bits values on success.
+ */
+uint32_t	*bytes_to_uint32_be(const struct bytes *bytes, size_t *count_p);
+
+/*
  * Create a NUL-terminated string representation of the given bytes struct.
  *
  * Returns a pointer to a newly allocated NUL-terminated string that should

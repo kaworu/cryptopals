@@ -101,10 +101,10 @@ sha1_process_message_block(const uint8_t *msg, uint32_t *H)
 	 * the left-most word.
 	 */
 	for (size_t t = 0; t < 16; t++) {
-		uint32_t hh = msg[4 * t + 0];
-		uint32_t hl = msg[4 * t + 1];
-		uint32_t lh = msg[4 * t + 2];
-		uint32_t ll = msg[4 * t + 3];
+		const uint32_t hh = msg[4 * t + 0];
+		const uint32_t hl = msg[4 * t + 1];
+		const uint32_t lh = msg[4 * t + 2];
+		const uint32_t ll = msg[4 * t + 3];
 		W[t] = (hh << 24) | (hl << 16) | (lh << 8) | ll;
 	}
 
