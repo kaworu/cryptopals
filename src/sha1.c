@@ -18,25 +18,62 @@ static void	sha1_process_message_block(const uint8_t *msg, uint32_t *H);
 struct bytes *
 sha1_hash(const struct bytes *msg)
 {
-	struct bytes *block = NULL, *digest = NULL;
+	struct bytes *digest = NULL;
 	int success = 0;
 
-	if (msg == NULL || msg->len >= (UINT64_MAX / 8))
+	/* default initial SHA-1 Intermediate Hash State */
+	struct sha1_ctx ctx = {
+		.len = 0,
+		.state = {
+			0x67452301,
+			0xEFCDAB89,
+			0x98BADCFE,
+			0x10325476,
+			0xC3D2E1F0,
+		},
+	};
+
+	if (sha1_hash_ctx(&ctx, msg) != 0)
 		goto cleanup;
 
-	/* SHA-1 Intermediate Hash State */
-	uint32_t H[5] = {
-		0x67452301,
-		0xEFCDAB89,
-		0x98BADCFE,
-		0x10325476,
-		0xC3D2E1F0,
-	};
+	digest = bytes_from_uint32_be(ctx.state, 5);
+	if (digest == NULL)
+		goto cleanup;
+
+	success = 1;
+	/* FALLTHROUGH */
+cleanup:
+	if (!success) {
+		bytes_free(digest);
+		digest = NULL;
+	}
+	return (digest);
+}
+
+
+int
+sha1_hash_ctx(struct sha1_ctx *ctx, const struct bytes *msg)
+{
+	/* max total message length, in byte */
+	const uint64_t maxlen = UINT64_MAX / 8;
+	struct bytes *block = NULL;
+	int success = 0;
+
+	/* sanity checks */
+	if (ctx == NULL)
+		goto cleanup;
+	if (ctx->len > maxlen)
+		goto cleanup;
+	if (msg == NULL || msg->len > (maxlen - ctx->len))
+		goto cleanup;
+
+	uint32_t *H = ctx->state;
 
 	/* process each "complete" message block */
 	const size_t nblock = msg->len / 64;
 	for (size_t i = 0; i < nblock; i++)
 		sha1_process_message_block(msg->data + 64 * i, H);
+	ctx->len += msg->len;
 
 	/* the padded block */
 	block = bytes_zeroed(64);
@@ -61,7 +98,7 @@ sha1_hash(const struct bytes *msg)
 
 	/* set the 64-bits message length (count of bits) in the last 8 bytes of
 	   the padded block, most significant byte first */
-	const uint64_t nbits = msg->len * 8;
+	const uint64_t nbits = 8 * ctx->len;
 	block->data[56] = nbits >> 56;
 	block->data[57] = nbits >> 48;
 	block->data[58] = nbits >> 40;
@@ -74,19 +111,11 @@ sha1_hash(const struct bytes *msg)
 	/* process the last padding block */
 	sha1_process_message_block(block->data, H);
 
-	digest = bytes_from_uint32_be(H, sizeof(H) / sizeof(*H));
-	if (digest == NULL)
-		goto cleanup;
-
 	success = 1;
 	/* FALLTHROUGH */
 cleanup:
 	bytes_free(block);
-	if (!success) {
-		bytes_free(digest);
-		digest = NULL;
-	}
-	return (digest);
+	return (success ? 0 : -1);
 }
 
 
