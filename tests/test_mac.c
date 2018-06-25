@@ -77,8 +77,11 @@ test_sha1_mac_keyed_prefix_verify(const MunitParameter *params, void *data)
 	if (mac == NULL)
 		munit_error("sha1_mac_keyed_prefix");
 
+	/* verify the message against its MAC */
 	int ret = sha1_mac_keyed_prefix_verify(key, msg, mac);
 	munit_assert_int(ret, ==, 0);
+
+	/* verify a tempered version of the message against the MAC */
 	ret = sha1_mac_keyed_prefix_verify(key, msg_tempered, mac);
 	munit_assert_int(ret, ==, 1);
 
