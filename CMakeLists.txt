@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 2.6.0)
 project(cryptopals)
 
 add_compile_options(-std=c11 -Wall -Wextra -Werror -fno-strict-aliasing -D_BSD_SOURCE)
-add_compile_options(-fstack-protector-strong -o aslr -fpie)
+add_compile_options(-fstack-protector-strong -o aslr -fPIC)
 set(CMAKE_EXE_LINKER_FLAGS ${CMAKE_EXE_LINKER_FLAGS} -pie)
 # Per build type flags.
 set(CMAKE_C_FLAGS_DEBUG    "${CMAKE_C_FLAGS} -O0 -g -fsanitize=undefined")
