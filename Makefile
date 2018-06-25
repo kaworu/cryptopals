@@ -1,12 +1,12 @@
 # Just a wrapper around CMake to build, run and clean.
 BUILD_TYPE?=DEBUG
 
-all: testrunner
+all: build/testrunner
 
-test: testrunner
-	./build/testrunner
+test: build/testrunner
+	./build/testrunner --show-stderr
 
-testrunner: build
+build/testrunner: build
 	cd build && cmake -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DCMAKE_VERBOSE_MAKEFILE=YES .. && make
 
 build:
@@ -15,4 +15,4 @@ build:
 clean:
 	rm -rf build
 
-.PHONY: all test testrunner clean
+.PHONY: all test clean
