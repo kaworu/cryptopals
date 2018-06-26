@@ -5,6 +5,7 @@
  *
  * See RFC 3174.
  */
+#include "compat.h"
 #include "sha1.h"
 
 
@@ -12,7 +13,7 @@
  * Helper processing one 512-bits input message block into the given SHA-1
  * Intermediate Hash State.
  */
-static void	sha1_process_message_block(const uint8_t *msg, uint32_t *H);
+static void	sha1_process_message_block(const uint8_t *block, uint32_t *H);
 
 
 struct bytes *
@@ -43,6 +44,7 @@ sha1_hash(const struct bytes *msg)
 	success = 1;
 	/* FALLTHROUGH */
 cleanup:
+	explicit_bzero(&ctx, sizeof(struct sha1_ctx));
 	if (!success) {
 		bytes_free(digest);
 		digest = NULL;
@@ -120,7 +122,7 @@ cleanup:
 
 
 static void
-sha1_process_message_block(const uint8_t *msg, uint32_t *H)
+sha1_process_message_block(const uint8_t *block, uint32_t *H)
 #define	S(n, word)	(((word) << (n)) | ((word) >> (32 - (n))))
 {
 	uint32_t W[80];
@@ -130,10 +132,10 @@ sha1_process_message_block(const uint8_t *msg, uint32_t *H)
 	 * the left-most word.
 	 */
 	for (size_t t = 0; t < 16; t++) {
-		const uint32_t hh = msg[4 * t + 0];
-		const uint32_t hl = msg[4 * t + 1];
-		const uint32_t lh = msg[4 * t + 2];
-		const uint32_t ll = msg[4 * t + 3];
+		const uint32_t hh = block[4 * t + 0];
+		const uint32_t hl = block[4 * t + 1];
+		const uint32_t lh = block[4 * t + 2];
+		const uint32_t ll = block[4 * t + 3];
 		W[t] = (hh << 24) | (hl << 16) | (lh << 8) | ll;
 	}
 
@@ -190,5 +192,7 @@ sha1_process_message_block(const uint8_t *msg, uint32_t *H)
 	H[2] += C;
 	H[3] += D;
 	H[4] += E;
+
+	explicit_bzero(W, sizeof(W));
 }
 #undef	S

@@ -30,8 +30,8 @@ struct bytes	*sha1_hash(const struct bytes *msg);
  * Compute the SHA-1 Hash of the given message starting from the given SHA-1
  * context. Useful to perform SHA-1 length extension.
  *
- * Note that this function will compute and process the padding of msg. This is
- * not like the SHA1Input() function from the RFC.
+ * Unlike the SHA1Input() function from the RFC, this function will compute and
+ * process the padding of msg.
  *
  * Returns 0 on success, -1 on error.
  */
