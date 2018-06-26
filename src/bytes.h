@@ -44,6 +44,16 @@ struct bytes	*bytes_repeated(size_t len, uint8_t byte);
 struct bytes	*bytes_from_raw(const void *p, size_t len);
 
 /*
+ * Create a bytes struct from an array of 32-bits values, least significant byte
+ * first (aka "little endian").
+ *
+ * Returns a pointer to a newly allocated bytes struct that should passed to
+ * bytes_free(). Returns NULL if the given buffer pointer is NULL, or malloc(3)
+ * failed.
+ */
+struct bytes	*bytes_from_uint32_le(const uint32_t *p, size_t count);
+
+/*
  * Create a bytes struct from an array of 32-bits values, most significant byte
  * first (aka "big endian").
  *
@@ -234,6 +244,18 @@ int	bytes_put(struct bytes *dest, size_t offset, const struct bytes *src);
  */
 int	bytes_sput(struct bytes *dest, size_t offset,
 		    const struct bytes *src, size_t soffset, size_t slen);
+
+/*
+ * Create an array of 32-bits values from a bytes struct, least significant byte
+ * first (aka "little endian").
+ *
+ * Returns a pointer to a newly allocated pointer that should be passed to
+ * free(). Returns NULL if the given buffer pointer is NULL, its length is not
+ * congruent modulo 4, or malloc(3) failed.
+ *
+ * if count_p is not NULL, it is set to the count of 32-bits values on success.
+ */
+uint32_t	*bytes_to_uint32_le(const struct bytes *bytes, size_t *count_p);
 
 /*
  * Create an array of 32-bits values from a bytes struct, most significant byte

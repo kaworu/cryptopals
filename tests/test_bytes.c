@@ -68,6 +68,37 @@ test_bytes_from_raw(const MunitParameter *params, void *data)
 	return (MUNIT_OK);
 }
 
+
+static MunitResult
+test_bytes_from_uint32_le(const MunitParameter *params, void *data)
+{
+	const uint32_t input[] = {
+		0x12345678,
+		0x00000001,
+		0x10000000,
+		0xff00ee00,
+	};
+	const uint8_t expected[] = {
+		0x78, 0x56, 0x34,0x12,
+		0x01, 0x00, 0x00,0x00,
+		0x00, 0x00, 0x00,0x10,
+		0x00, 0xee, 0x00,0xff,
+	};
+	const size_t count = sizeof(input) / sizeof(*input);
+
+	struct bytes *buf = bytes_from_uint32_le(input, count);
+	munit_assert_not_null(buf);
+	munit_assert_size(buf->len, ==, 4 * count);
+	munit_assert_memory_equal(buf->len, buf->data, expected);
+
+	/* when NULL is given */
+	munit_assert_null(bytes_from_uint32_le(NULL, 1));
+
+	bytes_free(buf);
+	return (MUNIT_OK);
+}
+
+
 static MunitResult
 test_bytes_from_uint32_be(const MunitParameter *params, void *data)
 {
@@ -897,6 +928,48 @@ test_bytes_hamming_distance(const MunitParameter *params, void *data)
 
 
 static MunitResult
+test_bytes_to_uint32_le(const MunitParameter *params, void *data)
+{
+	const uint8_t input[] = {
+		0x78, 0x56, 0x34,0x12,
+		0x01, 0x00, 0x00,0x00,
+		0x00, 0x00, 0x00,0x10,
+		0x00, 0xee, 0x00,0xff,
+	};
+	const size_t len = sizeof(input) / sizeof(*input);
+	const uint32_t expected[] = {
+		0x12345678,
+		0x00000001,
+		0x10000000,
+		0xff00ee00,
+	};
+	const size_t expected_count = sizeof(expected) / sizeof(*expected);
+
+	struct bytes *buf = bytes_from_raw(input, len);
+	if (buf == NULL)
+		munit_error("bytes_from_raw");
+
+	size_t count = 0;
+	uint32_t *words = bytes_to_uint32_le(buf, &count);
+	munit_assert_not_null(words);
+	munit_assert_size(count, ==, expected_count);
+	munit_assert_memory_equal(len, words, expected);
+	free(words);
+	words = bytes_to_uint32_le(buf, NULL);
+	munit_assert_not_null(words);
+	munit_assert_memory_equal(len, words, expected);
+	free(words);
+
+	/* when NULL is given */
+	munit_assert_null(bytes_to_uint32_le(NULL, &count));
+	munit_assert_null(bytes_to_uint32_le(NULL, NULL));
+
+	bytes_free(buf);
+	return (MUNIT_OK);
+}
+
+
+static MunitResult
 test_bytes_to_uint32_be(const MunitParameter *params, void *data)
 {
 	const uint8_t input[] = {
@@ -1103,6 +1176,7 @@ MunitTest test_bytes_suite_tests[] = {
 	{ "bytes_zeroed",           test_bytes_zeroed,           NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bytes_repeated",         test_bytes_repeated,         NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bytes_from_raw",         test_bytes_from_raw,         NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "bytes_from_uint32_le",   test_bytes_from_uint32_le,   NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bytes_from_uint32_be",   test_bytes_from_uint32_be,   NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bytes_from_single",      test_bytes_from_single,      NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bytes_from_str",         test_bytes_from_str,         NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
@@ -1121,6 +1195,7 @@ MunitTest test_bytes_suite_tests[] = {
 	{ "bytes_slice",            test_bytes_slice,            NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bytes_slices",           test_bytes_slices,           NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bytes_hamming_distance", test_bytes_hamming_distance, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "bytes_to_uint32_le",     test_bytes_to_uint32_le,     NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bytes_to_uint32_be",     test_bytes_to_uint32_be,     NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bytes_to_str",           test_bytes_to_str,           NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bytes_to_hex",           test_bytes_to_hex,           NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },

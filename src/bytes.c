@@ -120,6 +120,32 @@ bytes_from_raw(const void *p, size_t len)
 
 
 struct bytes *
+bytes_from_uint32_le(const uint32_t *words, size_t count)
+{
+	struct bytes *buf = NULL;
+
+	/* sanity check */
+	if (words == NULL)
+		return (NULL);
+
+	buf = bytes_alloc(4 * count);
+	if (buf == NULL)
+		return (NULL);
+
+	for (size_t i = 0; i < count; i++) {
+		const uint32_t word = words[i];
+		/* NOTE: little endian, least significant byte first */
+		buf->data[4 * i + 0] = (word >>  0) & 0xff;
+		buf->data[4 * i + 1] = (word >>  8) & 0xff;
+		buf->data[4 * i + 2] = (word >> 16) & 0xff;
+		buf->data[4 * i + 3] = (word >> 24) & 0xff;
+	}
+
+	return (buf);
+}
+
+
+struct bytes *
 bytes_from_uint32_be(const uint32_t *words, size_t count)
 {
 	struct bytes *buf = NULL;
@@ -620,6 +646,34 @@ bytes_sput(struct bytes *dest, size_t offset,
 
 
 uint32_t *
+bytes_to_uint32_le(const struct bytes *bytes, size_t *count_p)
+{
+	uint32_t *words = NULL;
+
+	if (bytes == NULL || (bytes->len % 4) != 0)
+		return (NULL);
+
+	const size_t count = bytes->len / 4;
+	words = calloc(count, sizeof(uint32_t));
+	if (words == NULL)
+		return (NULL);
+
+	for (size_t i = 0; i < count; i++) {
+		/* NOTE: little endian, least significant byte first */
+		const uint32_t ll = bytes->data[4 * i + 0];
+		const uint32_t lh = bytes->data[4 * i + 1];
+		const uint32_t hl = bytes->data[4 * i + 2];
+		const uint32_t hh = bytes->data[4 * i + 3];
+		words[i] = (hh << 24) | (hl << 16) | (lh << 8) | ll;
+	}
+
+	if (count_p != NULL)
+		*count_p = count;
+	return (words);
+}
+
+
+uint32_t *
 bytes_to_uint32_be(const struct bytes *bytes, size_t *count_p)
 {
 	uint32_t *words = NULL;
@@ -633,6 +687,7 @@ bytes_to_uint32_be(const struct bytes *bytes, size_t *count_p)
 		return (NULL);
 
 	for (size_t i = 0; i < count; i++) {
+		/* NOTE: big endian, most significant byte first */
 		const uint32_t hh = bytes->data[4 * i + 0];
 		const uint32_t hl = bytes->data[4 * i + 1];
 		const uint32_t lh = bytes->data[4 * i + 2];
