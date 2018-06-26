@@ -20,6 +20,7 @@ extern MunitTest test_cbc_suite_tests[];
 extern MunitTest test_ctr_suite_tests[];
 extern MunitTest test_mt19937_suite_tests[];
 extern MunitTest test_sha1_suite_tests[];
+extern MunitTest test_md4_suite_tests[];
 extern MunitTest test_mac_suite_tests[];
 extern MunitTest test_break_ecb_suite_tests[];
 extern MunitTest test_break_cbc_suite_tests[];
@@ -41,6 +42,7 @@ static MunitSuite all_test_suites[] = {
 	{ "ctr/",       test_ctr_suite_tests,                     NULL, 1, MUNIT_SUITE_OPTION_NONE },
 	{ "mt/",        test_mt19937_suite_tests,                 NULL, 1, MUNIT_SUITE_OPTION_NONE },
 	{ "sha1/",      test_sha1_suite_tests,                    NULL, 1, MUNIT_SUITE_OPTION_NONE },
+	{ "md4/",       test_md4_suite_tests,                     NULL, 1, MUNIT_SUITE_OPTION_NONE },
 	{ "mac/",       test_mac_suite_tests,                     NULL, 1, MUNIT_SUITE_OPTION_NONE },
 	{ "break-ecb/", test_break_ecb_suite_tests,               NULL, 1, MUNIT_SUITE_OPTION_NONE },
 	{ "break-cbc/", test_break_cbc_suite_tests,               NULL, 1, MUNIT_SUITE_OPTION_NONE },

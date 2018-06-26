@@ -4,6 +4,7 @@
  * Message Authentication Code stuff for cryptopals.com challenges.
  */
 #include "sha1.h"
+#include "md4.h"
 #include "mac.h"
 
 
@@ -37,6 +38,21 @@ sha1_mac_keyed_prefix_verify(const struct bytes *key,
 		    const struct bytes *msg, const struct bytes *mac)
 {
 	return (mac_keyed_prefix_verify(&sha1_hash, key, msg, mac));
+}
+
+
+struct bytes *
+md4_mac_keyed_prefix(const struct bytes *key, const struct bytes *msg)
+{
+	return (mac_keyed_prefix(&md4_hash, key, msg));
+}
+
+
+int
+md4_mac_keyed_prefix_verify(const struct bytes *key,
+		    const struct bytes *msg, const struct bytes *mac)
+{
+	return (mac_keyed_prefix_verify(&md4_hash, key, msg, mac));
 }
 
 
