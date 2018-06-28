@@ -42,7 +42,7 @@ test_sha1_mac_keyed_prefix(const MunitParameter *params, void *data)
 		struct bytes *mac = sha1_mac_keyed_prefix(key, message);
 		munit_assert_not_null(mac);
 		/* SHA-1 output is 160-bit */
-		munit_assert_size(mac->len, ==, sha1_hash_len());
+		munit_assert_size(mac->len, ==, sha1_hashlength());
 		munit_assert_size(mac->len, ==, expected->len);
 		munit_assert_memory_equal(mac->len, mac->data, expected->data);
 
@@ -165,7 +165,7 @@ test_md4_mac_keyed_prefix(const MunitParameter *params, void *data)
 		struct bytes *mac = md4_mac_keyed_prefix(key, message);
 		munit_assert_not_null(mac);
 		/* MD4 output is 128-bit */
-		munit_assert_size(mac->len, ==, md4_hash_len());
+		munit_assert_size(mac->len, ==, md4_hashlength());
 		munit_assert_size(mac->len, ==, expected->len);
 		munit_assert_memory_equal(mac->len, mac->data, expected->data);
 

@@ -22,7 +22,7 @@ struct sha1_ctx {
 /*
  * Returns the size of a SHA-1 hash result, in byte (20).
  */
-size_t	sha1_hash_len(void);
+size_t	sha1_hashlength(void);
 
 /*
  * Compute the SHA-1 Hash of the given message.
