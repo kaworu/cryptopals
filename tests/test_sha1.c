@@ -5,6 +5,14 @@
 #include "sha1.h"
 
 
+static MunitResult
+test_sha1_hash_len(const MunitParameter *params, void *data)
+{
+	munit_assert_size(sha1_hash_len(), ==, 20);
+	return (MUNIT_OK);
+}
+
+
 /* Test Vectors from RFC 3174 */
 static MunitResult
 test_sha1_hash(const MunitParameter *params, void *data)
@@ -49,7 +57,7 @@ test_sha1_hash(const MunitParameter *params, void *data)
 		struct bytes *hash = sha1_hash(message);
 		munit_assert_not_null(hash);
 		/* SHA-1 output is 160-bit */
-		munit_assert_size(hash->len, ==, 160 / 8);
+		munit_assert_size(hash->len, ==, sha1_hash_len());
 		munit_assert_size(hash->len, ==, expected->len);
 		munit_assert_memory_equal(hash->len, hash->data, expected->data);
 
@@ -67,7 +75,8 @@ test_sha1_hash(const MunitParameter *params, void *data)
 
 /* The test suite. */
 MunitTest test_sha1_suite_tests[] = {
-	{ "sha1_hash", test_sha1_hash, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "sha1_hash_len", test_sha1_hash_len, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "sha1_hash",     test_sha1_hash,     NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{
 		.name       = NULL,
 		.test       = NULL,

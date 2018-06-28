@@ -3,6 +3,7 @@
  */
 #include "munit.h"
 #include "helpers.h"
+#include "sha1.h"
 #include "mac.h"
 #include "break_mac.h"
 

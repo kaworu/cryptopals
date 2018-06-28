@@ -54,6 +54,14 @@
 static void	md4_transform(uint32_t *state, const uint8_t *block);
 
 
+size_t
+md4_hash_len(void)
+{
+	/* MD4 hashes are 128-bit long */
+	return (128 / 8);
+}
+
+
 struct bytes *
 md4_hash(const struct bytes *msg)
 {

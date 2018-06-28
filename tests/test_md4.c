@@ -5,6 +5,14 @@
 #include "md4.h"
 
 
+static MunitResult
+test_md4_hash_len(const MunitParameter *params, void *data)
+{
+	munit_assert_size(md4_hash_len(), ==, 16);
+	return (MUNIT_OK);
+}
+
+
 /* Test Vectors from RFC 1320 APPENDIX A.5 (Test suite) */
 static MunitResult
 test_md4_hash(const MunitParameter *params, void *data)
@@ -48,7 +56,7 @@ test_md4_hash(const MunitParameter *params, void *data)
 		struct bytes *hash = md4_hash(message);
 		munit_assert_not_null(hash);
 		/* MD4 output is 128-bit */
-		munit_assert_size(hash->len, ==, 128 / 8);
+		munit_assert_size(hash->len, ==, md4_hash_len());
 		munit_assert_size(hash->len, ==, expected->len);
 		munit_assert_memory_equal(hash->len, hash->data, expected->data);
 
@@ -66,7 +74,8 @@ test_md4_hash(const MunitParameter *params, void *data)
 
 /* The test suite. */
 MunitTest test_md4_suite_tests[] = {
-	{ "md4_hash", test_md4_hash, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "md4_hash_len", test_md4_hash_len, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "md4_hash",     test_md4_hash,     NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{
 		.name       = NULL,
 		.test       = NULL,

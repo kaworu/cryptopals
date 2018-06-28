@@ -16,6 +16,14 @@
 static void	sha1_process_message_block(const uint8_t *block, uint32_t *H);
 
 
+size_t
+sha1_hash_len(void)
+{
+	/* SHA-1 hashes are 160-bit long */
+	return (160 / 8);
+}
+
+
 struct bytes *
 sha1_hash(const struct bytes *msg)
 {
