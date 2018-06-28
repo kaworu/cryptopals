@@ -13,6 +13,14 @@ test_md4_hashlength(const MunitParameter *params, void *data)
 }
 
 
+static MunitResult
+test_md4_blocksize(const MunitParameter *params, void *data)
+{
+	munit_assert_size(md4_blocksize(), ==, 64);
+	return (MUNIT_OK);
+}
+
+
 /* Test Vectors from RFC 1320 APPENDIX A.5 (Test suite) */
 static MunitResult
 test_md4_hash(const MunitParameter *params, void *data)
@@ -75,6 +83,7 @@ test_md4_hash(const MunitParameter *params, void *data)
 /* The test suite. */
 MunitTest test_md4_suite_tests[] = {
 	{ "md4_hashlength", test_md4_hashlength, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "md4_blocksize",  test_md4_blocksize,  NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "md4_hash",       test_md4_hash,       NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{
 		.name       = NULL,

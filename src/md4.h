@@ -20,7 +20,7 @@ struct md4_ctx {
 
 
 /*
- * Returns the size of a MD4 hash result, in byte (16).
+ * Returns the size of a MD4 hash result, in bytes (16).
  */
 size_t	md4_hashlength(void);
 
@@ -30,6 +30,11 @@ size_t	md4_hashlength(void);
  * Returns the resulting hash, or NULL on error.
  */
 struct bytes	*md4_hash(const struct bytes *msg);
+
+/*
+ * Returns the size of a MD4 compression block, in bytes (64).
+ */
+size_t	md4_blocksize(void);
 
 /*
  * Compute the MD4 Hash of the given message starting from the given MD4

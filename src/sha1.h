@@ -20,9 +20,14 @@ struct sha1_ctx {
 
 
 /*
- * Returns the size of a SHA-1 hash result, in byte (20).
+ * Returns the size of a SHA-1 hash result, in bytes (20).
  */
 size_t	sha1_hashlength(void);
+
+/*
+ * Returns the size of a SHA-1 compression block, in bytes (64).
+ */
+size_t	sha1_blocksize(void);
 
 /*
  * Compute the SHA-1 Hash of the given message.

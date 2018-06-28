@@ -25,7 +25,8 @@ enum length_encoding {
  */
 static struct bytes	*sha1_padding(size_t len);
 static struct bytes	*md4_padding(size_t len);
-static struct bytes	*padding(size_t len, enum length_encoding le);
+static struct bytes	*padding(size_t len, size_t blocksize,
+		    enum length_encoding le);
 
 
 int
@@ -207,32 +208,32 @@ cleanup:
 static struct bytes *
 sha1_padding(size_t len)
 {
-	return padding(len, HIGH_WORD_FIRST_BE);
+	return padding(len, sha1_blocksize(), HIGH_WORD_FIRST_BE);
 }
 
 
 static struct bytes *
 md4_padding(size_t len)
 {
-	return padding(len, LOW_WORD_FIRST_LE);
+	return padding(len, md4_blocksize(), LOW_WORD_FIRST_LE);
 }
 
 
 static struct bytes *
-padding(size_t len, enum length_encoding le)
+padding(size_t len, size_t blocksize, enum length_encoding le)
 {
 	/* max total message length, in bytes */
 	struct bytes *padding = NULL;
 	int success = 0;
 
 	/* count of message bytes in the padded block */
-	const size_t restlen = len % 64;
+	const size_t restlen = len % blocksize;
 	/* count of padding bytes in the padded block */
-	size_t padlen = 64 - restlen;
+	size_t padlen = blocksize - restlen;
 	if (padlen < (1 + 8)) {
 		/* not enough space for the leading 0x80 and total message
 		   length in the last block, add one block. */
-		padlen += 64;
+		padlen += blocksize;
 	}
 
 	/* allocate enough space to hold the padding bytes */

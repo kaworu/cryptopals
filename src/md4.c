@@ -62,6 +62,13 @@ md4_hashlength(void)
 }
 
 
+size_t
+md4_blocksize(void)
+{
+	return (512 / 8);
+}
+
+
 struct bytes *
 md4_hash(const struct bytes *msg)
 {
@@ -109,19 +116,19 @@ md4_hash_ctx(struct md4_ctx *ctx, const struct bytes *msg)
 		goto cleanup;
 
 	/* process each "complete" message block */
-	const size_t nblock = msg->len / 64;
+	const size_t nblock = msg->len / md4_blocksize();
 	for (size_t i = 0; i < nblock; i++)
-		md4_transform(ctx->state, msg->data + 64 * i);
+		md4_transform(ctx->state, msg->data + md4_blocksize() * i);
 	ctx->len += msg->len;
 
 	/* the padded block */
-	block = bytes_zeroed(64);
+	block = bytes_zeroed(md4_blocksize());
 	if (block == NULL)
 		goto cleanup;
 	/* count of message bytes in the padded block */
-	const size_t restlen = msg->len % 64;
+	const size_t restlen = msg->len % md4_blocksize();
 	/* copy what is left of the message to process into the padded block */
-	if (bytes_sput(block, 0, msg, 64 * nblock, restlen) != 0)
+	if (bytes_sput(block, 0, msg, md4_blocksize() * nblock, restlen) != 0)
 		goto cleanup;
 	/* Add the first padding bytes, a `1' bit followed by zeroes */
 	block->data[restlen] = 0x80;

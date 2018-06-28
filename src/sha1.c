@@ -24,6 +24,13 @@ sha1_hashlength(void)
 }
 
 
+size_t
+sha1_blocksize(void)
+{
+	return (512 / 8);
+}
+
+
 struct bytes *
 sha1_hash(const struct bytes *msg)
 {
@@ -80,19 +87,19 @@ sha1_hash_ctx(struct sha1_ctx *ctx, const struct bytes *msg)
 	uint32_t *H = ctx->state;
 
 	/* process each "complete" message block */
-	const size_t nblock = msg->len / 64;
+	const size_t nblock = msg->len / sha1_blocksize();
 	for (size_t i = 0; i < nblock; i++)
-		sha1_process_message_block(msg->data + 64 * i, H);
+		sha1_process_message_block(msg->data + sha1_blocksize() * i, H);
 	ctx->len += msg->len;
 
 	/* the padded block */
-	block = bytes_zeroed(64);
+	block = bytes_zeroed(sha1_blocksize());
 	if (block == NULL)
 		goto cleanup;
 	/* count of message bytes in the padded block */
-	const size_t restlen = msg->len % 64;
+	const size_t restlen = msg->len % sha1_blocksize();
 	/* copy what is left of the message to process into the padded block */
-	if (bytes_sput(block, 0, msg, 64 * nblock, restlen) != 0)
+	if (bytes_sput(block, 0, msg, sha1_blocksize() * nblock, restlen) != 0)
 		goto cleanup;
 	/* Add the first padding bytes, a `1' bit followed by zeroes */
 	block->data[restlen] = 0x80;

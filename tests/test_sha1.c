@@ -13,6 +13,14 @@ test_sha1_hashlength(const MunitParameter *params, void *data)
 }
 
 
+static MunitResult
+test_sha1_blocksize(const MunitParameter *params, void *data)
+{
+	munit_assert_size(sha1_blocksize(), ==, 64);
+	return (MUNIT_OK);
+}
+
+
 /* Test Vectors from RFC 3174 */
 static MunitResult
 test_sha1_hash(const MunitParameter *params, void *data)
@@ -76,6 +84,7 @@ test_sha1_hash(const MunitParameter *params, void *data)
 /* The test suite. */
 MunitTest test_sha1_suite_tests[] = {
 	{ "sha1_hashlength", test_sha1_hashlength, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "sha1_blocksize",  test_sha1_blocksize,  NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "sha1_hash",       test_sha1_hash,       NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{
 		.name       = NULL,
