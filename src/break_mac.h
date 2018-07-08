@@ -36,4 +36,17 @@ int	extend_md4_mac_keyed_prefix(const void *key,
 		    const struct bytes *msg, const struct bytes *mac,
 		    struct bytes **msg_p, struct bytes **mac_p);
 
+/*
+ * Break a server verifying HMAC-SHA1 with an artificial timing leak as
+ * described in Set 4 / Challenge 31 & 32.
+ *
+ * the fmt argument is the query having exactly one %s replacement pattern that
+ * will be replaced by the MAC. Note: this is highly insecure and no escape is
+ * performed.
+ *
+ * Returns the hacked MAC on success, NULL on failure.
+ */
+struct bytes	*break_timing_leaking_server(const char *hostname,
+		    const char *port, const char *fmt, size_t maclen);
+
 #endif /* ndef BREAK_MAC_H */

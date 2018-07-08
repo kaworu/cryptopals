@@ -3,7 +3,16 @@
  *
  * MAC analysis stuff for cryptopals.com challenges.
  */
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <sys/time.h>
+#include <errno.h>
+#include <limits.h>
+#include <netdb.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "compat.h"
 #include "sha1.h"
@@ -27,6 +36,15 @@ static struct bytes	*sha1_padding(size_t len);
 static struct bytes	*md4_padding(size_t len);
 static struct bytes	*padding(size_t len, size_t blocksize,
 		    enum length_encoding le);
+
+/*
+ * Perform a HTTP request to the server and compute request time.
+ *
+ * Returns -1 on error, the HTTP status code otherwise.
+ */
+static int	request_timing_leaking_server(const struct addrinfo *res,
+		    const char *fmt, const struct bytes *mac,
+		    struct timeval *tdiff_p);
 
 
 int
@@ -205,6 +223,90 @@ cleanup:
 #undef oracle
 
 
+struct bytes *
+break_timing_leaking_server(const char *hostname,
+		    const char *port, const char *fmt, size_t maclen)
+{
+	struct bytes *mac = NULL;
+	struct addrinfo hints;
+	struct addrinfo *res = NULL, *res0 = NULL;
+	int success = 0;
+
+	/* sanity checks */
+	if (hostname == NULL || fmt == NULL)
+		goto cleanup;
+
+	/* find the addresses for the given hostname (both IPv6 and IPv4).
+	   Heavily based on OpenBSD's getaddrinfo(3) manpage example. */
+	(void)memset(&hints, 0, sizeof(struct addrinfo));
+	hints.ai_family = AF_UNSPEC;
+	hints.ai_socktype = SOCK_STREAM;
+	if (getaddrinfo(hostname, port, &hints, &res0) != 0)
+		goto cleanup;
+	for (res = res0; res != NULL; res = res->ai_next) {
+		const int s = socket(res->ai_family, res->ai_socktype,
+			    res->ai_protocol);
+		if (s == -1)
+			continue;
+		const int ret = connect(s, res->ai_addr, res->ai_addrlen);
+		(void)close(s);
+		if (ret == 0) {
+			/* ok we got one */
+			break;
+		}
+	}
+	if (res == NULL)
+		goto cleanup;
+
+	/* allocate enough space for the MAC we're trying to break */
+	mac = bytes_zeroed(maclen);
+	if (mac == NULL)
+		goto cleanup;
+
+	/* Perform one request to warm up the server (filesystem cache etc.) */
+	(void)request_timing_leaking_server(res, fmt, mac, NULL);
+
+	/* break one byte MAC byte at a time */
+	for (size_t i = 0; i < mac->len; i++) {
+		/* very naive heuristic, we try each possible byte value
+		   remembering the one where the request took the most time */
+		struct {
+			struct timeval tv;
+			uint8_t byte;
+		} slow;
+		timerclear(&slow.tv);
+		slow.byte = 0;
+		for (uint16_t byte = 0; byte <= UINT8_MAX; byte++) {
+			struct timeval t;
+			mac->data[i] = byte;
+			if (request_timing_leaking_server(res, fmt, mac, &t) == -1)
+				goto cleanup;
+			if (timercmp(&t, &slow.tv, >)) {
+				slow.tv.tv_sec  = t.tv_sec;
+				slow.tv.tv_usec = t.tv_usec;
+				slow.byte = (uint8_t)byte;
+			}
+		}
+		mac->data[i] = slow.byte;
+	}
+
+	/* ultimately, verify that our guessed MAC is valid. The server should
+	   respond with a "200 OK" HTTP status if we succeeded. */
+	if (request_timing_leaking_server(res, fmt, mac, NULL) != 200)
+		goto cleanup;
+
+	success = 1;
+	/* FALLTHROUGH */
+cleanup:
+	freeaddrinfo(res0);
+	if (!success) {
+		bytes_free(mac);
+		mac = NULL;
+	}
+	return (mac);
+}
+
+
 static struct bytes *
 sha1_padding(size_t len)
 {
@@ -279,4 +381,111 @@ cleanup:
 		padding = NULL;
 	}
 	return (padding);
+}
+
+
+static int
+request_timing_leaking_server(const struct addrinfo *res,
+		    const char *fmt, const struct bytes *mac,
+		    struct timeval *tdiff_p)
+{
+	char *hex = NULL, *path = NULL, *req = NULL;
+	int plen = 0, rlen = 0;
+	size_t psize = 0, rsize = 0;
+	struct timeval t1, t2;
+	int s = -1; /* socket */
+	int success = 0, status = 0;
+	/* just enough space to hold the first few bytes including the status
+	   code, i.e "HTTP/1.0 200" */
+	char rsp[12 + 1] = { 0 };
+
+	/* sanity checks */
+	if (res == NULL || fmt == NULL || mac == NULL)
+		goto cleanup;
+
+	/* encode the hex representation of mac and build the path */
+	hex = bytes_to_hex(mac);
+	if (hex == NULL)
+		goto cleanup;
+	plen = snprintf(NULL, 0, fmt, hex);
+	if (plen == -1)
+		goto cleanup;
+	psize = (size_t)plen + 1;
+	path = calloc(psize, sizeof(char));
+	if (path == NULL)
+		goto cleanup;
+	if (snprintf(path, psize, fmt, hex) != plen)
+		goto cleanup;
+	/* now build the full request */
+	rlen = snprintf(NULL, 0, "GET %s HTTP/1.0\r\n\r\n", path);
+	if (rlen == -1)
+		goto cleanup;
+	rsize = (size_t)rlen + 1;
+	req = calloc(rsize, sizeof(char));
+	if (req == NULL)
+		goto cleanup;
+	if (snprintf(req, rsize, "GET %s HTTP/1.0\r\n\r\n", path) != rlen)
+		goto cleanup;
+
+	/* initiate the connection to the server */
+	s = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
+	if (s == -1)
+		goto cleanup;
+	if (connect(s, res->ai_addr, res->ai_addrlen) != 0)
+		goto cleanup;
+
+	/* perform the request while timing it */
+	if (gettimeofday(&t1, NULL) != 0)
+		goto cleanup;
+	if (send(s, req, rlen, /* flags */0) != rlen)
+		goto cleanup;
+	/* waste no time in reading the data, we just want to get back as soon
+	   as there is an answer from the server */
+	if (recv(s, rsp, 0, /* flags */0) == -1)
+		goto cleanup;
+	if (gettimeofday(&t2, NULL) != 0)
+		goto cleanup;
+	/* now read the data that we're interested in */
+	if (recv(s, rsp, sizeof(rsp) - 1, /* flags */0) == -1)
+		goto cleanup;
+
+	/*
+	 * Consume all the bytes that were sent by the server. This is needed in
+	 * order to avoid closing the socket too early and exhaust the server
+	 * sending buffer(s)
+	 */
+	char buf[BUFSIZ];
+	while (recv(s, buf, sizeof(buf), /* flags */0) > 0);
+
+	/* check that the response preamble match what we expect */
+	const char *http_1_0 = "HTTP/1.0 ";
+	if (strncmp(http_1_0, rsp, strlen(http_1_0)) != 0)
+		goto cleanup;
+
+	/* parse the HTTP status code */
+	const char *p = rsp + strlen(http_1_0);
+	char *ep = NULL;
+	errno = 0;
+	const unsigned long int ulval = strtoul(p, &ep, /* base */10);
+	if (p[0] == '\0' || *ep != '\0') /* not a number */
+		goto cleanup;
+	if (errno == ERANGE && ulval == ULONG_MAX) /* out of range */
+		goto cleanup;
+	if (ulval > INT_MAX)
+		goto cleanup;
+	status = (int)ulval;
+
+	if (tdiff_p != NULL) {
+		/* the caller want to know how much time the request took */
+		timersub(&t2, &t1, tdiff_p);
+	}
+
+	success = 1;
+	/* FALLTHROUGH */
+cleanup:
+	(void)close(s);
+	free(req);
+	free(path);
+	free(hex);
+	return (success ? status : -1);
 }
