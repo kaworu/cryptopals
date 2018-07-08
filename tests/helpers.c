@@ -3,8 +3,13 @@
  *
  * Some testing help stuff.
  */
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 #include <limits.h>
 #include <stdlib.h>
+#include <unistd.h>
+
 
 #include "helpers.h"
 
@@ -39,4 +44,42 @@ rand_uint64(void)
 	uint64_t lo = munit_rand_uint32();
 	uint64_t hi = munit_rand_uint32();
 	return ((hi << 32) | lo);
+}
+
+
+struct bytes *
+fs_read(const char *path)
+{
+	struct stat st;
+	struct bytes *content = NULL;
+	int fd = -1;
+	int success = 0;
+
+	if (path == NULL)
+		goto cleanup;
+
+	if (stat(path, &st) == -1)
+		goto cleanup;
+
+	content = bytes_zeroed(st.st_size);
+	if (content == NULL)
+		goto cleanup;
+
+	fd = open(path, O_RDONLY);
+	if (fd == -1)
+		goto cleanup;
+
+	ssize_t ret = read(fd, content->data, content->len);
+	if ((size_t)ret != content->len)
+		goto cleanup;
+
+	success = 1;
+	/* FALLTHROUGH */
+cleanup:
+	(void)close(fd);
+	if (!success) {
+		bytes_free(content);
+		content = NULL;
+	}
+	return (content);
 }
