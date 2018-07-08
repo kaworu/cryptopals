@@ -15,6 +15,12 @@ typedef struct bytes *(hash_func_t)(const struct bytes *msg);
 
 
 /*
+ * Generic HMAC construction function.
+ */
+static struct bytes	*hmac(hash_func_t *H, size_t B, size_t L,
+		    const struct bytes *key, const struct bytes *msg);
+
+/*
  * Generic secret-prefix MAC functions.
  */
 static struct bytes	*mac_keyed_prefix(hash_func_t *hash,
@@ -53,6 +59,101 @@ md4_mac_keyed_prefix_verify(const struct bytes *key,
 		    const struct bytes *msg, const struct bytes *mac)
 {
 	return (mac_keyed_prefix_verify(&md4_hash, key, msg, mac));
+}
+
+
+struct bytes *
+hmac_sha1(const struct bytes *key, const struct bytes *msg)
+{
+	const size_t blocksize  = sha1_blocksize();
+	const size_t hashlength = sha1_hashlength();
+	return (hmac(&sha1_hash, blocksize, hashlength, key, msg));
+}
+
+
+struct bytes *
+hmac_md4(const struct bytes *key, const struct bytes *msg)
+{
+	const size_t blocksize  = md4_blocksize();
+	const size_t hashlength = md4_hashlength();
+	return (hmac(&md4_hash, blocksize, hashlength, key, msg));
+}
+
+
+static struct bytes *
+hmac(hash_func_t *H, size_t B, size_t L,
+		    const struct bytes *key, const struct bytes *msg)
+{
+	struct bytes *tk = NULL;
+	struct bytes *k_ipad = NULL, *k_opad = NULL;
+	struct bytes *in = NULL, *hin = NULL, *out = NULL;
+	struct bytes *mac = NULL;
+	int success = 0;
+
+	/* sanity checks */
+	if (H == NULL || key == NULL || msg == NULL)
+		goto cleanup;
+
+	if (key->len > B) {
+		/*
+		 * From § 2:
+		 * Applications that use keys longer than B bytes will first
+		 * hash the key using H and then use the resultant L byte string
+		 * as the actual key to HMAC.
+		 *
+		 * NOTE: see https://www.rfc-editor.org/errata/eid4809
+		 */
+		struct bytes *hkey = H(key);
+		tk = bytes_slice(hkey, 0, L);
+		bytes_free(hkey);
+	} else {
+		tk = bytes_dup(key);
+	}
+	if (tk == NULL)
+		goto cleanup;
+
+	/*
+	 * Build ipad and opad; the key followed by zeros, XOR'ed with 0x36,
+	 * respectively 0x5c.
+	 */
+	k_ipad = bytes_zeroed(B);
+	if (k_ipad == NULL)
+		goto cleanup;
+	if (bytes_put(k_ipad, 0, tk) != 0)
+		goto cleanup;
+	k_opad = bytes_dup(k_ipad);
+	if (k_opad == NULL)
+		goto cleanup;
+	for (size_t i = 0; i < B; i++) {
+		k_ipad->data[i] ^= 0x36;
+		k_opad->data[i] ^= 0x5c;
+	}
+
+	/* H(K XOR opad, H(K XOR ipad, text)) */
+
+	const struct bytes *iparts[] = { k_ipad, msg };
+	in = bytes_joined_const(iparts, sizeof(iparts) / sizeof(*iparts));
+	hin = H(in);
+	const struct bytes *oparts[] = { k_opad, hin };
+	out = bytes_joined_const(oparts, sizeof(oparts) / sizeof(*oparts));
+	mac = H(out);
+	if (mac == NULL)
+		goto cleanup;
+
+	success = 1;
+	/* FALLTHROUGH */
+cleanup:
+	bytes_free(out);
+	bytes_free(hin);
+	bytes_free(in);
+	bytes_free(k_opad);
+	bytes_free(k_ipad);
+	bytes_free(tk);
+	if (!success) {
+		bytes_free(mac);
+		mac = NULL;
+	}
+	return (mac);
 }
 
 
