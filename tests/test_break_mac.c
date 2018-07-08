@@ -236,11 +236,14 @@ test_timing_leaking_server(const MunitParameter *params, void *data)
 	if (waitpid(server->pid, NULL, WNOHANG) != 0)
 		munit_error("server started but down?");
 
-	const char *hostname = munit_parameters_get(params, "hostname");
-	const char *port     = munit_parameters_get(params, "port");
 	/* expected to be given on the cli */
 	const char *filepath = munit_parameters_get(params, "filepath");
-	if (hostname == NULL || port == NULL || filepath == NULL)
+	if (filepath == NULL)
+		return (MUNIT_SKIP);
+
+	const char *hostname = munit_parameters_get(params, "hostname");
+	const char *port     = munit_parameters_get(params, "port");
+	if (hostname == NULL || port == NULL)
 		return (MUNIT_ERROR);
 
 	struct bytes *content = fs_read(filepath);
