@@ -98,6 +98,7 @@ set(TEST_SRCS
     ${PROJECT_SOURCE_DIR}/tests/test_sha1.c
     ${PROJECT_SOURCE_DIR}/tests/test_md4.c
     ${PROJECT_SOURCE_DIR}/tests/test_mac.c
+    ${PROJECT_SOURCE_DIR}/tests/test_dh.c
     ${PROJECT_SOURCE_DIR}/tests/test_break_ecb.c
     ${PROJECT_SOURCE_DIR}/tests/test_break_cbc.c
     ${PROJECT_SOURCE_DIR}/tests/test_break_ctr.c
