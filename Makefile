@@ -7,6 +7,7 @@ test: testrunner
 	./build/testrunner                       \
 	--show-stderr                            \
 	--log-visible debug                      \
+	--param hostname localhost               \
 	--param server ./python/server.py        \
 	--param filepath ./README.md             \
 	--param delay 2
