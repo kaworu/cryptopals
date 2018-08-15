@@ -13,7 +13,7 @@
 
 
 struct bignum {
-	BIGNUM bn;
+	BIGNUM *bn;
 };
 
 
@@ -21,12 +21,24 @@ static inline struct bignum *
 bignum_alloc(void)
 {
 	struct bignum *num = NULL;
+	int success = 0;
 
 	num = malloc(sizeof(struct bignum));
-	if (num != NULL) {
-		BN_init(&num->bn);
-	}
+	if (num == NULL)
+		goto cleanup;
+	num->bn = BN_new();
+	if (num->bn == NULL)
+		goto cleanup;
 
+	success = 1;
+	/* FALLTHROUGH */
+cleanup:
+	if (!success) {
+		if (num != NULL)
+			BN_clear_free(num->bn);
+		freezero(num, sizeof(struct bignum));
+		num = NULL;
+	}
 	return (num);
 }
 
@@ -45,8 +57,7 @@ bignum_from_dec(const char *s)
 	if (num == NULL)
 		goto cleanup;
 
-	BIGNUM *p = &num->bn;
-	if (BN_dec2bn(&p, s) == 0)
+	if (BN_dec2bn(&num->bn, s) == 0)
 		goto cleanup;
 
 	success = 1;
@@ -74,8 +85,7 @@ bignum_from_hex(const char *s)
 	if (num == NULL)
 		goto cleanup;
 
-	BIGNUM *p = &num->bn;
-	if (BN_hex2bn(&p, s) == 0)
+	if (BN_hex2bn(&num->bn, s) == 0)
 		goto cleanup;
 
 	success = 1;
@@ -103,7 +113,7 @@ bignum_rand(const struct bignum *limit)
 	if (num == NULL)
 		goto cleanup;
 
-	if (BN_rand_range(&num->bn, &limit->bn) == 0)
+	if (BN_rand_range(num->bn, limit->bn) == 0)
 		goto cleanup;
 
 	success = 1;
@@ -122,7 +132,7 @@ bignum_cmp(const struct bignum *lhs, const struct bignum *rhs)
 {
 	if (lhs == NULL || rhs == NULL)
 		return (INT_MIN);
-	return (BN_cmp(&lhs->bn, &rhs->bn));
+	return (BN_cmp(lhs->bn, rhs->bn));
 }
 
 
@@ -145,7 +155,7 @@ struct bignum	*bignum_modexp(const struct bignum *base,
 	if (ctx == NULL)
 		goto cleanup;
 
-	if (BN_mod_exp(&num->bn, &base->bn, &exp->bn, &mod->bn, ctx) == 0)
+	if (BN_mod_exp(num->bn, base->bn, exp->bn, mod->bn, ctx) == 0)
 		goto cleanup;
 
 	success = 1;
@@ -166,7 +176,7 @@ bignum_to_dec(const struct bignum *num)
 	if (num == NULL)
 		return (NULL);
 
-	char *s = BN_bn2dec(&num->bn);
+	char *s = BN_bn2dec(num->bn);
 	if (s == NULL)
 		return (NULL);
 	char *ret = strdup(s);
@@ -183,7 +193,7 @@ bignum_to_hex(const struct bignum *num)
 	if (num == NULL)
 		goto cleanup;
 
-	s = BN_bn2hex(&num->bn);
+	s = BN_bn2hex(num->bn);
 	if (s == NULL)
 		goto cleanup;
 
@@ -215,7 +225,7 @@ void
 bignum_free(struct bignum *victim)
 {
 	if (victim != NULL) {
-		BN_clear_free(&victim->bn);
+		BN_clear_free(victim->bn);
 		freezero(victim, sizeof(struct bignum));
 	}
 }
