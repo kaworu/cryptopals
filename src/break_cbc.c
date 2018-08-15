@@ -274,7 +274,6 @@ cbc_padding_oracle(const struct bytes *ciphertext,
 cleanup:
 	EVP_CIPHER_CTX_free(ctx);
 	/* XXX: we don't provide any clue on what happened on error */
-	ERR_remove_state(/* pid will be looked up */0);
 	bytes_free(plaintext);
 	return (success ? padding : -1);
 }
