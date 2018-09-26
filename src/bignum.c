@@ -203,7 +203,7 @@ bignum_to_hex(const struct bignum *num)
 
 	/*
 	 * OpenSSL would prefix with zero so that hex number length are always
-	 * even, and that not what we want.
+	 * even, and that isn't what we want.
 	 */
 	char *p = s, *r = ret;
 	/* skip over the leading minus, if any */
