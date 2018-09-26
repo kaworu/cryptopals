@@ -3,7 +3,7 @@
  */
 #include "munit.h"
 #include "helpers.h"
-#include "bignum.h"
+#include "dh.h"
 
 
 /* Set 5 / Challenge 33 (first part) */
@@ -15,29 +15,24 @@ test_small_dh(const MunitParameter *params, void *data)
 	if (p == NULL || g == NULL)
 		munit_error("bignum_from_dec");
 
-	struct bignum *a = bignum_rand(p);
-	struct bignum *b = bignum_rand(p);
-	if (a == NULL || b == NULL)
-		munit_error("bignum_rand");
+	struct dh *alice = dh_new();
+	struct dh *bob   = dh_new();
+	if (alice == NULL || bob == NULL)
+		munit_error("dh_new");
 
-	struct bignum *A = bignum_modexp(g, a, p);
-	struct bignum *B = bignum_modexp(g, b, p);
-	if (A == NULL || B == NULL)
-		munit_error("bignum_modexp");
+	int ret = alice->exchange(alice, bob, p, g);
+	munit_assert_int(ret, ==, 0);
 
-	struct bignum *sa = bignum_modexp(B, a, p);
-	struct bignum *sb = bignum_modexp(A, b, p);
-	if (A == NULL || B == NULL)
-		munit_error("bignum_modexp");
+	struct bytes *alice_key = alice->key(alice);
+	struct bytes *bob_key   = bob->key(bob);
+	munit_assert_not_null(alice_key);
+	munit_assert_not_null(bob_key);
+	munit_assert_int(bytes_bcmp(alice_key, bob_key), ==, 0);
 
-	munit_assert_int(bignum_cmp(sa, sb), ==, 0);
-
-	bignum_free(sb);
-	bignum_free(sa);
-	bignum_free(B);
-	bignum_free(A);
-	bignum_free(b);
-	bignum_free(a);
+	bytes_free(bob_key);
+	bytes_free(alice_key);
+	bob->free(bob);
+	alice->free(alice);
 	bignum_free(g);
 	bignum_free(p);
 	return (MUNIT_OK);
@@ -61,29 +56,24 @@ test_nist_dh(const MunitParameter *params, void *data)
 	if (p == NULL || g == NULL)
 		munit_error("bignum_from_hex");
 
-	struct bignum *a = bignum_rand(p);
-	struct bignum *b = bignum_rand(p);
-	if (a == NULL || b == NULL)
-		munit_error("bignum_rand");
+	struct dh *alice = dh_new();
+	struct dh *bob   = dh_new();
+	if (alice == NULL || bob == NULL)
+		munit_error("dh_new");
 
-	struct bignum *A = bignum_modexp(g, a, p);
-	struct bignum *B = bignum_modexp(g, b, p);
-	if (A == NULL || B == NULL)
-		munit_error("bignum_modexp");
+	int ret = alice->exchange(alice, bob, p, g);
+	munit_assert_int(ret, ==, 0);
 
-	struct bignum *sa = bignum_modexp(B, a, p);
-	struct bignum *sb = bignum_modexp(A, b, p);
-	if (A == NULL || B == NULL)
-		munit_error("bignum_modexp");
+	struct bytes *alice_key = alice->key(alice);
+	struct bytes *bob_key   = bob->key(bob);
+	munit_assert_not_null(alice_key);
+	munit_assert_not_null(bob_key);
+	munit_assert_int(bytes_bcmp(alice_key, bob_key), ==, 0);
 
-	munit_assert_int(bignum_cmp(sa, sb), ==, 0);
-
-	bignum_free(sb);
-	bignum_free(sa);
-	bignum_free(B);
-	bignum_free(A);
-	bignum_free(b);
-	bignum_free(a);
+	bytes_free(bob_key);
+	bytes_free(alice_key);
+	bob->free(bob);
+	alice->free(alice);
 	bignum_free(g);
 	bignum_free(p);
 	return (MUNIT_OK);
@@ -92,8 +82,8 @@ test_nist_dh(const MunitParameter *params, void *data)
 
 /* The test suite. */
 MunitTest test_dh_suite_tests[] = {
-	{ "small",  test_small_dh, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
-	{ "nist",   test_nist_dh,  NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "small",  test_small_dh, srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "nist",   test_nist_dh,  srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{
 		.name       = NULL,
 		.test       = NULL,
