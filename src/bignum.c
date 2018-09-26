@@ -221,6 +221,37 @@ cleanup:
 }
 
 
+struct bytes *
+bignum_to_bytes_be(const struct bignum *num)
+{
+	struct bytes *buf = NULL;
+	int success = 0;
+
+	if (num == NULL)
+		goto cleanup;
+
+	const int n = BN_num_bytes(num->bn);
+	if (n < 0)
+		goto cleanup;
+
+	buf = bytes_zeroed((size_t)n);
+	if (buf == NULL)
+		goto cleanup;
+
+	if (BN_bn2bin(num->bn, buf->data) != n)
+		goto cleanup;
+
+	success = 1;
+	/* FALLTHROUGH */
+cleanup:
+	if (!success) {
+		bytes_free(buf);
+		buf = NULL;
+	}
+	return (buf);
+}
+
+
 void
 bignum_free(struct bignum *victim)
 {

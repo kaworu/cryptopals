@@ -82,6 +82,14 @@ char	*bignum_to_dec(const struct bignum *num);
 char	*bignum_to_hex(const struct bignum *num);
 
 /*
+ * Create a big-endian bytes buffer representation of the given bignum struct.
+ *
+ * Returns a pointer to a newly allocated bytes struct that should passed to
+ * bytes_free(). Returns NULL if the given pointer is NULL, or malloc(3) failed.
+ */
+struct bytes	*bignum_to_bytes_be(const struct bignum *num);
+
+/*
  * Free the resource associated with the given bignum struct.
  *
  * If not NULL, the data will be zero'd before freed.

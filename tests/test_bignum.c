@@ -121,6 +121,37 @@ test_bignum_modexp(const MunitParameter *params, void *data)
 
 
 static MunitResult
+test_bignum_to_bytes(const MunitParameter *params, void *data)
+{
+	for (size_t i = 1; i < 100; i++) {
+		struct bytes *buf = bytes_randomized(i);
+		if (buf == NULL)
+			munit_error("bytes_randomized");
+		char *hex = bytes_to_hex(buf);
+		if (hex == NULL)
+			munit_error("bytes_to_hex");
+		struct bignum *num = bignum_from_hex(hex);
+		if (num == NULL)
+			munit_error("bignum_from_hex");
+		struct bytes *result = bignum_to_bytes_be(num);
+
+		munit_assert_not_null(result);
+		munit_assert_size(result->len, ==, buf->len);
+		munit_assert_memory_equal(buf->len, result->data, buf->data);
+
+		bytes_free(result);
+		bignum_free(num);
+		free(hex);
+		bytes_free(buf);
+	}
+
+	/* when NULL is given */
+	munit_assert_null(bignum_to_dec(NULL));
+
+	return (MUNIT_OK);
+}
+
+static MunitResult
 test_bignum_to_dec(const MunitParameter *params, void *data)
 {
 	const struct {
@@ -206,6 +237,7 @@ MunitTest test_bignum_suite_tests[] = {
 	{ "bignum_from_dec",  test_bignum_from_hex_and_dec, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bignum_cmp",       test_bignum_cmp,              NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bignum_modexp",    test_bignum_modexp,           NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "bignum_to_bytes",  test_bignum_to_bytes,         NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bignum_to_dec",    test_bignum_to_dec,           NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bignum_to_hex",    test_bignum_to_hex,           NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{
