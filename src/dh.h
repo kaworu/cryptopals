@@ -44,6 +44,24 @@ struct dh {
 			    const struct bignum *g, const struct bignum *A);
 
 	/*
+	 * Ask alice to encrypt the provided msg with its key, send the encrypted
+	 * version to bob, and check that bob's echo message is the same as msg.
+	 *
+	 * Returns 0 on success, -1 on failure.
+	 */
+	int	(*challenge)(const struct dh *alice, const struct dh *bob,
+			    const struct bytes *msg);
+
+	/*
+	 * Ask bob to decrypt the given iv + ciphertext message (encrypted in
+	 * AES128-CBC), encrypt it with another iv and return it.
+	 *
+	 * Returns the re-encrypted plaintext on success, NULL on failure.
+	 */
+	struct bytes	*(*echo)(const struct dh *bob,
+			    const struct bytes *iv_ct);
+
+	/*
 	 * Returns a copy of the shared secret key.
 	 *
 	 * NOTE: This function is used by the test suites for debugging, it's

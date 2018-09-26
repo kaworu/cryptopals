@@ -4,6 +4,7 @@
 #include "munit.h"
 #include "helpers.h"
 #include "dh.h"
+#include "test_dh.h"
 
 
 /* Set 5 / Challenge 33 (first part) */
@@ -43,16 +44,8 @@ test_small_dh(const MunitParameter *params, void *data)
 static MunitResult
 test_nist_dh(const MunitParameter *params, void *data)
 {
-	struct bignum *p = bignum_from_hex(
-		"ffffffffffffffffc90fdaa22168c234c4c6628b80dc1cd129024"
-		"e088a67cc74020bbea63b139b22514a08798e3404ddef9519b3cd"
-		"3a431b302b0a6df25f14374fe1356d6d51c245e485b576625e7ec"
-		"6f44c42e9a637ed6b0bff5cb6f406b7edee386bfb5a899fa5ae9f"
-		"24117c4b1fe649286651ece45b3dc2007cb8a163bf0598da48361"
-		"c55d39a69163fa8fd24cf5f83655d23dca3ad961c62f356208552"
-		"bb9ed529077096966d670c354e4abc9804f1746c08ca237327fff"
-		"fffffffffffff");
-	struct bignum *g = bignum_from_hex("2");
+	struct bignum *p = bignum_from_hex(nist_p_hex);
+	struct bignum *g = bignum_from_hex(nist_g_hex);
 	if (p == NULL || g == NULL)
 		munit_error("bignum_from_hex");
 
@@ -79,11 +72,45 @@ test_nist_dh(const MunitParameter *params, void *data)
 	return (MUNIT_OK);
 }
 
+/* Set 5 / Challenge 34 (first part without MITM) */
+static MunitResult
+test_message(const MunitParameter *params, void *data)
+{
+	struct bignum *p = bignum_from_hex(nist_p_hex);
+	struct bignum *g = bignum_from_hex(nist_g_hex);
+	if (p == NULL || g == NULL)
+		munit_error("bignum_from_hex");
+
+	struct dh *alice = dh_new();
+	struct dh *bob   = dh_new();
+	if (alice == NULL || bob == NULL)
+		munit_error("dh_new");
+
+	int ret = alice->exchange(alice, bob, p, g);
+	if (ret != 0)
+		munit_error("dh exchange");
+
+	struct bytes *message = bytes_from_str("All we have to decide is what to do with the time that is given us.");
+	if (message == NULL)
+		munit_error("bytes_from_str");
+
+	ret = alice->challenge(alice, bob, message);
+	munit_assert_int(ret, ==, 0);
+
+	bytes_free(message);
+	bob->free(bob);
+	alice->free(alice);
+	bignum_free(g);
+	bignum_free(p);
+	return (MUNIT_OK);
+}
+
 
 /* The test suite. */
 MunitTest test_dh_suite_tests[] = {
-	{ "small",  test_small_dh, srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
-	{ "nist",   test_nist_dh,  srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "small",   test_small_dh, srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "nist",    test_nist_dh,  srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "message", test_message,  srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{
 		.name       = NULL,
 		.test       = NULL,
