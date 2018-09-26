@@ -127,6 +127,13 @@ test_bignum_to_bytes(const MunitParameter *params, void *data)
 		struct bytes *buf = bytes_randomized(i);
 		if (buf == NULL)
 			munit_error("bytes_randomized");
+
+		/*
+		 * prevent the most significant byte to be zero, because it
+		 * would be "lost" when converted to a bignum number.
+		 */
+		buf->data[0] |= 0x1;
+
 		char *hex = bytes_to_hex(buf);
 		if (hex == NULL)
 			munit_error("bytes_to_hex");
@@ -235,9 +242,9 @@ test_bignum_to_hex(const MunitParameter *params, void *data)
 MunitTest test_bignum_suite_tests[] = {
 	{ "bignum_from_hex",  test_bignum_from_hex_and_dec, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bignum_from_dec",  test_bignum_from_hex_and_dec, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
-	{ "bignum_cmp",       test_bignum_cmp,              NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "bignum_cmp",       test_bignum_cmp,              srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bignum_modexp",    test_bignum_modexp,           NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
-	{ "bignum_to_bytes",  test_bignum_to_bytes,         NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "bignum_to_bytes",  test_bignum_to_bytes,         srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bignum_to_dec",    test_bignum_to_dec,           NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bignum_to_hex",    test_bignum_to_hex,           NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{
