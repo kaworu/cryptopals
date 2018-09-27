@@ -120,6 +120,28 @@ cleanup:
 }
 
 
+struct bignum *
+bignum_dup(const struct bignum *n)
+{
+	struct bignum *cpy = NULL;
+
+	if (n == NULL)
+		return (NULL);
+
+	cpy = malloc(sizeof(struct bignum));
+	if (cpy == NULL)
+		return (NULL);
+
+	cpy->bn = BN_dup(n->bn);
+	if (cpy->bn == NULL) {
+		freezero(cpy, sizeof(struct bignum));
+		return (NULL);
+	}
+
+	return (cpy);
+}
+
+
 int
 bignum_cmp(const struct bignum *lhs, const struct bignum *rhs)
 {

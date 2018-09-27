@@ -75,6 +75,31 @@ test_bignum_from_hex_and_dec(const MunitParameter *params, void *data)
 
 
 static MunitResult
+test_bignum_dup(const MunitParameter *params, void *data)
+{
+	struct bignum *limit = bignum_from_dec("9001");
+	if (limit == NULL)
+		munit_error("bignum_from_dec");
+
+	struct bignum *n = bignum_rand(limit);
+	if (n == NULL)
+		munit_error("bignum_rand");
+
+	struct bignum *cpy = bignum_dup(n);
+	munit_assert_not_null(cpy);
+	munit_assert_int(bignum_cmp(n, cpy), ==, 0);
+
+	/* when NULL is given */
+	munit_assert_null(bignum_dup(NULL));
+
+	bignum_free(cpy);
+	bignum_free(n);
+	bignum_free(limit);
+	return (MUNIT_OK);
+}
+
+
+static MunitResult
 test_bignum_cmp(const MunitParameter *params, void *data)
 {
 	char buf[BUFSIZ] = { 0 };
@@ -266,6 +291,7 @@ MunitTest test_bignum_suite_tests[] = {
 	{ "bignum_zero",      test_bignum_zero,             NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bignum_from_hex",  test_bignum_from_hex_and_dec, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bignum_from_dec",  test_bignum_from_hex_and_dec, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "bignum_dup",       test_bignum_dup,              NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bignum_cmp",       test_bignum_cmp,              srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bignum_modexp",    test_bignum_modexp,           NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bignum_to_bytes",  test_bignum_to_bytes,         srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },

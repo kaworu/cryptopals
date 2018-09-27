@@ -54,6 +54,15 @@ struct bignum	*bignum_from_hex(const char *s);
 struct bignum	*bignum_rand(const struct bignum *limit);
 
 /*
+ * Create a bignum struct from another bignum struct by duplicating it.
+ *
+ * Returns a pointer to a newly allocated bignum struct that should passed to
+ * bignum_free(). Returns NULL if the given pointer is NULL, or malloc(3)
+ * failed.
+ */
+struct bignum	*bignum_dup(const struct bignum *n);
+
+/*
  * Compare two bignum structs.
  *
  * Returns 1, 0, -1 if lhs is found, respectively, to be greater than, equals,
