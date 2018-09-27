@@ -21,7 +21,6 @@ static int		 dh_challenge(const struct dh *self,
 		    const struct dh *to, const struct bytes *msg);
 static struct bytes	*dh_echo(const struct dh *self,
 		    const struct bytes *iv_ct);
-static struct bytes	*dh_key(const struct dh *self);
 static void		 dh_free(struct dh *self);
 
 
@@ -34,12 +33,10 @@ dh_new(void)
 	if (client == NULL)
 		return (NULL);
 
-	client->opaque    = NULL; /* the shared key */
 	client->exchange  = dh_exchange;
 	client->receive   = dh_receive;
 	client->challenge = dh_challenge;
 	client->echo      = dh_echo;
-	client->key       = dh_key;
 	client->free      = dh_free;
 
 	return (client);
@@ -99,10 +96,10 @@ dh_exchange(struct dh *self, struct dh *bob, const struct bignum *p,
 	s = bignum_modexp(B, a, p);
 
 	/* reset associated data for Alice */
-	bytes_free(self->opaque);
+	bytes_free(self->key);
 	/* Compute the shared key from the shared secret number s */
-	self->opaque = dh_secret_to_aes128_key(s);
-	if (self->opaque == NULL)
+	self->key = dh_secret_to_aes128_key(s);
+	if (self->key == NULL)
 		goto cleanup;
 
 	success = 1;
@@ -138,10 +135,10 @@ dh_receive(struct dh *self, const struct bignum *p, const struct bignum *g,
 		goto cleanup;
 
 	/* reset associated data for Bob */
-	bytes_free(self->opaque);
+	bytes_free(self->key);
 	/* Compute the shared key from the shared secret number s */
-	self->opaque = dh_secret_to_aes128_key(s);
-	if (self->opaque == NULL)
+	self->key = dh_secret_to_aes128_key(s);
+	if (self->key == NULL)
 		goto cleanup;
 
 	success = 1;
@@ -170,13 +167,12 @@ dh_challenge(const struct dh *self, const struct dh *to,
 	if (self == NULL || to == NULL || msg == NULL)
 		goto cleanup;
 
-	const struct bytes *key = self->opaque;
 	const size_t ivlen = aes_128_blocksize();
 
 	/* encrypt the message, and create a iv + ciphertext buffer to be sent
 	   to Bob */
 	iv = bytes_randomized(ivlen);
-	ct = aes_128_cbc_encrypt(msg, key, iv);
+	ct = aes_128_cbc_encrypt(msg, self->key, iv);
 	const struct bytes *parts[] = { iv, ct };
 	iv_ct = bytes_joined_const(parts, sizeof(parts) / sizeof(*parts));
 
@@ -190,7 +186,7 @@ dh_challenge(const struct dh *self, const struct dh *to,
 	/* split and decrypt its version of the message */
 	bob_iv  = bytes_slice(bob_iv_ct, 0, ivlen);
 	bob_ct  = bytes_slice(bob_iv_ct, ivlen, bob_iv_ct->len - ivlen);
-	bob_msg = aes_128_cbc_decrypt(bob_ct, key, bob_iv);
+	bob_msg = aes_128_cbc_decrypt(bob_ct, self->key, bob_iv);
 
 	/* if Bob's message is the same as our own then it's a success */
 	if (bytes_timingsafe_bcmp(msg, bob_msg) != 0)
@@ -217,23 +213,23 @@ dh_echo(const struct dh *self, const struct bytes *alice_iv_ct)
 	struct bytes *msg = NULL, *iv = NULL, *ct = NULL, *iv_ct = NULL;
 	int success = 0;
 
+	/* sanity checks */
 	if (self == NULL || alice_iv_ct == NULL)
 		goto cleanup;
 
-	const struct bytes *key = self->opaque;
 	const size_t ivlen = aes_128_blocksize();
 
 	/* split and decrypt the message */
 	alice_iv  = bytes_slice(alice_iv_ct, 0, ivlen);
 	alice_ct  = bytes_slice(alice_iv_ct, ivlen, alice_iv_ct->len - ivlen);
-	msg = aes_128_cbc_decrypt(alice_ct, key, alice_iv);
+	msg = aes_128_cbc_decrypt(alice_ct, self->key, alice_iv);
 
 	/* XXX: there is a very small (but non-zero) probability that we
 	   generate the same IV as Alice's IV */
 	iv = bytes_randomized(ivlen);
 	/* (re)encrypt the message, and create a iv + ciphertext buffer to be
 	   returned to Alice */
-	ct = aes_128_cbc_encrypt(msg, key, iv);
+	ct = aes_128_cbc_encrypt(msg, self->key, iv);
 	const struct bytes *parts[] = { iv, ct };
 	iv_ct = bytes_joined_const(parts, sizeof(parts) / sizeof(*parts));
 	if (iv_ct == NULL)
@@ -252,16 +248,6 @@ cleanup:
 		iv_ct = NULL;
 	}
 	return (iv_ct);
-}
-
-
-static struct bytes *
-dh_key(const struct dh *self)
-{
-	if (self == NULL)
-		return (NULL);
-
-	return (bytes_dup(self->opaque));
 }
 
 

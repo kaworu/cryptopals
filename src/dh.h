@@ -16,8 +16,7 @@
  * implementation so that it can be used for a MITM implementation as well.
  */
 struct dh {
-	/* implementation defined data */
-	void	*opaque;
+	struct bytes *key;
 
 	/*
 	 * Initiate a DH exchange between an "initiator" (self) and a "receiver"
@@ -62,23 +61,14 @@ struct dh {
 			    const struct bytes *iv_ct);
 
 	/*
-	 * Returns a copy of the shared secret key.
-	 *
-	 * NOTE: This function is used by the test suites for debugging, it's
-	 * obviously a bad idea to leak the secret shared key.
-	 *
-	 * Returns a pointer to a newly allocated bytes struct that should
-	 * passed to bytes_free(). Returns NULL if the given pointer is NULL, or
-	 * malloc(3) failed.
-	 */
-	struct bytes	*(*key)(const struct dh *self);
-
-	/*
 	 * Free the resource associated with the given dh struct.
 	 *
 	 * If not NULL, the data will be zero'd before freed.
 	 */
 	void	(*free)(struct dh *self);
+
+	/* implementation defined data */
+	void	*opaque;
 };
 
 

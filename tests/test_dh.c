@@ -24,14 +24,10 @@ test_small_dh(const MunitParameter *params, void *data)
 	int ret = alice->exchange(alice, bob, p, g);
 	munit_assert_int(ret, ==, 0);
 
-	struct bytes *alice_key = alice->key(alice);
-	struct bytes *bob_key   = bob->key(bob);
-	munit_assert_not_null(alice_key);
-	munit_assert_not_null(bob_key);
-	munit_assert_int(bytes_bcmp(alice_key, bob_key), ==, 0);
+	munit_assert_not_null(alice->key);
+	munit_assert_not_null(bob->key);
+	munit_assert_int(bytes_bcmp(alice->key, bob->key), ==, 0);
 
-	bytes_free(bob_key);
-	bytes_free(alice_key);
 	bob->free(bob);
 	alice->free(alice);
 	bignum_free(g);
@@ -57,14 +53,10 @@ test_nist_dh(const MunitParameter *params, void *data)
 	int ret = alice->exchange(alice, bob, p, g);
 	munit_assert_int(ret, ==, 0);
 
-	struct bytes *alice_key = alice->key(alice);
-	struct bytes *bob_key   = bob->key(bob);
-	munit_assert_not_null(alice_key);
-	munit_assert_not_null(bob_key);
-	munit_assert_int(bytes_bcmp(alice_key, bob_key), ==, 0);
+	munit_assert_not_null(alice->key);
+	munit_assert_not_null(bob->key);
+	munit_assert_int(bytes_bcmp(alice->key, bob->key), ==, 0);
 
-	bytes_free(bob_key);
-	bytes_free(alice_key);
 	bob->free(bob);
 	alice->free(alice);
 	bignum_free(g);
