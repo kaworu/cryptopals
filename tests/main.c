@@ -29,6 +29,7 @@ extern MunitTest test_break_cbc_suite_tests[];
 extern MunitTest test_break_ctr_suite_tests[];
 extern MunitTest test_break_mt19937_suite_tests[];
 extern MunitTest test_break_mac_suite_tests[];
+extern MunitTest test_break_dh_suite_tests[];
 
 static MunitSuite all_test_suites[] = {
 	{ "bytes/",     test_bytes_suite_tests,                   NULL, 1, MUNIT_SUITE_OPTION_NONE },
@@ -53,6 +54,7 @@ static MunitSuite all_test_suites[] = {
 	{ "break-ctr/", test_break_ctr_suite_tests,               NULL, 1, MUNIT_SUITE_OPTION_NONE },
 	{ "break-mt/",  test_break_mt19937_suite_tests,           NULL, 1, MUNIT_SUITE_OPTION_NONE },
 	{ "break-mac/", test_break_mac_suite_tests,               NULL, 1, MUNIT_SUITE_OPTION_NONE },
+	{ "break-dh/",  test_break_dh_suite_tests,                NULL, 1, MUNIT_SUITE_OPTION_NONE },
 	{
 		.prefix     = NULL,
 		.tests      = NULL,
