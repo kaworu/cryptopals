@@ -11,7 +11,7 @@
 static MunitResult
 test_bignum_zero(const MunitParameter *params, void *data)
 {
-	struct bignum *zero = bignum_zero("0");
+	struct bignum *zero = bignum_zero();
 	struct bignum *hex  = bignum_from_hex("0");
 	struct bignum *dec  = bignum_from_dec("0");
 	if (hex == NULL)
