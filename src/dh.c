@@ -255,6 +255,6 @@ static void
 dh_free(struct dh *self)
 {
 	if (self != NULL)
-		bytes_free(self->opaque);
+		bytes_free(self->key);
 	freezero(self, sizeof(struct dh));
 }

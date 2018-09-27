@@ -16,6 +16,9 @@
  * implementation so that it can be used for a MITM implementation as well.
  */
 struct dh {
+	/*
+	 * The shared key resulting from the DH exchange.
+	 */
 	struct bytes *key;
 
 	/*
