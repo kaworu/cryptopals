@@ -9,6 +9,29 @@
 
 
 static MunitResult
+test_bignum_zero(const MunitParameter *params, void *data)
+{
+	struct bignum *zero = bignum_zero("0");
+	struct bignum *hex  = bignum_from_hex("0");
+	struct bignum *dec  = bignum_from_dec("0");
+	if (hex == NULL)
+		munit_error("bignum_from_hex");
+	if (dec == NULL)
+		munit_error("bignum_from_dec");
+
+	munit_assert_not_null(zero);
+	munit_assert_int(bignum_cmp(zero, hex), ==, 0);
+	munit_assert_int(bignum_cmp(zero, dec), ==, 0);
+
+	bignum_free(dec);
+	bignum_free(hex);
+	bignum_free(zero);
+
+	return (MUNIT_OK);
+}
+
+
+static MunitResult
 test_bignum_from_hex_and_dec(const MunitParameter *params, void *data)
 {
 	const struct {
@@ -36,8 +59,8 @@ test_bignum_from_hex_and_dec(const MunitParameter *params, void *data)
 		munit_assert_not_null(hex);
 		munit_assert_int(bignum_cmp(dec, hex), ==, 0);
 
-		bignum_free(hex);
 		bignum_free(dec);
+		bignum_free(hex);
 	}
 
 	/* when NULL is given */
@@ -69,10 +92,10 @@ test_bignum_cmp(const MunitParameter *params, void *data)
 		if (x == NULL || y == NULL)
 			munit_error("bignum_from_dec");
 
-		const int x_wrt_y = (xi == yi ? 0 : (xi > yi ? 1 : -1));
-		const int y_wrt_x = -(x_wrt_y);
-		munit_assert_int(bignum_cmp(x, y), ==, x_wrt_y);
-		munit_assert_int(bignum_cmp(y, x), ==, y_wrt_x);
+		const int x_cmp_y = (xi == yi ? 0 : (xi > yi ? 1 : -1));
+		const int y_cmp_x = -(x_cmp_y);
+		munit_assert_int(bignum_cmp(x, y), ==, x_cmp_y);
+		munit_assert_int(bignum_cmp(y, x), ==, y_cmp_x);
 		munit_assert_int(bignum_cmp(x, x), ==, 0);
 		munit_assert_int(bignum_cmp(y, y), ==, 0);
 
@@ -240,6 +263,7 @@ test_bignum_to_hex(const MunitParameter *params, void *data)
 
 /* The test suite. */
 MunitTest test_bignum_suite_tests[] = {
+	{ "bignum_zero",      test_bignum_zero,             NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bignum_from_hex",  test_bignum_from_hex_and_dec, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bignum_from_dec",  test_bignum_from_hex_and_dec, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bignum_cmp",       test_bignum_cmp,              srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },

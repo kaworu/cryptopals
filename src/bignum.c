@@ -17,28 +17,21 @@ struct bignum {
 };
 
 
-static inline struct bignum *
-bignum_alloc(void)
+struct bignum *
+bignum_zero(void)
 {
 	struct bignum *num = NULL;
-	int success = 0;
 
 	num = malloc(sizeof(struct bignum));
 	if (num == NULL)
-		goto cleanup;
-	num->bn = BN_new();
-	if (num->bn == NULL)
-		goto cleanup;
+		return (NULL);
 
-	success = 1;
-	/* FALLTHROUGH */
-cleanup:
-	if (!success) {
-		if (num != NULL)
-			BN_clear_free(num->bn);
+	num->bn = BN_new();
+	if (num->bn == NULL) {
 		freezero(num, sizeof(struct bignum));
-		num = NULL;
+		return (NULL);
 	}
+
 	return (num);
 }
 
@@ -53,7 +46,7 @@ bignum_from_dec(const char *s)
 	if (s == NULL)
 		goto cleanup;
 
-	num = bignum_alloc();
+	num = bignum_zero();
 	if (num == NULL)
 		goto cleanup;
 
@@ -81,7 +74,7 @@ bignum_from_hex(const char *s)
 	if (s == NULL)
 		goto cleanup;
 
-	num = bignum_alloc();
+	num = bignum_zero();
 	if (num == NULL)
 		goto cleanup;
 
@@ -109,7 +102,7 @@ bignum_rand(const struct bignum *limit)
 	if (limit == NULL)
 		goto cleanup;
 
-	num = bignum_alloc();
+	num = bignum_zero();
 	if (num == NULL)
 		goto cleanup;
 
@@ -147,7 +140,7 @@ struct bignum	*bignum_modexp(const struct bignum *base,
 	if (base == NULL || exp == NULL || mod == NULL)
 		goto cleanup;
 
-	num = bignum_alloc();
+	num = bignum_zero();
 	if (num == NULL)
 		goto cleanup;
 

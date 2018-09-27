@@ -18,6 +18,14 @@ struct bignum;
 
 
 /*
+ * Create a bignum struct holding the value 0.
+ *
+ * Returns a pointer to a newly allocated bignum struct that should passed to
+ * bignum_free(), or NULL if malloc(3) failed.
+ */
+struct bignum	*bignum_zero(void);
+
+/*
  * Create a bignum struct from a decimal-encoded NUL-terminated string.
  *
  * Returns a pointer to a newly allocated bignum struct that should passed to
