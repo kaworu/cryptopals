@@ -18,12 +18,6 @@
 #include "compat/explicit_bzero.h"
 #endif
 
-#if defined(HAVE_FREEZERO)
-#include <stdlib.h>
-#else
-#include "compat/freezero.h"
-#endif
-
 #if defined(HAVE_TIMINGSAFE_BCMP)
 #include <string.h>
 #else
@@ -40,6 +34,24 @@
 #include <string.h>
 #else
 #include "compat/strlcat.h"
+#endif
+
+#if defined(HAVE_REALLOCARRAY)
+#include <stdlib.h>
+#else
+#include "compat/reallocarray.h"
+#endif
+
+#if defined(HAVE_RECALLOCARRAY)
+#include <stdlib.h>
+#else
+#include "compat/recallocarray.h"
+#endif
+
+#if defined(HAVE_FREEZERO)
+#include <stdlib.h>
+#else
+#include "compat/freezero.h"
 #endif
 
 #endif /* ndef COMPAT_H */
