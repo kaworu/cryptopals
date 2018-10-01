@@ -23,7 +23,7 @@ test_mitm_dh(const MunitParameter *params, void *data)
 	if (alice == NULL)
 		munit_error("dh_new");
 
-	struct dh *mallory = dh_mitm_new(/* bob */dh_new());
+	struct dh *mallory = dh_mitm_new(DH_MITM_P_AS_A, /* bob */dh_new());
 	if (mallory == NULL)
 		munit_error("dh_mitm_new");
 

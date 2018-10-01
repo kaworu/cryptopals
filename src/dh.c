@@ -13,8 +13,11 @@
 
 
 /* implementations for the struct dh function members */
-static int		 dh_exchange(struct dh *self, struct dh *bob, const
-		    struct bignum *p, const struct bignum *g);
+static int		 dh_exchange(struct dh *self, struct dh *bob,
+		    const struct bignum *p, const struct bignum *g);
+static int		 dh_negociate(struct dh *self,
+		    const struct bignum *p, const struct bignum *g,
+		    struct bignum **np_p, struct bignum **ng_p);
 static struct bignum	*dh_receive(struct dh *self, const struct bignum *p,
 		    const struct bignum *g, const struct bignum *A);
 static int		 dh_challenge(const struct dh *self,
@@ -34,6 +37,7 @@ dh_new(void)
 		return (NULL);
 
 	client->exchange  = dh_exchange;
+	client->negociate = dh_negociate;
 	client->receive   = dh_receive;
 	client->challenge = dh_challenge;
 	client->echo      = dh_echo;
@@ -75,6 +79,7 @@ static int
 dh_exchange(struct dh *self, struct dh *bob, const struct bignum *p,
 		    const struct bignum *g)
 {
+	struct bignum *np = NULL, *ng = NULL;
 	struct bignum *a = NULL, *A = NULL, *B = NULL, *s = NULL;
 	int success = 0;
 
@@ -84,16 +89,24 @@ dh_exchange(struct dh *self, struct dh *bob, const struct bignum *p,
 	if (p == NULL || g == NULL)
 		goto cleanup;
 
+	/* negociate the public parameters p and g */
+	if (bob->negociate(bob, p, g, &np, &ng) != 0)
+		goto cleanup;
+
+	/*
+	 * np and ng are now the negociated parameters, no additional checks.
+	 */
+
 	/* generate Alice's private number a */
-	a = bignum_rand(p);
+	a = bignum_rand(np);
 	/* compute Alice's public number A */
-	A = bignum_modexp(g, a, p);
+	A = bignum_modexp(ng, a, np);
 	/* send the DH parameters to Bob, he'll answer with his own public
 	   number B */
-	B = bob->receive(bob, p, g, A);
+	B = bob->receive(bob, np, ng, A);
 	/* compute the shared secret using Bob's public number B and Alice's
 	   private number a */
-	s = bignum_modexp(B, a, p);
+	s = bignum_modexp(B, a, np);
 
 	/* reset associated data for Alice */
 	bytes_free(self->key);
@@ -109,6 +122,43 @@ cleanup:
 	bignum_free(B);
 	bignum_free(A);
 	bignum_free(a);
+	bignum_free(ng);
+	bignum_free(np);
+	return (success ? 0 : -1);
+}
+
+
+static int
+dh_negociate(struct dh *self, const struct bignum *p, const struct bignum *g,
+		    struct bignum **np_p, struct bignum **ng_p)
+{
+	struct bignum *np = NULL, *ng = NULL;
+	int success = 0;
+
+	/* sanity checks */
+	if (self == NULL)
+		goto cleanup;
+	if (p == NULL || g == NULL)
+		goto cleanup;
+	if (np_p == NULL || ng_p == NULL)
+		goto cleanup;
+
+	/* no checks at all, just accept the proposed p and g */
+	np = bignum_dup(p);
+	ng = bignum_dup(g);
+	if (np == NULL || ng == NULL)
+		goto cleanup;
+
+	*np_p = np;
+	np = NULL;
+	*ng_p = ng;
+	ng = NULL;
+
+	success = 1;
+	/* FALLTHROUGH */
+cleanup:
+	bignum_free(ng);
+	bignum_free(np);
 	return (success ? 0 : -1);
 }
 

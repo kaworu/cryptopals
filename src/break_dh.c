@@ -12,6 +12,9 @@
 
 
 /* implementations for the struct dh function members */
+static int		 dh_mitm_negociate(struct dh *self,
+		    const struct bignum *p, const struct bignum *g,
+		    struct bignum **np_p, struct bignum **ng_p);
 static struct bignum	*dh_mitm_receive(struct dh *self, const struct bignum *p,
 		    const struct bignum *g, const struct bignum *A);
 static struct bytes	*dh_mitm_echo(const struct dh *self,
@@ -20,7 +23,7 @@ static void		 dh_mitm_free(struct dh *self);
 
 
 struct dh *
-dh_mitm_new(struct dh *bob)
+dh_mitm_new(enum dh_mitm_type type, struct dh *bob)
 {
 	struct dh_mitm_opaque *ad = NULL;
 	struct dh *client = NULL;
@@ -39,13 +42,73 @@ dh_mitm_new(struct dh *bob)
 		return (NULL);
 	}
 
-	client->receive = dh_mitm_receive;
-	client->echo    = dh_mitm_echo;
-	client->free    = dh_mitm_free;
-	client->opaque  = ad;
-	ad->bob = bob;
+	client->negociate = dh_mitm_negociate;
+	client->receive   = dh_mitm_receive;
+	client->echo      = dh_mitm_echo;
+	client->free      = dh_mitm_free;
+	client->opaque    = ad;
+	ad->type = type;
+	ad->bob  = bob;
 
 	return (client);
+}
+
+
+static int
+dh_mitm_negociate(struct dh *self,
+		    const struct bignum *p, const struct bignum *g,
+		    struct bignum **np_p, struct bignum **ng_p)
+{
+	struct dh_mitm_opaque *ad = NULL;
+	struct bignum *np = NULL, *ng = NULL;
+	int success = 0;
+
+	/* sanity checks */
+	if (self == NULL)
+		goto cleanup;
+	if (p == NULL || g == NULL)
+		goto cleanup;
+	if (np_p == NULL || ng_p == NULL)
+		goto cleanup;
+	if (self->opaque == NULL)
+		goto cleanup;
+
+	ad = self->opaque;
+	switch (ad->type) {
+	case DH_MITM_P_AS_A:
+		/* simply pass the negociation parameters to bob, this attack is
+		   about the public numbers at the exchange step. */
+		if (ad->bob->negociate(ad->bob, p, g, &np, &ng) != 0)
+			goto cleanup;
+		break;
+	case DH_MITM_1_AS_G:
+		/* TODO */
+		goto cleanup;
+		break;
+	case DH_MITM_P_AS_G:
+		/* TODO */
+		goto cleanup;
+		break;
+	case DH_MITM_P_MINUS_1_AS_G:
+		/* TODO */
+		goto cleanup;
+		break;
+	}
+
+	if (np == NULL || ng == NULL)
+		goto cleanup;
+
+	*np_p = np;
+	np = NULL;
+	*ng_p = ng;
+	ng = NULL;
+
+	success = 1;
+	/* FALLTHROUGH */
+cleanup:
+	bignum_free(ng);
+	bignum_free(np);
+	return (success ? 0 : -1);
 }
 
 
@@ -63,24 +126,41 @@ dh_mitm_receive(struct dh *self, const struct bignum *p, const struct bignum *g,
 	if (self->opaque == NULL)
 		goto cleanup;
 
-	/* send (p, g, p) to Bob */
 	ad = self->opaque;
-	B = ad->bob->receive(ad->bob, p, g, p);
-	if (B == NULL)
-		goto cleanup;
-	bignum_free(B);
-	B = NULL;
+	switch (ad->type) {
+	case DH_MITM_P_AS_A:
+		/* This is the attack, send (p, g, p) to Bob */
+		B = ad->bob->receive(ad->bob, p, g, p);
+		if (B == NULL)
+			goto cleanup;
+		bignum_free(B);
+		B = NULL;
 
-	/* The shared key is zero */
-	s = bignum_zero();
-	self->key = dh_secret_to_aes128_key(s);
-	if (self->key == NULL)
+		/* The private shared number is zero */
+		s = bignum_zero();
+		self->key = dh_secret_to_aes128_key(s);
+		if (self->key == NULL)
+			goto cleanup;
+		break;
+	case DH_MITM_1_AS_G:
+		/* TODO */
 		goto cleanup;
+		break;
+	case DH_MITM_P_AS_G:
+		/* TODO */
+		goto cleanup;
+		break;
+	case DH_MITM_P_MINUS_1_AS_G:
+		/* TODO */
+		goto cleanup;
+		break;
+	}
 
 	success = 1;
 	/* FALLTHROUGH */
 cleanup:
 	bignum_free(s);
+	/* FIXME: this looks good only for DH_MITM_P_AS_A at first glance */
 	return (success ? bignum_dup(p) : NULL);
 }
 

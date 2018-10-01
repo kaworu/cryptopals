@@ -27,12 +27,31 @@ struct dh {
 	 * setup a shared AES 128 key derived from the DH exchange shared secret
 	 * number.
 	 *
-	 * p is the public (prime) modulus, g is the public (prime) base.
+	 * p, g is the public (prime) modulus, respectively base, sent by the
+	 * "initiator" to the "receiver" when parameters are negociated.
 	 *
 	 * Returns 0 on success, -1 on error.
 	 */
 	int	(*exchange)(struct dh *self, struct dh *bob,
 			    const struct bignum *p, const struct bignum *g);
+
+	/*
+	 * Negociate the public p and g parameters.
+	 *
+	 * This function is called by Alice to negociate p and g with Bob (the
+	 * self pointer). Alice send her wished p and g, and Bob will set np_p,
+	 * np_g to the negociated p, respecivelty g.
+	 *
+	 * Returns 0 on success, -1 on failure. On success, np_p and np_g point
+	 * to the negociated p, respectively g, DH parameters and must be passed
+	 * to bignum_free() by the caller (Alice).
+	 *
+	 * NOTE: This is intentionally a "naive" negotiation mechanism to allow
+	 * the MITM attacks we're trying. For a practical example, see RFC 4419.
+	 */
+	int	(*negociate)(struct dh *self,
+			    const struct bignum *p, const struct bignum *g,
+			    struct bignum **np_p, struct bignum **np_g);
 
 	/*
 	 * Receive a DH exchange initiated by alice. Here self (bob) will

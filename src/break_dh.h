@@ -9,12 +9,48 @@
 
 
 /*
+ * Types of MITM attack.
+ */
+enum dh_mitm_type {
+	/*
+	 * Pass the public parameter p as A (Alice's public number) to Bob and
+	 * to Alice as B (Bob's public number). This effectively set the private
+	 * shared secret number to zero.
+	 *
+	 * This is the attack described in Set 5 / Challenge 34.
+	 */
+	DH_MITM_P_AS_A,
+
+	/*
+	 * TODO
+	 *
+	 * This is the first attack described in Set 5 / Challenge 35.
+	 */
+	DH_MITM_1_AS_G,
+
+	/*
+	 * TODO
+	 *
+	 * This is the second attack described in Set 5 / Challenge 35.
+	 */
+	DH_MITM_P_AS_G,
+
+	/*
+	 * TODO
+	 *
+	 * This is the third attack described in Set 5 / Challenge 35.
+	 */
+	DH_MITM_P_MINUS_1_AS_G,
+};
+
+/*
  * Used as opaque member for the struct dh returned by dh_mitm_new().
  *
  * Hold an owned pointer to Bob to relay Alice's messages, and the decrypted
  * messages sent by Alice.
  */
 struct dh_mitm_opaque {
+	enum dh_mitm_type type;
 	struct dh *bob;
 	size_t count;
 	struct bytes **messages;
@@ -29,6 +65,6 @@ struct dh_mitm_opaque {
  * Returns a pointer to a newly allocated dh struct that should passed to its
  * free function member, NULL if the given pointer is NULL or malloc(3) failed.
  */
-struct dh	*dh_mitm_new(struct dh *bob);
+struct dh	*dh_mitm_new(enum dh_mitm_type type, struct dh *bob);
 
 #endif /* ndef BREAK_DH_H */
