@@ -37,6 +37,25 @@ bignum_zero(void)
 
 
 struct bignum *
+bignum_one(void)
+{
+	struct bignum *one = NULL;
+	int success = 0;
+
+	one = bignum_zero();
+	if (one == NULL)
+		return (NULL);
+
+	if (BN_one(one->bn) != 1) {
+		bignum_free(one);
+		return (NULL);
+	}
+
+	return (one);
+}
+
+
+struct bignum *
 bignum_from_dec(const char *s)
 {
 	struct bignum *num = NULL;

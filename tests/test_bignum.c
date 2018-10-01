@@ -32,6 +32,29 @@ test_bignum_zero(const MunitParameter *params, void *data)
 
 
 static MunitResult
+test_bignum_one(const MunitParameter *params, void *data)
+{
+	struct bignum *one  = bignum_one();
+	struct bignum *hex  = bignum_from_hex("1");
+	struct bignum *dec  = bignum_from_dec("1");
+	if (hex == NULL)
+		munit_error("bignum_from_hex");
+	if (dec == NULL)
+		munit_error("bignum_from_dec");
+
+	munit_assert_not_null(one);
+	munit_assert_int(bignum_cmp(one, hex), ==, 0);
+	munit_assert_int(bignum_cmp(one, dec), ==, 0);
+
+	bignum_free(dec);
+	bignum_free(hex);
+	bignum_free(one);
+
+	return (MUNIT_OK);
+}
+
+
+static MunitResult
 test_bignum_from_hex_and_dec(const MunitParameter *params, void *data)
 {
 	const struct {
@@ -289,6 +312,7 @@ test_bignum_to_hex(const MunitParameter *params, void *data)
 /* The test suite. */
 MunitTest test_bignum_suite_tests[] = {
 	{ "bignum_zero",      test_bignum_zero,             NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "bignum_one",       test_bignum_one,              NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bignum_from_hex",  test_bignum_from_hex_and_dec, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bignum_from_dec",  test_bignum_from_hex_and_dec, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bignum_dup",       test_bignum_dup,              NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
