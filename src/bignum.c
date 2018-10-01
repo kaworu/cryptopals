@@ -28,7 +28,7 @@ bignum_zero(void)
 
 	num->bn = BN_new();
 	if (num->bn == NULL) {
-		freezero(num, sizeof(struct bignum));
+		bignum_free(num);
 		return (NULL);
 	}
 
@@ -153,7 +153,7 @@ bignum_dup(const struct bignum *n)
 
 	cpy->bn = BN_dup(n->bn);
 	if (cpy->bn == NULL) {
-		freezero(cpy, sizeof(struct bignum));
+		bignum_free(cpy);
 		return (NULL);
 	}
 
