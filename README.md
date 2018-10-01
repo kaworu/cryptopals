@@ -2,7 +2,8 @@
 
 # cryptopals
 
-Just me going tough the cryptopals challenges.
+Just me going tough the cryptopals challenges. It is slow, insecure code *by
+design*. So, don't use it.
 
 ## Building
 
