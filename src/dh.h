@@ -28,7 +28,7 @@ struct dh {
 	 * number.
 	 *
 	 * p, g is the public (prime) modulus, respectively base, sent by the
-	 * "initiator" to the "receiver" when parameters are negociated.
+	 * "initiator" to the "receiver" when parameters are negotiated.
 	 *
 	 * Returns 0 on success, -1 on error.
 	 */
@@ -36,15 +36,15 @@ struct dh {
 			    const struct bignum *p, const struct bignum *g);
 
 	/*
-	 * Negociate the public p and g parameters.
+	 * Negotiate the public p and g parameters.
 	 *
-	 * This function is called by Alice to negociate p and g with Bob (the
-	 * self pointer). Alice send her wished p and g, and Bob will set np_p,
-	 * np_g to the negociated p, respecivelty g.
+	 * This function is called by alice to negotiate p and g with bob (the
+	 * self pointer). alice send her wished p and g, and bob will set np_p,
+	 * np_g to the negotiated p, respectively g.
 	 *
 	 * Returns 0 on success, -1 on failure. On success, np_p and np_g point
-	 * to the negociated p, respectively g, DH parameters and must be passed
-	 * to bignum_free() by the caller (Alice).
+	 * to the negotiated p, respectively g, DH parameters and must be passed
+	 * to bignum_free() by the caller (alice).
 	 *
 	 * NOTE: This is intentionally a "naive" negotiation mechanism to allow
 	 * the MITM attacks we're trying. For a practical example, see RFC 4419.

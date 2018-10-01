@@ -13,8 +13,8 @@
  */
 enum dh_mitm_type {
 	/*
-	 * Pass the public parameter p as A (Alice's public number) to Bob and
-	 * to Alice as B (Bob's public number). This effectively set the private
+	 * Pass the public parameter p as A (alice's public number) to bob and
+	 * to alice as B (bob's public number). This effectively set the private
 	 * shared secret number to zero.
 	 *
 	 * This is the attack described in Set 5 / Challenge 34.
@@ -46,8 +46,8 @@ enum dh_mitm_type {
 /*
  * Used as opaque member for the struct dh returned by dh_mitm_new().
  *
- * Hold an owned pointer to Bob to relay Alice's messages, and the decrypted
- * messages sent by Alice.
+ * Hold an owned pointer to bob to relay alice's messages, and the decrypted
+ * messages sent by alice.
  */
 struct dh_mitm_opaque {
 	enum dh_mitm_type type;
