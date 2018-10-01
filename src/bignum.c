@@ -40,7 +40,6 @@ struct bignum *
 bignum_one(void)
 {
 	struct bignum *one = NULL;
-	int success = 0;
 
 	one = bignum_zero();
 	if (one == NULL)
