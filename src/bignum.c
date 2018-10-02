@@ -45,7 +45,7 @@ bignum_one(void)
 	if (one == NULL)
 		return (NULL);
 
-	if (BN_one(one->bn) != 1) {
+	if (BN_one(one->bn) == 0) {
 		bignum_free(one);
 		return (NULL);
 	}
