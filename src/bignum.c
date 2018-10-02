@@ -189,8 +189,37 @@ bignum_is_one(const struct bignum *n)
 }
 
 
-struct bignum	*bignum_modexp(const struct bignum *base,
-		    const struct bignum *exp, const struct bignum *mod)
+struct bignum *
+bignum_sub(const struct bignum *a, const struct bignum *b)
+{
+	struct bignum *result = NULL;
+	int success = 0;
+
+	/* sanity checks */
+	if (a == NULL || b == NULL)
+		goto cleanup;
+
+	result = bignum_zero();
+	if (result == NULL)
+		goto cleanup;
+
+	if (BN_sub(result->bn, a->bn, b->bn) == 0)
+		goto cleanup;
+
+	success = 1;
+	/* FALLTHROUGH */
+cleanup:
+	if (!success) {
+		bignum_free(result);
+		result = NULL;
+	}
+	return (result);
+}
+
+
+struct bignum *
+bignum_modexp(const struct bignum *base, const struct bignum *exp,
+		    const struct bignum *mod)
 {
 	struct bignum *num = NULL;
 	BN_CTX *ctx = NULL;
