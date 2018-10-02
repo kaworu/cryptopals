@@ -74,11 +74,12 @@ dh_mitm_negociate(struct dh *self,
 		goto cleanup;
 
 	ad = self->opaque;
+	struct dh *bob = ad->bob;
 	switch (ad->type) {
 	case DH_MITM_P_AS_A:
 		/* simply pass the negociation parameters to bob, this attack is
 		   about the public numbers at the exchange step. */
-		if (ad->bob->negociate(ad->bob, p, g, &np, &ng) != 0)
+		if (bob->negociate(bob, p, g, &np, &ng) != 0)
 			goto cleanup;
 		break;
 	case DH_MITM_1_AS_G:
@@ -127,10 +128,11 @@ dh_mitm_receive(struct dh *self, const struct bignum *p, const struct bignum *g,
 		goto cleanup;
 
 	ad = self->opaque;
+	struct dh *bob = ad->bob;
 	switch (ad->type) {
 	case DH_MITM_P_AS_A:
 		/* This is the attack, send (p, g, p) to Bob */
-		B = ad->bob->receive(ad->bob, p, g, p);
+		B = bob->receive(bob, p, g, p);
 		if (B == NULL)
 			goto cleanup;
 		bignum_free(B);
@@ -180,6 +182,7 @@ dh_mitm_echo(const struct dh *self, const struct bytes *alice_iv_ct)
 		goto cleanup;
 
 	ad = self->opaque;
+	struct dh *bob = ad->bob;
 	const size_t ivlen = aes_128_blocksize();
 
 	/* split and decrypt the message */
@@ -201,7 +204,7 @@ dh_mitm_echo(const struct dh *self, const struct bytes *alice_iv_ct)
 	ad->count += 1;
 
 	/* forward the echo message to Bob */
-	bob_iv_ct = ad->bob->echo(ad->bob, alice_iv_ct);
+	bob_iv_ct = bob->echo(bob, alice_iv_ct);
 	if (bob_iv_ct == NULL)
 		goto cleanup;
 
@@ -226,8 +229,9 @@ dh_mitm_free(struct dh *self)
 		bytes_free(self->key);
 		struct dh_mitm_opaque *ad = self->opaque;
 		if (ad != NULL) {
-			if (ad->bob != NULL)
-				ad->bob->free(ad->bob);
+			struct dh *bob = ad->bob;
+			if (bob != NULL)
+				bob->free(bob);
 			for (size_t i = 0; i < ad->count; i++)
 				bytes_free(ad->messages[i]);
 			freezero(ad->messages, ad->count * sizeof(struct bytes *));
