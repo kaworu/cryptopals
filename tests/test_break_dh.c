@@ -8,9 +8,8 @@
 #include "test_dh.h"
 
 
-/* Set 5 / Challenge 34 (second part, MITM attack) */
 static MunitResult
-test_mitm_dh(const MunitParameter *params, void *data)
+mitm_dh_helper(const MunitParameter *params, void *data, enum dh_mitm_type type)
 {
 	/* XXX: this test does a little too much, it test both the exchange w/
 	   MITM and the echo message */
@@ -23,7 +22,7 @@ test_mitm_dh(const MunitParameter *params, void *data)
 	if (alice == NULL)
 		munit_error("dh_new");
 
-	struct dh *mallory = dh_mitm_new(DH_MITM_P_AS_A, /* bob */dh_new());
+	struct dh *mallory = dh_mitm_new(type, /* bob */dh_new());
 	if (mallory == NULL)
 		munit_error("dh_mitm_new");
 
@@ -52,6 +51,14 @@ test_mitm_dh(const MunitParameter *params, void *data)
 	bignum_free(g);
 	bignum_free(p);
 	return (MUNIT_OK);
+}
+
+
+/* Set 5 / Challenge 34 (second part, MITM attack) */
+static MunitResult
+test_mitm_dh(const MunitParameter *params, void *data)
+{
+	return (mitm_dh_helper(params, data, DH_MITM_P_AS_A));
 }
 
 
