@@ -79,6 +79,20 @@ struct bignum	*bignum_dup(const struct bignum *n);
 int	bignum_cmp(const struct bignum *lhs, const struct bignum *rhs);
 
 /*
+ * Test if the given bignum struct is zero.
+ *
+ * Returns 0 if the given bignum struct is zero, 1 otherwise.
+ */
+int	bignum_is_zero(const struct bignum *n);
+
+/*
+ * Test if the given bignum struct is one.
+ *
+ * Returns 0 if the given bignum struct is one, 1 otherwise.
+ */
+int	bignum_is_one(const struct bignum *n);
+
+/*
  * Compute and returns the result of (base ^ exp) % mod.
  *
  * Returns a pointer to a newly allocated bignum struct that should passed to

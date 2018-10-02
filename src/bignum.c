@@ -169,6 +169,26 @@ bignum_cmp(const struct bignum *lhs, const struct bignum *rhs)
 }
 
 
+int
+bignum_is_zero(const struct bignum *n)
+{
+	if (n == NULL)
+		return (1);
+	const int is_zero = (BN_is_zero(n->bn) == 1);
+	return (is_zero ? 0 : 1);
+}
+
+
+int
+bignum_is_one(const struct bignum *n)
+{
+	if (n == NULL)
+		return (1);
+	const int is_one = (BN_is_one(n->bn) == 1);
+	return (is_one ? 0 : 1);
+}
+
+
 struct bignum	*bignum_modexp(const struct bignum *base,
 		    const struct bignum *exp, const struct bignum *mod)
 {

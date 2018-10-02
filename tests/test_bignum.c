@@ -165,6 +165,52 @@ test_bignum_cmp(const MunitParameter *params, void *data)
 
 
 static MunitResult
+test_bignum_is_zero(const MunitParameter *params, void *data)
+{
+	struct bignum *zero      = bignum_from_dec("0");
+	struct bignum *one       = bignum_from_dec("1");
+	struct bignum *minus_one = bignum_from_dec("-1");
+	if (zero == NULL || one == NULL || minus_one == NULL)
+		munit_error("bignum_from_dec");
+
+	munit_assert_int(bignum_is_zero(zero),       ==, 0);
+	munit_assert_int(bignum_is_zero(one),        ==, 1);
+	munit_assert_int(bignum_is_zero(minus_one),  ==, 1);
+	/* when NULL is given */
+	munit_assert_int(bignum_is_zero(NULL), ==, 1);
+
+	bignum_free(minus_one);
+	bignum_free(one);
+	bignum_free(zero);
+
+	return (MUNIT_OK);
+}
+
+
+static MunitResult
+test_bignum_is_one(const MunitParameter *params, void *data)
+{
+	struct bignum *zero      = bignum_from_dec("0");
+	struct bignum *one       = bignum_from_dec("1");
+	struct bignum *minus_one = bignum_from_dec("-1");
+	if (zero == NULL || one == NULL || minus_one == NULL)
+		munit_error("bignum_from_dec");
+
+	munit_assert_int(bignum_is_one(zero),       ==, 1);
+	munit_assert_int(bignum_is_one(one),        ==, 0);
+	munit_assert_int(bignum_is_one(minus_one),  ==, 1);
+	/* when NULL is given */
+	munit_assert_int(bignum_is_one(NULL), ==, 1);
+
+	bignum_free(minus_one);
+	bignum_free(one);
+	bignum_free(zero);
+
+	return (MUNIT_OK);
+}
+
+
+static MunitResult
 test_bignum_modexp(const MunitParameter *params, void *data)
 {
 	/* example from https://en.wikipedia.org/wiki/Modular_exponentiation */
@@ -317,6 +363,8 @@ MunitTest test_bignum_suite_tests[] = {
 	{ "bignum_from_dec",  test_bignum_from_hex_and_dec, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bignum_dup",       test_bignum_dup,              NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bignum_cmp",       test_bignum_cmp,              srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "bignum_is_zero",   test_bignum_is_zero,          NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "bignum_is_one",    test_bignum_is_one,           NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bignum_modexp",    test_bignum_modexp,           NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bignum_to_bytes",  test_bignum_to_bytes,         srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bignum_to_dec",    test_bignum_to_dec,           NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
