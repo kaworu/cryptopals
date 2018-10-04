@@ -60,7 +60,7 @@ dh_mitm_negociate(struct dh *self,
 		    struct bignum **np_p, struct bignum **ng_p)
 {
 	struct dh_mitm_opaque *ad = NULL;
-	struct bignum *np = NULL, *ng = NULL;
+	struct bignum *spoofed_g = NULL, *np = NULL, *ng = NULL;
 	int success = 0;
 
 	/* sanity checks */
@@ -79,26 +79,33 @@ dh_mitm_negociate(struct dh *self,
 	case DH_MITM_P_AS_A:
 		/* simply pass the negociation parameters to bob, this attack is
 		   about the public numbers at the exchange step. */
-		if (bob->negociate(bob, p, g, &np, &ng) != 0)
-			goto cleanup;
+		spoofed_g = bignum_dup(g);
 		break;
 	case DH_MITM_1_AS_G:
-		/* TODO */
-		goto cleanup;
+		/* g = 1 */
+		spoofed_g = bignum_one();
 		break;
 	case DH_MITM_P_AS_G:
-		/* TODO */
-		goto cleanup;
+		/* g = p */
+		spoofed_g = bignum_dup(p);
 		break;
 	case DH_MITM_P_MINUS_1_AS_G:
-		/* TODO */
-		goto cleanup;
+		/* g = p - 1 */
+		spoofed_g = bignum_sub_one(p);
 		break;
 	}
 
+	/* negociate our spoofed parameters with bob */
+	if (bob->negociate(bob, p, spoofed_g, &np, &ng) != 0)
+		goto cleanup;
 	if (np == NULL || ng == NULL)
 		goto cleanup;
 
+	/* check that bob accepted our g value */
+	if (bignum_cmp(spoofed_g, ng) != 0)
+		goto cleanup;
+
+	/* set the negociated parameters for alice */
 	*np_p = np;
 	np = NULL;
 	*ng_p = ng;
@@ -107,6 +114,7 @@ dh_mitm_negociate(struct dh *self,
 	success = 1;
 	/* FALLTHROUGH */
 cleanup:
+	bignum_free(spoofed_g);
 	bignum_free(ng);
 	bignum_free(np);
 	return (success ? 0 : -1);
@@ -118,7 +126,7 @@ dh_mitm_receive(struct dh *self, const struct bignum *p, const struct bignum *g,
 		    const struct bignum *A)
 {
 	struct dh_mitm_opaque *ad = NULL;
-	struct bignum *s = NULL, *B = NULL;
+	struct bignum *p_minus_one = NULL, *s = NULL, *B = NULL;
 	int success = 0;
 
 	/* sanity checks */
@@ -136,34 +144,64 @@ dh_mitm_receive(struct dh *self, const struct bignum *p, const struct bignum *g,
 		if (B == NULL)
 			goto cleanup;
 		bignum_free(B);
-		B = NULL;
-
+		/* we'll send back p to alice as bob's public number */
+		B = bignum_dup(p);
+		if (B == NULL)
+			goto cleanup;
 		/* The private shared number is zero */
 		s = bignum_zero();
-		self->key = dh_secret_to_aes128_key(s);
-		if (self->key == NULL)
-			goto cleanup;
 		break;
 	case DH_MITM_1_AS_G:
-		/* TODO */
-		goto cleanup;
+		/* ensure that g = 1 */
+		if (bignum_is_one(g) != 0)
+			goto cleanup;
+		/* forward the parameters to bob */
+		B = bob->receive(bob, p, g, A);
+		if (B == NULL)
+			goto cleanup;
+		/* The private shared number is one */
+		s = bignum_one();
 		break;
 	case DH_MITM_P_AS_G:
-		/* TODO */
-		goto cleanup;
+		/* ensure that g = p */
+		if (bignum_cmp(g, p) != 0)
+			goto cleanup;
+		/* forward the parameters to bob */
+		B = bob->receive(bob, p, g, A);
+		if (B == NULL)
+			goto cleanup;
+		/* The private shared number is zero */
+		s = bignum_zero();
 		break;
 	case DH_MITM_P_MINUS_1_AS_G:
-		/* TODO */
-		goto cleanup;
+		p_minus_one = bignum_sub_one(p);
+		/* ensure that g = p - 1 */
+		if (bignum_cmp(g, p_minus_one) != 0)
+			goto cleanup;
+		/* forward the parameters to bob */
+		B = bob->receive(bob, p, g, A);
+		if (B == NULL)
+			goto cleanup;
+		/* The private shared number is either p - 1 or 1 */
+		if (bignum_cmp(A, p_minus_one) == 0 &&
+			    bignum_cmp(B, p_minus_one) == 0) {
+			s = bignum_dup(p_minus_one);
+		} else {
+			s = bignum_one();
+		}
 		break;
 	}
+
+	self->key = dh_secret_to_aes128_key(s);
+	if (self->key == NULL)
+		goto cleanup;
 
 	success = 1;
 	/* FALLTHROUGH */
 cleanup:
 	bignum_free(s);
-	/* FIXME: this looks good only for DH_MITM_P_AS_A at first glance */
-	return (success ? bignum_dup(p) : NULL);
+	bignum_free(p_minus_one);
+	return (success ? B : NULL);
 }
 
 

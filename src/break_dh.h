@@ -15,28 +15,31 @@ enum dh_mitm_type {
 	/*
 	 * Pass the public parameter p as A (alice's public number) to bob and
 	 * to alice as B (bob's public number). This effectively set the private
-	 * shared secret number to zero.
+	 * shared secret number to 0.
 	 *
 	 * This is the attack described in Set 5 / Challenge 34.
 	 */
 	DH_MITM_P_AS_A,
 
 	/*
-	 * TODO
+	 * Force the parameter g to be negotiated as 1. This effectively set the
+	 * private shared secret number to 1.
 	 *
 	 * This is the first attack described in Set 5 / Challenge 35.
 	 */
 	DH_MITM_1_AS_G,
 
 	/*
-	 * TODO
+	 * Force the parameter g to be negotiated as p. This effectively set the
+	 * private shared secret number to 0.
 	 *
 	 * This is the second attack described in Set 5 / Challenge 35.
 	 */
 	DH_MITM_P_AS_G,
 
 	/*
-	 * TODO
+	 * Force the parameter g to be negotiated as p - 1. This effectively set
+	 * the private shared secret number to (p - 1) or 1.
 	 *
 	 * This is the third attack described in Set 5 / Challenge 35.
 	 */

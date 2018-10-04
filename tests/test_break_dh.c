@@ -56,15 +56,42 @@ mitm_dh_helper(const MunitParameter *params, void *data, enum dh_mitm_type type)
 
 /* Set 5 / Challenge 34 (second part, MITM attack) */
 static MunitResult
-test_mitm_dh(const MunitParameter *params, void *data)
+test_mitm_dh_p_as_a(const MunitParameter *params, void *data)
 {
 	return (mitm_dh_helper(params, data, DH_MITM_P_AS_A));
 }
 
 
+/* Set 5 / Challenge 35 (first part, g = 1) */
+static MunitResult
+test_mitm_dh_1_as_g(const MunitParameter *params, void *data)
+{
+	return (mitm_dh_helper(params, data, DH_MITM_1_AS_G));
+}
+
+
+/* Set 5 / Challenge 35 (second part, g = p) */
+static MunitResult
+test_mitm_dh_p_as_g(const MunitParameter *params, void *data)
+{
+	return (mitm_dh_helper(params, data, DH_MITM_P_AS_G));
+}
+
+
+/* Set 5 / Challenge 35 (third part, g = p - 1) */
+static MunitResult
+test_mitm_dh_p_minus_1_as_g(const MunitParameter *params, void *data)
+{
+	return (mitm_dh_helper(params, data, DH_MITM_P_MINUS_1_AS_G));
+}
+
+
 /* The test suite. */
 MunitTest test_break_dh_suite_tests[] = {
-	{ "mitm", test_mitm_dh, srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "mitm-0", test_mitm_dh_p_as_a, srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "mitm-1", test_mitm_dh_1_as_g, srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "mitm-2", test_mitm_dh_p_as_g, srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "mitm-3", test_mitm_dh_p_minus_1_as_g, srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{
 		.name       = NULL,
 		.test       = NULL,
