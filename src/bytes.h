@@ -132,8 +132,7 @@ int	bytes_bcmp(const struct bytes *a, const struct bytes *b);
  * length and data, 1 otherwise.
  *
  * NOTE: Unlike bytes_bcmp(), the running time of bytes_timingsafe_bcmp() is
- * independent of the bytes structs data, and does not return a lexicographic
- * ordering on the data at a and b; it tells only whether they are equal.
+ * independent of the bytes structs data.
  */
 int	bytes_timingsafe_bcmp(const struct bytes *a, const struct bytes *b);
 

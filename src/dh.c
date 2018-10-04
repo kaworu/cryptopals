@@ -269,9 +269,9 @@ dh_echo(const struct dh *self, const struct bytes *alice_iv_ct)
 
 	const size_t ivlen = aes_128_blocksize();
 
-	/* split and decrypt the message */
-	alice_iv  = bytes_slice(alice_iv_ct, 0, ivlen);
-	alice_ct  = bytes_slice(alice_iv_ct, ivlen, alice_iv_ct->len - ivlen);
+	/* decrypt alice's message */
+	alice_iv = bytes_slice(alice_iv_ct, 0, ivlen);
+	alice_ct = bytes_slice(alice_iv_ct, ivlen, alice_iv_ct->len - ivlen);
 	msg = aes_128_cbc_decrypt(alice_ct, self->key, alice_iv);
 
 	/* XXX: there is a very small (but non-zero) probability that we
