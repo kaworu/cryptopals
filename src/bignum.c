@@ -218,6 +218,34 @@ cleanup:
 
 
 struct bignum *
+bignum_sub_one(const struct bignum *n)
+{
+	struct bignum *result = NULL;
+	int success = 0;
+
+	/* sanity check */
+	if (n == NULL)
+		goto cleanup;
+
+	result = bignum_dup(n);
+	if (result == NULL)
+		goto cleanup;
+
+	if (BN_sub_word(result->bn, 1) == 0)
+		goto cleanup;
+
+	success = 1;
+	/* FALLTHROUGH */
+cleanup:
+	if (!success) {
+		bignum_free(result);
+		result = NULL;
+	}
+	return (result);
+}
+
+
+struct bignum *
 bignum_modexp(const struct bignum *base, const struct bignum *exp,
 		    const struct bignum *mod)
 {

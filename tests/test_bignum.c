@@ -209,6 +209,7 @@ test_bignum_is_one(const MunitParameter *params, void *data)
 	return (MUNIT_OK);
 }
 
+
 static MunitResult
 test_bignum_sub(const MunitParameter *params, void *data)
 {
@@ -260,6 +261,43 @@ test_bignum_sub(const MunitParameter *params, void *data)
 	bignum_free(zero);
 	return (MUNIT_OK);
 }
+
+
+static MunitResult
+test_bignum_sub_one(const MunitParameter *params, void *data)
+{
+	struct bignum *limit = bignum_from_dec("9001");
+	if (limit == NULL)
+		munit_error("bignum_from_dec");
+
+	struct bignum *n = bignum_rand(limit);
+	if (n == NULL)
+		munit_error("bignum_rand");
+
+	struct bignum *one = bignum_one();
+	if (one == NULL)
+		munit_error("bignum_one");
+
+	struct bignum *n_minus_one = bignum_sub(n, one);
+	if (n_minus_one == NULL)
+		munit_error("bignum_sub");
+
+	struct bignum *result = bignum_sub_one(n);
+
+	munit_assert_not_null(result);
+	munit_assert_int(bignum_cmp(result, n_minus_one), ==, 0);
+
+	/* when NULL is given */
+	munit_assert_null(bignum_sub_one(NULL));
+
+	bignum_free(result);
+	bignum_free(n_minus_one);
+	bignum_free(one);
+	bignum_free(n);
+	bignum_free(limit);
+	return (MUNIT_OK);
+}
+
 
 static MunitResult
 test_bignum_modexp(const MunitParameter *params, void *data)
@@ -325,6 +363,7 @@ test_bignum_to_bytes(const MunitParameter *params, void *data)
 
 	return (MUNIT_OK);
 }
+
 
 static MunitResult
 test_bignum_to_dec(const MunitParameter *params, void *data)
@@ -417,6 +456,7 @@ MunitTest test_bignum_suite_tests[] = {
 	{ "bignum_is_zero",   test_bignum_is_zero,          NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bignum_is_one",    test_bignum_is_one,           NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bignum_sub",       test_bignum_sub,              srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "bignum_sub_one",   test_bignum_sub_one,          srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bignum_modexp",    test_bignum_modexp,           NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bignum_to_bytes",  test_bignum_to_bytes,         srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bignum_to_dec",    test_bignum_to_dec,           NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
