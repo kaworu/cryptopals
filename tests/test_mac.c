@@ -241,85 +241,67 @@ test_hmac_sha1(const MunitParameter *params, void *data)
 	const struct {
 		size_t test_case;
 		char *key;
-		size_t key_len;
 		char *data;
-		size_t data_len;
 		char *digest;
 	} vectors[] = {
 		{
 			.test_case = 1,
-			.key       = "\x0b\x0b\x0b\x0b\x0b\x0b\x0b\x0b\x0b\x0b\x0b\x0b\x0b\x0b\x0b\x0b\x0b\x0b\x0b\x0b",
-			.key_len   = 20,
-			.data      = "Hi There",
-			.data_len  = 8,
-			.digest    = "\xb6\x17\x31\x86\x55\x05\x72\x64\xe2\x8b\xc0\xb6\xfb\x37\x8c\x8e\xf1\x46\xbe\x00",
+			.key    = "0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b",
+			.data   = "4869205468657265", /* "Hi There" */
+			.digest = "b617318655057264e28bc0b6fb378c8ef146be00",
 		}, {
 			.test_case = 2,
-			.key       = "Jefe",
-			.key_len   = 4,
-			.data      = "what do ya want for nothing?",
-			.data_len  = 28,
-			.digest    = "\xef\xfc\xdf\x6a\xe5\xeb\x2f\xa2\xd2\x74\x16\xd5\xf1\x84\xdf\x9c\x25\x9a\x7c\x79",
+			.key    = "4a656665", /* "Jefe" */
+			.data   = "7768617420646f2079612077616e7420666f72206e6f7468696e673f",
+				/* "what do ya want for nothing?" */
+			.digest = "effcdf6ae5eb2fa2d27416d5f184df9c259a7c79",
 		}, {
 			.test_case = 3,
-			.key       = "\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa",
-			.key_len   = 20,
+			.key    = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
 			/* 0xdd repeated 50 times */
-			.data      = "\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd"
-			            "\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd"
-			            "\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd\xdd",
-			.data_len  = 50,
-			.digest    = "\x12\x5d\x73\x42\xb9\xac\x11\xcd\x91\xa3\x9a\xf4\x8a\xa1\x7b\x4f\x63\xf1\x75\xd3",
+			.data   = "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+			          "dddddddddddddddddddd",
+			.digest = "125d7342b9ac11cd91a39af48aa17b4f63f175d3",
 		}, {
 			.test_case = 4,
-			.key       = "\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f\x10\x11\x12\x13\x14"
-			            "\x15\x16\x17\x18\x19",
-			.key_len   = 25,
+			.key    = "0102030405060708090a0b0c0d0e0f10111213141516171819",
 			/* 0xcd repeated 50 times */
-			.data      = "\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd"
-			            "\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd"
-			            "\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd\xcd",
-			.data_len  = 50,
-			.digest    = "\x4c\x90\x07\xf4\x02\x62\x50\xc6\xbc\x84\x14\xf9\xbf\x50\xc8\x6c\x2d\x72\x35\xda",
+			.data   = "cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd"
+			          "cdcdcdcdcdcdcdcdcdcd",
+			.digest = "4c9007f4026250c6bc8414f9bf50c86c2d7235da",
 		}, {
 			.test_case = 5,
-			.key       = "\x0c\x0c\x0c\x0c\x0c\x0c\x0c\x0c\x0c\x0c\x0c\x0c\x0c\x0c\x0c\x0c\x0c\x0c\x0c\x0c",
-			.key_len   = 20,
-			.data      = "Test With Truncation",
-			.data_len  = 20,
-			.digest    = "\x4c\x1a\x03\x42\x4b\x55\xe0\x7f\xe7\xf2\x7b\xe1\xd5\x8b\xb9\x32\x4a\x9a\x5a\x04",
+			.key    = "0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c",
+			.data   = "546573742057697468205472756e636174696f6e", /* "Test With Truncation" */
+			.digest = "4c1a03424b55e07fe7f27be1d58bb9324a9a5a04",
 		}, {
 			.test_case = 6,
 			/* 0xaa repeated 80 times */
-			.key       = "\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa"
-			             "\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa"
-			             "\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa"
-			             "\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa",
-			.key_len   = 80,
-			.data      = "Test Using Larger Than Block-Size Key - Hash Key First",
-			.data_len  = 54,
-			.digest    = "\xaa\x4a\xe5\xe1\x52\x72\xd0\x0e\x95\x70\x56\x37\xce\x8a\x3b\x55\xed\x40\x21\x12",
+			.key    = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+			          "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+			.data   = "54657374205573696e67204c6172676572205468616e20426c6f636b2d53697a65204b6579202d20"
+			          "48617368204b6579204669727374",
+				/* "Test Using Larger Than Block-Size Key - Hash Key First" */
+			.digest = "aa4ae5e15272d00e95705637ce8a3b55ed402112",
 		}, {
 			.test_case = 7,
 			/* 0xaa repeated 80 times */
-			.key       = "\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa"
-			             "\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa"
-			             "\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa"
-			             "\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa",
-			.key_len   = 80,
-			.data      = "Test Using Larger Than Block-Size Key and Larger Than One Block-Size Data",
-			.data_len  = 73,
-			.digest    = "\xe8\xe9\x9d\x0f\x45\x23\x7d\x78\x6d\x6b\xba\xa7\x96\x5c\x78\x08\xbb\xff\x1a\x91",
+			.key    = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+			          "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+			.data   = "54657374205573696e67204c6172676572205468616e20426c6f636b2d53697a65204b657920616e"
+			          "64204c6172676572205468616e204f6e6520426c6f636b2d53697a652044617461",
+				/* "Test Using Larger Than Block-Size Key and Larger Than One Block-Size Data" */
+			.digest = "e8e99d0f45237d786d6bbaa7965c7808bbff1a91",
 		}
 	};
 
 	for (size_t i = 0; i < (sizeof(vectors) / sizeof(*vectors)); i++) {
 		struct bytes *key, *data, *expected;
-		key      = bytes_from_raw(vectors[i].key, vectors[i].key_len);
-		data     = bytes_from_raw(vectors[i].data, vectors[i].data_len);
-		expected = bytes_from_raw(vectors[i].digest, sha1_hashlength());
+		key      = bytes_from_hex(vectors[i].key);
+		data     = bytes_from_hex(vectors[i].data);
+		expected = bytes_from_hex(vectors[i].digest);
 		if (key == NULL || data == NULL || expected == NULL)
-			munit_error("bytes_from_raw");
+			munit_error("bytes_from_hex");
 
 		struct bytes *mac = hmac_sha1(key, data);
 		munit_assert_not_null(mac);
@@ -353,32 +335,29 @@ test_hmac_md4(const MunitParameter *params, void *data)
 	const struct {
 		size_t test_case;
 		char *key;
-		size_t key_len;
 		char *data;
-		size_t data_len;
 		char *digest;
 	} vectors[] = {
 		{
 			.test_case = 2,
-			.key       = "Jefe",
-			.key_len   = 4,
-			.data      = "what do ya want for nothing?",
-			.data_len  = 28,
-			.digest    = "\xbe\x19\x2c\x58\x8a\x8e\x91\x4d\x8a\x59\xb4\x74\xa8\x28\x12\x8f",
+			.key       = "4a656665", /* "Jefe" */
+			.data      = "7768617420646f2079612077616e7420666f72206e6f7468696e673f",
+				/* "what do ya want for nothing?" */
+			.digest    = "be192c588a8e914d8a59b474a828128f",
 		},
 	};
 
 	for (size_t i = 0; i < (sizeof(vectors) / sizeof(*vectors)); i++) {
 		struct bytes *key, *data, *expected;
-		key      = bytes_from_raw(vectors[i].key, vectors[i].key_len);
-		data     = bytes_from_raw(vectors[i].data, vectors[i].data_len);
-		expected = bytes_from_raw(vectors[i].digest, md4_hashlength());
+		key      = bytes_from_hex(vectors[i].key);
+		data     = bytes_from_hex(vectors[i].data);
+		expected = bytes_from_hex(vectors[i].digest);
 		if (key == NULL || data == NULL || expected == NULL)
-			munit_error("bytes_from_raw");
+			munit_error("bytes_from_hex");
 
 		struct bytes *mac = hmac_md4(key, data);
 		munit_assert_not_null(mac);
-		munit_assert_size(mac->len, ==, expected->len);
+		munit_assert_size(mac->len, ==, md4_hashlength());
 		munit_assert_memory_equal(mac->len, mac->data, expected->data);
 
 		bytes_free(mac);
@@ -412,58 +391,58 @@ test_hmac_sha256(const MunitParameter *params, void *data)
 	} vectors[] = {
 		{
 			.test_case = 1,
-			.key       = "0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b",
-			.data      = "4869205468657265", /* "Hi There" */
-			.digest    = "b0344c61d8db38535ca8afceaf0bf12b881dc200c9833da726e9376c2e32cff7",
+			.key    = "0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b",
+			.data   = "4869205468657265", /* "Hi There" */
+			.digest = "b0344c61d8db38535ca8afceaf0bf12b881dc200c9833da726e9376c2e32cff7",
 		}, {
 			.test_case = 2,
-			.key       = "4a656665", /* "Jefe" */
-			.data      = "7768617420646f2079612077616e7420666f72206e6f7468696e673f",
+			.key    = "4a656665", /* "Jefe" */
+			.data   = "7768617420646f2079612077616e7420666f72206e6f7468696e673f",
 				/* "what do ya want for nothing?" */
-			.digest    = "5bdcc146bf60754e6a042426089575c75a003f089d2739839dec58b964ec3843",
+			.digest = "5bdcc146bf60754e6a042426089575c75a003f089d2739839dec58b964ec3843",
 		}, {
 			.test_case = 3,
-			.key       = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+			.key    = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
 			/* 0xdd repeated 50 times */
-			.data      = "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
-			             "dddddddddddddddddddd",
-			.digest    = "773ea91e36800e46854db8ebd09181a72959098b3ef8c122d9635514ced565fe",
+			.data   = "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+			          "dddddddddddddddddddd",
+			.digest = "773ea91e36800e46854db8ebd09181a72959098b3ef8c122d9635514ced565fe",
 		}, {
 			.test_case = 4,
-			.key       = "0102030405060708090a0b0c0d0e0f10111213141516171819",
+			.key    = "0102030405060708090a0b0c0d0e0f10111213141516171819",
 			/* 0xcd repeated 50 times */
-			.data      = "cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd"
-			            "cdcdcdcdcdcdcdcdcdcd",
-			.digest    = "82558a389a443c0ea4cc819899f2083a85f0faa3e578f8077a2e3ff46729665b",
+			.data   = "cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd"
+			          "cdcdcdcdcdcdcdcdcdcd",
+			.digest = "82558a389a443c0ea4cc819899f2083a85f0faa3e578f8077a2e3ff46729665b",
 		}, {
 			.test_case = 5,
-			.key       = "0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c",
-			.data      = "546573742057697468205472756e636174696f6e", /* "Test With Truncation" */
-			.digest    = "a3b6167473100ee06e0c796c2955552b",
+			.key    = "0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c",
+			.data   = "546573742057697468205472756e636174696f6e", /* "Test With Truncation" */
+			.digest = "a3b6167473100ee06e0c796c2955552b",
 		}, {
 			.test_case = 6,
 			/* 0xaa repeated 131 times */
-			.key       = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-			             "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-			             "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-			             "aaaaaaaaaaaaaaaaaaaaaa",
-			.data      = "54657374205573696e67204c6172676572205468616e20426c6f636b2d53697a65204b6579202d20"
-			             "48617368204b6579204669727374",
+			.key    = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+			          "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+			          "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+			          "aaaaaaaaaaaaaaaaaaaaaa",
+			.data   = "54657374205573696e67204c6172676572205468616e20426c6f636b2d53697a65204b6579202d20"
+			          "48617368204b6579204669727374",
 				/* "Test Using Larger Than Block-Size Key - Hash Key First" */
-			.digest    = "60e431591ee0b67f0d8a26aacbf5b77f8e0bc6213728c5140546040f0ee37f54",
+			.digest = "60e431591ee0b67f0d8a26aacbf5b77f8e0bc6213728c5140546040f0ee37f54",
 		}, {
 			.test_case = 7,
 			/* 0xaa repeated 131 times */
-			.key       = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-			             "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-			             "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-			             "aaaaaaaaaaaaaaaaaaaaaa",
-			.data      = "5468697320697320612074657374207573696e672061206c6172676572207468616e20626c6f636b"
-			             "2d73697a65206b657920616e642061206c6172676572207468616e20626c6f636b2d73697a652064"
-			             "6174612e20546865206b6579206e6565647320746f20626520686173686564206265666f72652062"
-			             "65696e6720757365642062792074686520484d414320616c676f726974686d2e",
+			.key    = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+			          "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+			          "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+			          "aaaaaaaaaaaaaaaaaaaaaa",
+			.data   = "5468697320697320612074657374207573696e672061206c6172676572207468616e20626c6f636b"
+			          "2d73697a65206b657920616e642061206c6172676572207468616e20626c6f636b2d73697a652064"
+			          "6174612e20546865206b6579206e6565647320746f20626520686173686564206265666f72652062"
+			          "65696e6720757365642062792074686520484d414320616c676f726974686d2e",
 				/* "This is a test using a larger than block-size key and a larger than block-size data. The key needs to be hashed before being used by the HMAC algorithm." */
-			.digest    = "9b09ffa71b942fcb27635fbcd5b0e944bfdc63644f0713938a7f51535c3a35e2",
+			.digest = "9b09ffa71b942fcb27635fbcd5b0e944bfdc63644f0713938a7f51535c3a35e2",
 		}
 	};
 
