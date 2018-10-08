@@ -98,6 +98,7 @@ hmac(hash_func_t *H, size_t B, size_t L,
 	struct bytes *k_ipad = NULL, *k_opad = NULL;
 	struct bytes *in = NULL, *hin = NULL, *out = NULL;
 	struct bytes *mac = NULL;
+	size_t tklen = 0;
 	int success = 0;
 
 	/* sanity checks */
@@ -113,13 +114,22 @@ hmac(hash_func_t *H, size_t B, size_t L,
 		 *
 		 * NOTE: see https://www.rfc-editor.org/errata/eid4809
 		 */
-		struct bytes *hkey = H(key);
-		tk = bytes_slice(hkey, 0, L);
-		bytes_free(hkey);
+		tklen = L;
+		tk = H(key);
 	} else {
+		/*
+		 * from § 3:
+		 * The key for HMAC can be of any length (keys longer than B
+		 * bytes are first hashed using H).  However, less than L bytes
+		 * is strongly discouraged as it would decrease the security
+		 * strength of the function.
+		 *
+		 * NOTE: We do not enforce this recommendation here.
+		 */
+		tklen = key->len;
 		tk = bytes_dup(key);
 	}
-	if (tk == NULL)
+	if (tk == NULL || tk->len != tklen)
 		goto cleanup;
 
 	/*
