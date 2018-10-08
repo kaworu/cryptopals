@@ -5,6 +5,7 @@
  */
 #include "sha1.h"
 #include "md4.h"
+#include "sha256.h"
 #include "mac.h"
 
 
@@ -77,6 +78,15 @@ hmac_md4(const struct bytes *key, const struct bytes *msg)
 	const size_t blocksize  = md4_blocksize();
 	const size_t hashlength = md4_hashlength();
 	return (hmac(&md4_hash, blocksize, hashlength, key, msg));
+}
+
+
+struct bytes *
+hmac_sha256(const struct bytes *key, const struct bytes *msg)
+{
+	const size_t blocksize  = sha256_blocksize();
+	const size_t hashlength = sha256_hashlength();
+	return (hmac(&sha256_hash, blocksize, hashlength, key, msg));
 }
 
 

@@ -66,4 +66,10 @@ struct bytes	*hmac_sha1(const struct bytes *key, const struct bytes *msg);
  */
 struct bytes	*hmac_md4(const struct bytes *key, const struct bytes *msg);
 
+/*
+ * Returns the HMAC-SHA256 MAC of the given message under the provided key, or
+ * NULL on error (either argument is NULL or malloc failed).
+ */
+struct bytes	*hmac_sha256(const struct bytes *key, const struct bytes *msg);
+
 #endif /* ndef MAC_H */
