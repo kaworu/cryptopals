@@ -33,6 +33,7 @@ set(SRCS
     ${PROJECT_SOURCE_DIR}/src/ctr.c
     ${PROJECT_SOURCE_DIR}/src/mt19937.c
     ${PROJECT_SOURCE_DIR}/src/sha1.c
+    ${PROJECT_SOURCE_DIR}/src/sha256.c
     ${PROJECT_SOURCE_DIR}/src/md4.c
     ${PROJECT_SOURCE_DIR}/src/mac.c
     ${PROJECT_SOURCE_DIR}/src/dh.c
@@ -107,6 +108,7 @@ set(TEST_SRCS
     ${PROJECT_SOURCE_DIR}/tests/test_ctr.c
     ${PROJECT_SOURCE_DIR}/tests/test_mt19937.c
     ${PROJECT_SOURCE_DIR}/tests/test_sha1.c
+    ${PROJECT_SOURCE_DIR}/tests/test_sha256.c
     ${PROJECT_SOURCE_DIR}/tests/test_md4.c
     ${PROJECT_SOURCE_DIR}/tests/test_mac.c
     ${PROJECT_SOURCE_DIR}/tests/test_dh.c
