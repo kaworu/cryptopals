@@ -73,6 +73,7 @@ sha1_hash_ctx(struct sha1_ctx *ctx, const struct bytes *msg)
 {
 	/* max total message length, in byte */
 	const uint64_t maxlen = UINT64_MAX / 8;
+	const size_t blocksize = sha1_blocksize();
 	struct bytes *block = NULL;
 	int success = 0;
 
@@ -87,19 +88,19 @@ sha1_hash_ctx(struct sha1_ctx *ctx, const struct bytes *msg)
 	uint32_t *H = ctx->state;
 
 	/* process each "complete" message block */
-	const size_t nblock = msg->len / sha1_blocksize();
+	const size_t nblock = msg->len / blocksize;
 	for (size_t i = 0; i < nblock; i++)
-		sha1_process_message_block(msg->data + sha1_blocksize() * i, H);
+		sha1_process_message_block(msg->data + blocksize * i, H);
 	ctx->len += msg->len;
 
 	/* the padded block */
-	block = bytes_zeroed(sha1_blocksize());
+	block = bytes_zeroed(blocksize);
 	if (block == NULL)
 		goto cleanup;
 	/* count of message bytes in the padded block */
-	const size_t restlen = msg->len % sha1_blocksize();
+	const size_t restlen = msg->len % blocksize;
 	/* copy what is left of the message to process into the padded block */
-	if (bytes_sput(block, 0, msg, sha1_blocksize() * nblock, restlen) != 0)
+	if (bytes_sput(block, 0, msg, blocksize * nblock, restlen) != 0)
 		goto cleanup;
 	/* Add the first padding bytes, a `1' bit followed by zeroes */
 	block->data[restlen] = 0x80;
@@ -146,11 +147,11 @@ sha1_process_message_block(const uint8_t *block, uint32_t *H)
 	 * a. Divide M(i) into 16 words W(0), W(1), ... , W(15), where W(0) is
 	 * the left-most word.
 	 */
-	for (size_t t = 0; t < 16; t++) {
-		const uint32_t hh = block[4 * t + 0];
-		const uint32_t hl = block[4 * t + 1];
-		const uint32_t lh = block[4 * t + 2];
-		const uint32_t ll = block[4 * t + 3];
+	for (size_t t = 0, i = 0; t < 16; t++, i += 4) {
+		const uint32_t hh = block[i + 0];
+		const uint32_t hl = block[i + 1];
+		const uint32_t lh = block[i + 2];
+		const uint32_t ll = block[i + 3];
 		W[t] = (hh << 24) | (hl << 16) | (lh << 8) | ll;
 	}
 
