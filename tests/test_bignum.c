@@ -6,6 +6,48 @@
 #include "bignum.h"
 
 #include <stdio.h>
+#include <stdlib.h>
+
+
+/* helper to create a bignum from an int */
+static struct bignum *
+my_bignum_from_int(int x)
+{
+	/*
+	 * Use decimal printf(3) format so that negative values are handled
+	 * correctly.
+	 */
+	const char *fmt = "%d";
+	char *buf = NULL;
+	struct bignum *num = NULL;
+	int success = 0;
+
+	/* compute the required size */
+	const int size = snprintf(NULL, 0, fmt, x);
+	if (size < 0)
+		goto cleanup;
+
+	const size_t buflen = (size_t)size + 1;
+	buf = malloc(buflen);
+	if (buf == NULL)
+		goto cleanup;
+	if (snprintf(buf, buflen, fmt, x) != size)
+		goto cleanup;
+
+	num = bignum_from_dec(buf);
+	if (num == NULL)
+		goto cleanup;
+
+	success = 1;
+	/* FALLTHROUGH */
+cleanup:
+	free(buf);
+	if (!success) {
+		bignum_free(num);
+		num = NULL;
+	}
+	return (num);
+}
 
 
 static MunitResult
@@ -163,20 +205,13 @@ test_bignum_dup(const MunitParameter *params, void *data)
 static MunitResult
 test_bignum_cmp(const MunitParameter *params, void *data)
 {
-	char buf[BUFSIZ] = { 0 };
 	for (size_t i = 0; i < 100; i++) {
-		const uint64_t xi = rand_uint64();
-		const uint64_t yi = rand_uint64();
-		int ret = snprintf(buf, sizeof(buf), "%ju", (uintmax_t)xi);
-		if (ret < 0 || (size_t)ret >= sizeof(buf))
-			munit_error("snprintf");
-		struct bignum *x = bignum_from_dec(buf);
-		ret = snprintf(buf, sizeof(buf), "%ju", (uintmax_t)yi);
-		if (ret < 0 || (size_t)ret >= sizeof(buf))
-			munit_error("snprintf");
-		struct bignum *y = bignum_from_dec(buf);
+		const int xi = munit_rand_int_range(INT_MIN, INT_MAX);
+		const int yi = munit_rand_int_range(INT_MIN, INT_MAX);
+		struct bignum *x = my_bignum_from_int(xi);
+		struct bignum *y = my_bignum_from_int(yi);
 		if (x == NULL || y == NULL)
-			munit_error("bignum_from_dec");
+			munit_error("my_bignum_from_int");
 
 		const int x_cmp_y = (xi == yi ? 0 : (xi > yi ? 1 : -1));
 		const int y_cmp_x = -(x_cmp_y);
@@ -189,9 +224,9 @@ test_bignum_cmp(const MunitParameter *params, void *data)
 		bignum_free(x);
 	}
 
-	struct bignum *zero = bignum_from_dec("0");
+	struct bignum *zero = bignum_zero();
 	if (zero == NULL)
-		munit_error("bignum_from_dec");
+		munit_error("bignum_zero");
 	/* when NULL is given */
 	munit_assert_int(bignum_cmp(NULL, zero), ==, INT_MIN);
 	munit_assert_int(bignum_cmp(zero, NULL), ==, INT_MIN);
@@ -249,54 +284,86 @@ test_bignum_is_one(const MunitParameter *params, void *data)
 
 
 static MunitResult
+test_bignum_mod_add(const MunitParameter *params, void *data)
+{
+	for (size_t i = 0; i < 100; i++) {
+		const int ai = munit_rand_int_range(INT_MIN / 2, INT_MAX / 2);
+		const int bi = munit_rand_int_range(INT_MIN / 2, INT_MAX / 2);
+		const int mi = munit_rand_int_range(2, 16);
+
+		int ri = (ai + bi) % mi;
+		if (ri < 0)
+			ri += mi;
+
+		struct bignum *a = my_bignum_from_int(ai);
+		struct bignum *b = my_bignum_from_int(bi);
+		struct bignum *m = my_bignum_from_int(mi);
+		struct bignum *r = my_bignum_from_int(ri);
+		if (a == NULL || b == NULL || m == NULL || r == NULL)
+			munit_error("my_bignum_from_int");
+
+		struct bignum *result = bignum_mod_add(a, b, m);
+		munit_assert_not_null(result);
+		munit_assert_int(bignum_cmp(result, r), ==, 0);
+
+		bignum_free(result);
+		bignum_free(r);
+		bignum_free(m);
+		bignum_free(b);
+		bignum_free(a);
+	}
+
+	struct bignum *one = bignum_one();
+	if (one == NULL)
+		munit_error("bignum_one");
+	/* when NULL is given */
+	munit_assert_null(bignum_mod_add(NULL, one, one));
+	munit_assert_null(bignum_mod_add(one, NULL, one));
+	munit_assert_null(bignum_mod_add(one, one, NULL));
+	munit_assert_null(bignum_mod_add(NULL, NULL, one));
+	munit_assert_null(bignum_mod_add(NULL, one, NULL));
+	munit_assert_null(bignum_mod_add(one, NULL, NULL));
+	munit_assert_null(bignum_mod_add(NULL, NULL, NULL));
+
+	bignum_free(one);
+	return (MUNIT_OK);
+}
+
+
+static MunitResult
 test_bignum_sub(const MunitParameter *params, void *data)
 {
 	for (size_t i = 0; i < 100; i++) {
-		const int a = munit_rand_int_range(-256, 256);
-		const int b = munit_rand_int_range(-256, 256);
-		const int r = a - b;
+		const int ai = munit_rand_int_range(INT_MIN / 2, INT_MAX / 2);
+		const int bi = munit_rand_int_range(INT_MIN / 2, INT_MAX / 2);
+		const int ri = ai - bi;
 
-		char buf[5] = { 0 };
-		int ret = snprintf(buf, sizeof(buf), "%d", a);
-		if (ret < 0 || (size_t)ret >= sizeof(buf))
-			munit_error("snprintf");
-		struct bignum *bna = bignum_from_dec(buf);
-		if (bna == NULL)
-			munit_error("bignum_from_dec");
+		struct bignum *a = my_bignum_from_int(ai);
+		struct bignum *b = my_bignum_from_int(bi);
+		struct bignum *r = my_bignum_from_int(ri);
+		if (a == NULL || b == NULL || r == NULL)
+			munit_error("my_bignum_from_int");
 
-		ret = snprintf(buf, sizeof(buf), "%d", b);
-		if (ret < 0 || (size_t)ret >= sizeof(buf))
-			munit_error("snprintf");
-		struct bignum *bnb = bignum_from_dec(buf);
-		if (bnb == NULL)
-			munit_error("bignum_from_dec");
-
-		ret = snprintf(buf, sizeof(buf), "%d", r);
-		if (ret < 0 || (size_t)ret >= sizeof(buf))
-			munit_error("snprintf");
-		struct bignum *bnr = bignum_from_dec(buf);
-		if (bnr == NULL)
-			munit_error("bignum_from_dec");
-
-		struct bignum *result = bignum_sub(bna, bnb);
+		struct bignum *result = bignum_sub(a, b);
 
 		munit_assert_not_null(result);
-		munit_assert_int(bignum_cmp(result, bnr), ==, 0);
+		munit_assert_int(bignum_cmp(result, r), ==, 0);
 
 		bignum_free(result);
-		bignum_free(bnr);
-		bignum_free(bnb);
-		bignum_free(bna);
+		bignum_free(r);
+		bignum_free(b);
+		bignum_free(a);
 	}
 
-	struct bignum *zero = bignum_zero();
-	if (zero == NULL)
-		munit_error("bignum_zero");
+	struct bignum *one = bignum_one();
+	if (one == NULL)
+		munit_error("bignum_one");
 	/* when NULL is given */
-	munit_assert_null(bignum_sub(zero, NULL));
-	munit_assert_null(bignum_sub(NULL, zero));
+	munit_assert_null(bignum_sub(one, NULL));
+	munit_assert_null(bignum_sub(NULL, one));
+	munit_assert_null(bignum_sub(NULL, NULL));
 
-	bignum_free(zero);
+	bignum_free(one);
 	return (MUNIT_OK);
 }
 
@@ -333,6 +400,53 @@ test_bignum_sub_one(const MunitParameter *params, void *data)
 	bignum_free(one);
 	bignum_free(n);
 	bignum_free(limit);
+	return (MUNIT_OK);
+}
+
+
+static MunitResult
+test_bignum_mod_mul(const MunitParameter *params, void *data)
+{
+	for (size_t i = 0; i < 100; i++) {
+		const int ai = munit_rand_int_range(-256, 256);
+		const int bi = munit_rand_int_range(-256, 256);
+		const int mi = munit_rand_int_range(2, 16);
+
+		int ri = (ai * bi) % mi;
+		if (ri < 0)
+			ri += mi;
+
+		struct bignum *a = my_bignum_from_int(ai);
+		struct bignum *b = my_bignum_from_int(bi);
+		struct bignum *m = my_bignum_from_int(mi);
+		struct bignum *r = my_bignum_from_int(ri);
+		if (a == NULL || b == NULL || m == NULL || r == NULL)
+			munit_error("my_bignum_from_int");
+
+		struct bignum *result = bignum_mod_mul(a, b, m);
+		munit_assert_not_null(result);
+		munit_assert_int(bignum_cmp(result, r), ==, 0);
+
+		bignum_free(result);
+		bignum_free(r);
+		bignum_free(m);
+		bignum_free(b);
+		bignum_free(a);
+	}
+
+	struct bignum *one = bignum_one();
+	if (one == NULL)
+		munit_error("bignum_one");
+	/* when NULL is given */
+	munit_assert_null(bignum_mod_mul(NULL, one, one));
+	munit_assert_null(bignum_mod_mul(one, NULL, one));
+	munit_assert_null(bignum_mod_mul(one, one, NULL));
+	munit_assert_null(bignum_mod_mul(NULL, NULL, one));
+	munit_assert_null(bignum_mod_mul(NULL, one, NULL));
+	munit_assert_null(bignum_mod_mul(one, NULL, NULL));
+	munit_assert_null(bignum_mod_mul(NULL, NULL, NULL));
+
+	bignum_free(one);
 	return (MUNIT_OK);
 }
 
@@ -494,8 +608,10 @@ MunitTest test_bignum_suite_tests[] = {
 	{ "bignum_cmp",        test_bignum_cmp,              srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bignum_is_zero",    test_bignum_is_zero,          NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bignum_is_one",     test_bignum_is_one,           NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "bignum_mod_add",    test_bignum_mod_add,          NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bignum_sub",        test_bignum_sub,              srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bignum_sub_one",    test_bignum_sub_one,          srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "bignum_mod_mul",    test_bignum_mod_mul,          NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bignum_modexp",     test_bignum_modexp,           NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bignum_to_bytes",   test_bignum_to_bytes_be,      srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bignum_to_dec",     test_bignum_to_dec,           NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },

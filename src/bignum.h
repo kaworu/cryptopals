@@ -102,6 +102,15 @@ int	bignum_is_zero(const struct bignum *n);
 int	bignum_is_one(const struct bignum *n);
 
 /*
+ * Compute and returns the non-negative result of (a + b) % mod.
+ *
+ * Returns a pointer to a newly allocated bignum struct that should passed to
+ * bignum_free(), or NULL on failure.
+ */
+struct bignum	*bignum_mod_add(const struct bignum *a, const struct bignum *b,
+		    const struct bignum *mod);
+
+/*
  * Compute and returns the result of (a - b).
  *
  * Returns a pointer to a newly allocated bignum struct that should passed to
@@ -116,6 +125,15 @@ struct bignum	*bignum_sub(const struct bignum *a, const struct bignum *b);
  * bignum_free(). Returns NULL if any argument is NULL, or malloc(3) failed.
  */
 struct bignum	*bignum_sub_one(const struct bignum *n);
+
+/*
+ * Compute and returns the non-negative result of (a * b) % mod.
+ *
+ * Returns a pointer to a newly allocated bignum struct that should passed to
+ * bignum_free(), or NULL on failure.
+ */
+struct bignum	*bignum_mod_mul(const struct bignum *a, const struct bignum *b,
+		    const struct bignum *mod);
 
 /*
  * Compute and returns the result of (base ^ exp) % mod.
