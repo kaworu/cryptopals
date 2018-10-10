@@ -111,6 +111,47 @@ cleanup:
 
 
 struct bignum *
+bignum_from_bytes_be(const struct bytes *buf)
+{
+	struct bignum *num = NULL;
+	unsigned char *s = NULL;
+	size_t slen = 0;
+	int success = 0;
+
+	/* sanity check */
+	if (buf == NULL)
+		goto cleanup;
+
+	num = bignum_zero();
+	if (num == NULL)
+		goto cleanup;
+
+	/*
+	 * NOTE: BN_bin2bn() expect `const unsigned char *`
+	 */
+	slen = buf->len;
+	s = malloc(slen);
+	if (s == NULL)
+		goto cleanup;
+	for (size_t i = 0; i < slen; i++)
+		s[i] = buf->data[i];
+
+	if (BN_bin2bn(s, slen, num->bn) != num->bn)
+		goto cleanup;
+
+	success = 1;
+	/* FALLTHROUGH */
+cleanup:
+	freezero(s, slen);
+	if (!success) {
+		bignum_free(num);
+		num = NULL;
+	}
+	return (num);
+}
+
+
+struct bignum *
 bignum_rand(const struct bignum *limit)
 {
 	struct bignum *num = NULL;

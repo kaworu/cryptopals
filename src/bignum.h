@@ -52,6 +52,15 @@ struct bignum	*bignum_from_dec(const char *s);
 struct bignum	*bignum_from_hex(const char *s);
 
 /*
+ * Create a bignum struct from a big-endian bytes buffer.
+ *
+ * Returns a pointer to a newly allocated bignum struct that should passed to
+ * bignum_free(). Returns NULL if the given pointer is NULL, or malloc(3)
+ * failed.
+ */
+struct bignum	*bignum_from_bytes_be(const struct bytes *buf);
+
+/*
  * Returns a cryptographically strong pseudo-random number that is in the range
  * [0,limit[.
  *
