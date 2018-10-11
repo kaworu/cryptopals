@@ -120,6 +120,8 @@ break_repeating_key_xor(const struct bytes *ciphertext,
 		}
 	}
 
+	success = 1;
+
 	/* set `key_p' and `score_p' if needed */
 	if (key_p != NULL) {
 		*key_p = key;
@@ -128,7 +130,6 @@ break_repeating_key_xor(const struct bytes *ciphertext,
 	if (score_p != NULL)
 		*score_p = score;
 
-	success = 1;
 	/* FALLTHROUGH */
 cleanup:
 	bytes_free(key);
@@ -200,6 +201,7 @@ break_known_keysize(const struct bytes *ciphertext,
 {
 	struct bytes *decrypted = NULL, *key = NULL;
 	uint8_t *keybuf = NULL;
+	double score = 0;
 	int success = 0;
 
 	/* sanity check */
@@ -252,16 +254,21 @@ break_known_keysize(const struct bytes *ciphertext,
 	   more accurate result than the average of the scores for each key
 	   byte. */
 	if (score_p != NULL) {
-		if (looks_like_english(decrypted, score_p) != 0)
+		if (looks_like_english(decrypted, &score) != 0)
 			goto cleanup;
 	}
-	/* set `key_p' if needed */
+
+	success = 1;
+
+	/* set `key_p' and `score_p' if needed */
+
 	if (key_p != NULL) {
 		*key_p = key;
 		key = NULL;
 	}
+	if (score_p != NULL)
+		*score_p = score;
 
-	success = 1;
 	/* FALLTHROUGH */
 cleanup:
 	bytes_free(key);

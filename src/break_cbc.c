@@ -464,6 +464,8 @@ cbc_high_ascii_oracle(const struct bytes *ciphertext,
 		}
 	}
 
+	success = 1;
+
 	if (error_p != NULL) {
 		if (high_ascii_found) {
 			*error_p = plaintext;
@@ -473,7 +475,6 @@ cbc_high_ascii_oracle(const struct bytes *ciphertext,
 		}
 	}
 
-	success = 1;
 	/* FALLTHROUGH */
 cleanup:
 	bytes_free(plaintext);

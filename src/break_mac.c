@@ -114,6 +114,8 @@ extend_sha1_mac_keyed_prefix(const void *key,
 	if (admin == NULL || digest == NULL)
 		goto cleanup;
 
+	success = 1;
+
 	if (msg_p != NULL) {
 		*msg_p = admin;
 		admin = NULL;
@@ -123,7 +125,6 @@ extend_sha1_mac_keyed_prefix(const void *key,
 		digest = NULL;
 	}
 
-	success = 1;
 	/* FALLTHROUGH */
 cleanup:
 	bytes_free(admin);
@@ -202,6 +203,8 @@ extend_md4_mac_keyed_prefix(const void *key,
 	if (admin == NULL || digest == NULL)
 		goto cleanup;
 
+	success = 1;
+
 	if (msg_p != NULL) {
 		*msg_p = admin;
 		admin = NULL;
@@ -211,7 +214,6 @@ extend_md4_mac_keyed_prefix(const void *key,
 		digest = NULL;
 	}
 
-	success = 1;
 	/* FALLTHROUGH */
 cleanup:
 	bytes_free(admin);
@@ -475,12 +477,13 @@ request_timing_leaking_server(const struct addrinfo *res,
 		goto cleanup;
 	status = (int)ulval;
 
+	success = 1;
+
 	if (tdiff_p != NULL) {
 		/* the caller want to know how much time the request took */
 		timersub(&t2, &t1, tdiff_p);
 	}
 
-	success = 1;
 	/* FALLTHROUGH */
 cleanup:
 	(void)close(s);

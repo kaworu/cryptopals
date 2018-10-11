@@ -105,13 +105,14 @@ dh_mitm_negociate(struct dh *self,
 	if (bignum_cmp(spoofed_g, ng) != 0)
 		goto cleanup;
 
+	success = 1;
+
 	/* set the negociated parameters for alice */
 	*np_p = np;
 	np = NULL;
 	*ng_p = ng;
 	ng = NULL;
 
-	success = 1;
 	/* FALLTHROUGH */
 cleanup:
 	bignum_free(spoofed_g);

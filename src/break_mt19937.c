@@ -25,7 +25,7 @@ int
 mt19937_time_seeder(struct mt19937_generator *gen,
 		    uint32_t *n_p, uint32_t *now_p, uint32_t *seed_p)
 {
-	uint32_t seed, n;
+	uint32_t seed, n = 0;
 	const uint32_t before_delay = 40 + rand() % (1000 - 40);
 	const uint32_t after_delay  = 40 + rand() % (1000 - 40);
 	int success = 0;
@@ -51,15 +51,17 @@ mt19937_time_seeder(struct mt19937_generator *gen,
 		/* get the first 32 bits of output */
 		if (mt19937_next_uint32(gen, &n) != 0)
 			goto cleanup;
-		*n_p = n;
 	}
 
+	success = 1;
+
+	if (n_p != NULL)
+		*n_p = n;
 	if (now_p != NULL)
 		*now_p = seed + after_delay;
 	if (seed_p != NULL)
 		*seed_p = seed;
 
-	success = 1;
 	/* FALLTHROUGH */
 cleanup:
 	return (success ? 0 : -1);
@@ -89,10 +91,11 @@ mt19937_time_seeder_breaker(uint32_t before, uint32_t after, uint32_t generated,
 	}
 	found = (seed <= after);
 
+	success = 1;
+
 	if (found && seed_p != NULL)
 		*seed_p = seed;
 
-	success = 1;
 	/* FALLTHROUGH */
 cleanup:
 	mt19937_free(gen);
@@ -217,10 +220,11 @@ mt19937_encryption_breaker(const struct bytes *ciphertext,
 	if (seed > UINT16_MAX)
 		goto cleanup;
 
+	success = 1;
+
 	if (key_p != NULL)
 		*key_p = seed & 0xffff;
 
-	success = 1;
 	/* FALLTHROUGH */
 cleanup:
 	mt19937_free(gen);

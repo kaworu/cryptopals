@@ -55,10 +55,11 @@ looks_like_english(const struct bytes *buf, double *score_p)
 		goto cleanup;
 
 	success = 1;
+
+	*score_p = (chars * 0.5 + words * 0.5);
+
 	/* FALLTHROUGH */
 cleanup:
-	if (success)
-		*score_p = (chars * 0.5 + words * 0.5);
 	return (success ? 0 : -1);
 }
 
@@ -79,10 +80,11 @@ looks_like_shuffled_english(const struct bytes *buf, double *score_p)
 		goto cleanup;
 
 	success = 1;
+
+	*score_p = (chars * 0.5 + ascii * 0.5);
+
 	/* FALLTHROUGH */
 cleanup:
-	if (success)
-		*score_p = (chars * 0.5 + ascii * 0.5);
 	return (success ? 0 : -1);
 }
 
@@ -182,11 +184,10 @@ static int
 char_freq(const struct bytes *buf, const double *freq_ref, double *score_p)
 {
 	size_t count[27] = { 0 }; /* FIXME: that 27 need a #define */
-	int success = 0;
 
 	/* sanity checks */
 	if (buf == NULL || freq_ref == NULL || score_p == NULL)
-		goto cleanup;
+		return (-1);
 
 	size_t skipped = 0;
 	/* populate count by inspecting the buffer */
@@ -219,10 +220,7 @@ char_freq(const struct bytes *buf, const double *freq_ref, double *score_p)
 		}
 	}
 
-	success = 1;
-	/* FALLTHROUGH */
-cleanup:
-	return (success ? 0 : -1);
+	return (0);
 }
 
 
@@ -231,11 +229,10 @@ word_lengths_freq(const struct bytes *buf, const double *freq_ref,
 		double *score_p)
 {
 	size_t count[11] = { 0 }; /* FIXME: that 11 need a #define */
-	int success = 0;
 
 	/* sanity checks */
 	if (buf == NULL || freq_ref == NULL || score_p == NULL)
-		goto cleanup;
+		return (-1);
 
 	/* total word count */
 	size_t wc = 0;
@@ -276,8 +273,5 @@ word_lengths_freq(const struct bytes *buf, const double *freq_ref,
 		}
 	}
 
-	success = 1;
-	/* FALLTHROUGH */
-cleanup:
-	return (success ? 0 : -1);
+	return (0);
 }

@@ -12,7 +12,7 @@ break_single_byte_xor(const struct bytes *ciphertext,
 		break_plaintext_func_t method,
 		struct bytes **key_p, double *score_p)
 {
-	struct bytes *decrypted = NULL;
+	struct bytes *decrypted = NULL, *key = NULL;
 	uint8_t guess = 0;
 	double score = 0;
 	int success = 0;
@@ -52,19 +52,25 @@ break_single_byte_xor(const struct bytes *ciphertext,
 	for (size_t i = 0; i < decrypted->len; i++)
 		decrypted->data[i] = (uint8_t)guess ^ ciphertext->data[i];
 
-	/* set `key_p' and `score_p' if needed */
 	if (key_p != NULL) {
-		struct bytes *key = bytes_from_single(guess);
+		key = bytes_from_single(guess);
 		if (key == NULL)
 			goto cleanup;
+	}
+
+	success = 1;
+
+	/* set `key_p' and `score_p' if needed */
+	if (key_p != NULL) {
 		*key_p = key;
+		key = NULL;
 	}
 	if (score_p != NULL)
 		*score_p = score;
 
-	success = 1;
 	/* FALLTHROUGH */
 cleanup:
+	bytes_free(key);
 	if (!success) {
 		bytes_free(decrypted);
 		decrypted = NULL;

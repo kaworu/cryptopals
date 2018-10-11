@@ -149,12 +149,13 @@ dh_negociate(struct dh *self, const struct bignum *p, const struct bignum *g,
 	if (np == NULL || ng == NULL)
 		goto cleanup;
 
+	success = 1;
+
 	*np_p = np;
 	np = NULL;
 	*ng_p = ng;
 	ng = NULL;
 
-	success = 1;
 	/* FALLTHROUGH */
 cleanup:
 	bignum_free(ng);

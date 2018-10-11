@@ -44,9 +44,11 @@ ecb_detect(const struct bytes *buf, double *score_p)
 			bytes_free(rhs);
 		}
 	}
-	*score_p = (double)nmatch / rounds;
 
 	success = 1;
+
+	*score_p = (double)nmatch / rounds;
+
 	/* FALLTHROUGH */
 cleanup:
 	return (success ? 0 : -1);

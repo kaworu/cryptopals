@@ -415,10 +415,11 @@ bytes_find(const struct bytes *haystack, const struct bytes *needle,
 	}
 	found = (i < haystack->len);
 
+	success = 1;
+
 	if (found && index_p != NULL)
 		*index_p = i;
 
-	success = 1;
 	/* FALLTHROUGH */
 cleanup:
 	if (!success)
