@@ -71,8 +71,9 @@ server_setup(const MunitParameter *params, void *user_data)
 	struct server_settings *server = NULL;
 	server = munit_malloc(sizeof(struct server_settings));
 
-	/* XXX: max keylength */
-	server->key = bytes_randomized(sha1_blocksize());
+	/* NOTE: The recommended length for HMAC keys is the hash function's
+	   output length, see RFC 2104 § 3. */
+	server->key = bytes_randomized(sha1_hashlength());
 	if (server->key == NULL)
 		munit_error("bytes_randomized");
 	char *key = bytes_to_hex(server->key);
