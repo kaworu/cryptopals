@@ -857,6 +857,7 @@ bytes_free(struct bytes *victim)
 {
 	if (victim == NULL)
 		return;
+
 	size_t len = (sizeof(struct bytes) + victim->len * sizeof(uint8_t));
 	freezero(victim, len);
 }

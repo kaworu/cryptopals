@@ -176,6 +176,6 @@ struct bytes	*bignum_to_bytes_be(const struct bignum *num);
  *
  * If not NULL, the data will be zero'd before freed.
  */
-void	bignum_free(struct bignum *victim);
+void	bignum_free(struct bignum *num);
 
 #endif /* ndef BIGNUM_H */

@@ -128,6 +128,9 @@ mt19937_decrypt(const struct bytes *ciphertext, uint32_t key)
 void
 mt19937_free(struct mt19937_generator *gen)
 {
+	if (gen == NULL)
+		return;
+
 	freezero(gen, sizeof(struct mt19937_generator));
 }
 

@@ -260,15 +260,16 @@ cleanup:
 void
 cookie_free(struct cookie *victim)
 {
-	if (victim != NULL) {
-		struct cookie_kv *kv = victim->head;
-		while (kv != NULL) {
-			freezero(kv->key,   strlen(kv->key));
-			freezero(kv->value, strlen(kv->value));
-			struct cookie_kv *next = kv->next;
-			freezero(kv, sizeof(struct cookie_kv));
-			kv = next;
-		}
+	if (victim == NULL)
+		return;
+
+	struct cookie_kv *kv = victim->head;
+	while (kv != NULL) {
+		freezero(kv->key,   strlen(kv->key));
+		freezero(kv->value, strlen(kv->value));
+		struct cookie_kv *next = kv->next;
+		freezero(kv, sizeof(struct cookie_kv));
+		kv = next;
 	}
 	freezero(victim, sizeof(struct cookie));
 }

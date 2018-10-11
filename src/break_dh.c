@@ -264,18 +264,19 @@ cleanup:
 static void
 dh_mitm_free(struct dh *self)
 {
-	if (self != NULL) {
-		bytes_free(self->key);
-		struct dh_mitm_opaque *ad = self->opaque;
-		if (ad != NULL) {
-			struct dh *bob = ad->bob;
-			if (bob != NULL)
-				bob->free(bob);
-			for (size_t i = 0; i < ad->count; i++)
-				bytes_free(ad->messages[i]);
-			freezero(ad->messages, ad->count * sizeof(struct bytes *));
-		}
-		freezero(ad, sizeof(struct dh_mitm_opaque));
+	if (self == NULL)
+		return;
+
+	bytes_free(self->key);
+	struct dh_mitm_opaque *ad = self->opaque;
+	if (ad != NULL) {
+		struct dh *bob = ad->bob;
+		if (bob != NULL)
+			bob->free(bob);
+		for (size_t i = 0; i < ad->count; i++)
+			bytes_free(ad->messages[i]);
+		freezero(ad->messages, ad->count * sizeof(struct bytes *));
 	}
+	freezero(ad, sizeof(struct dh_mitm_opaque));
 	freezero(self, sizeof(struct dh));
 }

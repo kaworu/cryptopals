@@ -474,10 +474,11 @@ cleanup:
 
 
 void
-bignum_free(struct bignum *victim)
+bignum_free(struct bignum *num)
 {
-	if (victim != NULL) {
-		BN_clear_free(victim->bn);
-		freezero(victim, sizeof(struct bignum));
-	}
+	if (num == NULL)
+		return;
+
+	BN_clear_free(num->bn);
+	freezero(num, sizeof(struct bignum));
 }

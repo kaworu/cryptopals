@@ -305,7 +305,9 @@ cleanup:
 static void
 dh_free(struct dh *self)
 {
-	if (self != NULL)
-		bytes_free(self->key);
+	if (self == NULL)
+		return;
+
+	bytes_free(self->key);
 	freezero(self, sizeof(struct dh));
 }
