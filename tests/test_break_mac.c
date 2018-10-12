@@ -119,8 +119,10 @@ static void
 server_tear_down(void *data)
 {
 	struct server_settings *server = data;
+
 	if (server == NULL)
 		return;
+
 	if (kill(server->pid, SIGTERM) == 0) {
 		if (waitpid(server->pid, NULL, 0) != server->pid)
 			munit_error("waitpid");
@@ -261,8 +263,15 @@ test_timing_leaking_server(const MunitParameter *params, void *data)
 
 	munit_assert_not_null(guess);
 	munit_assert_size(guess->len, ==, sha1_hashlength());
-	/* FIXME: test against our own HMAC-SHA1 implementation */
 
+	/* test against our own HMAC-SHA1 implementation */
+	struct bytes *expected = hmac_sha1(server->key, content);
+	if (expected == NULL)
+		munit_error("hmac_sha1");
+	munit_assert_size(expected->len, ==, guess->len);
+	munit_assert_memory_equal(guess->len, expected->data, guess->data);
+
+	bytes_free(expected);
 	bytes_free(guess);
 	bytes_free(content);
 	return (MUNIT_OK);
