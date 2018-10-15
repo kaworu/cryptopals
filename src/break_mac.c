@@ -419,14 +419,15 @@ request_timing_leaking_server(const struct addrinfo *res,
 	if (snprintf(path, psize, fmt, hex) != plen)
 		goto cleanup;
 	/* now build the full request */
-	rlen = snprintf(NULL, 0, "GET %s HTTP/1.0\r\n\r\n", path);
+	const char *req_fmt = "GET %s HTTP/1.0\r\n\r\n";
+	rlen = snprintf(NULL, 0, req_fmt, path);
 	if (rlen == -1)
 		goto cleanup;
 	rsize = (size_t)rlen + 1;
 	req = calloc(rsize, sizeof(char));
 	if (req == NULL)
 		goto cleanup;
-	if (snprintf(req, rsize, "GET %s HTTP/1.0\r\n\r\n", path) != rlen)
+	if (snprintf(req, rsize, req_fmt, path) != rlen)
 		goto cleanup;
 
 	/* initiate the connection to the server */
