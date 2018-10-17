@@ -88,8 +88,7 @@ extend_sha1_mac_keyed_prefix(const void *key,
 		/* update the length, now that we know the glue padding */
 		ctx.len += glue->len;
 		/* generate the full admin message */
-		const struct bytes *const parts[] = { msg, glue, extension };
-		admin = bytes_joined_const(parts, sizeof(parts) / sizeof(*parts));
+		admin = bytes_joined(3, msg, glue, extension);
 		bytes_free(glue);
 		if (admin == NULL)
 			goto cleanup;
@@ -177,8 +176,7 @@ extend_md4_mac_keyed_prefix(const void *key,
 		/* update the length, now that we know the glue padding */
 		ctx.len += glue->len;
 		/* generate the full admin message */
-		const struct bytes *const parts[] = { msg, glue, extension };
-		admin = bytes_joined_const(parts, sizeof(parts) / sizeof(*parts));
+		admin = bytes_joined(3, msg, glue, extension);
 		bytes_free(glue);
 		if (admin == NULL)
 			goto cleanup;

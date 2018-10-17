@@ -430,8 +430,7 @@ srp_bignum_from_sha256_bytes(const struct bytes *lhs, const struct bytes *rhs)
 	struct bytes *lhs_rhs = NULL, *hash = NULL;
 	struct bignum *num = NULL;
 
-	const struct bytes *parts[] = { lhs, rhs };
-	lhs_rhs = bytes_joined_const(parts, sizeof(parts) / sizeof(*parts));
+	lhs_rhs = bytes_joined(2, lhs, rhs);
 	hash = sha256_hash(lhs_rhs);
 	num = bignum_from_bytes_be(hash);
 

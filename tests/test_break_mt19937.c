@@ -72,10 +72,9 @@ test_mt19937_encryption_breaker(const MunitParameter *params, void *data)
 	struct bytes *known = bytes_repeated(14, 'A');
 	if (known == NULL)
 		munit_error("bytes_repeated");
-	const struct bytes *const parts[] = { prefix, known };
-	struct bytes *payload = bytes_joined_const(parts, sizeof(parts) / sizeof(*parts));
+	struct bytes *payload = bytes_joined(2, prefix, known);
 	if (payload == NULL)
-		munit_error("bytes_joined_const");
+		munit_error("bytes_joined");
 
 	struct bytes *ciphertext = mt19937_encrypt(payload, key);
 	if (ciphertext == NULL)

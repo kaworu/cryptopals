@@ -132,9 +132,8 @@ aes_128_ctr_edit_oracle(const struct bytes *ciphertext,
 	/* find the copied parts from the ciphertext before and after the
 	   replacement */
 	before = bytes_slice(ciphertext, 0, offset);
-	after = bytes_slice(ciphertext, bound, ciphertext->len - bound);
-	const struct bytes *const parts[] = { before, rct, after };
-	output = bytes_joined_const(parts, sizeof(parts) / sizeof(*parts));
+	after  = bytes_slice(ciphertext, bound, ciphertext->len - bound);
+	output = bytes_joined(3, before, rct, after);
 
 	success = 1;
 	/* FALLTHROUGH */
@@ -182,8 +181,7 @@ ctr_bitflipping_encrypt(const struct bytes *payload,
 	/* build the full plaintext to encrypt */
 	before = bytes_from_str(CTR_BITFLIPPING_PREFIX);
 	after  = bytes_from_str(CTR_BITFLIPPING_SUFFIX);
-	const struct bytes *const parts[] = { before, escaped, after };
-	plaintext = bytes_joined_const(parts, sizeof(parts) / sizeof(*parts));
+	plaintext = bytes_joined(3, before, escaped, after);
 
 	/* encrypt the plaintext using AES-CTR */
 	ciphertext = aes_128_ctr_encrypt(plaintext, key, nonce);

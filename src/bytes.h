@@ -219,13 +219,12 @@ struct bytes	*bytes_pkcs7_unpadded(const struct bytes *src);
 
 /*
  * Create a new buffer that is the concatenation of all the provided buffers (in
- * order). Note that `parts' is not modified.
+ * order).
  *
  * Returns a pointer to a newly allocated bytes struct that should passed to
  * bytes_free(). Returns NULL if the given pointer is NULL or malloc(3) failed.
  */
-struct bytes	*bytes_joined(struct bytes *const *parts, size_t count);
-struct bytes	*bytes_joined_const(const struct bytes *const *parts, size_t count);
+struct bytes	*bytes_joined(size_t count, ...);
 
 /*
  * Copy all the bytes from src into dest starting at a given offset.

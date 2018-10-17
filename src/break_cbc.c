@@ -93,8 +93,7 @@ cbc_bitflipping_encrypt(const struct bytes *payload,
 	/* build the full plaintext to encrypt */
 	before = bytes_from_str(CBC_BITFLIPPING_PREFIX);
 	after  = bytes_from_str(CBC_BITFLIPPING_SUFFIX);
-	const struct bytes *const parts[] = { before, escaped, after };
-	plaintext = bytes_joined_const(parts, sizeof(parts) / sizeof(*parts));
+	plaintext = bytes_joined(3, before, escaped, after);
 
 	/* encrypt the plaintext using AES-CBC */
 	ciphertext = aes_128_cbc_encrypt(plaintext, key, iv);
@@ -174,8 +173,7 @@ cbc_bitflipping_breaker(const void *key, const void *iv)
 	admin = bytes_from_str(",admin-true");
 
 	/* generate the ciphertext */
-	const struct bytes *const parts[] = { pad, scrambled, admin };
-	payload = bytes_joined_const(parts, sizeof(parts) / sizeof(*parts));
+	payload = bytes_joined(3, pad, scrambled, admin);
 	ciphertext = encrypt(payload);
 	if (ciphertext == NULL)
 		goto cleanup;
@@ -507,8 +505,7 @@ cbc_key_as_iv_breaker(const struct bytes *ciphertext, const void *key_iv)
 	rest = bytes_slice(ciphertext, 3 * blocksize, restlen);
 
 	/* construct the full payload */
-	const struct bytes *const parts[] = { c1, zeroes, c1, rest };
-	payload = bytes_joined_const(parts, sizeof(parts) / sizeof(*parts));
+	payload = bytes_joined(4, c1, zeroes, c1, rest);
 
 	/* retrieve the plaintext by calling the oracle */
 	const int has_high_ascii = oracle(payload, &error);

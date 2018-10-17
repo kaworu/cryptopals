@@ -224,8 +224,7 @@ dh_challenge(const struct dh *self, const struct dh *to,
 	   to Bob */
 	iv = bytes_randomized(ivlen);
 	ct = aes_128_cbc_encrypt(msg, self->key, iv);
-	const struct bytes *parts[] = { iv, ct };
-	iv_ct = bytes_joined_const(parts, sizeof(parts) / sizeof(*parts));
+	iv_ct = bytes_joined(2, iv, ct);
 
 	/* send our iv + ciphertext buffer to bob and get its re-encrypted
 	   version of the message */
@@ -281,8 +280,7 @@ dh_echo(const struct dh *self, const struct bytes *alice_iv_ct)
 	/* (re)encrypt the message, and create a iv + ciphertext buffer to be
 	   returned to Alice */
 	ct = aes_128_cbc_encrypt(msg, self->key, iv);
-	const struct bytes *parts[] = { iv, ct };
-	iv_ct = bytes_joined_const(parts, sizeof(parts) / sizeof(*parts));
+	iv_ct = bytes_joined(2, iv, ct);
 	if (iv_ct == NULL)
 		goto cleanup;
 

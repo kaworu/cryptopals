@@ -647,7 +647,20 @@ test_bytes_joined(const MunitParameter *params, void *data)
 				munit_error("bytes_from_str");
 		}
 
-		struct bytes *joined = bytes_joined(array, count);
+		struct bytes *joined = NULL;
+		if (count == 0)
+			joined = bytes_joined(count);
+		else if (count == 1)
+			joined = bytes_joined(count, array[0]);
+		else if (count == 2)
+			joined = bytes_joined(count, array[0], array[1]);
+		else if (count == 3)
+			joined = bytes_joined(count, array[0], array[1], array[2]);
+		else if (count == 4)
+			joined = bytes_joined(count, array[0], array[1], array[2], array[3]);
+		else
+			munit_error("test_bytes_joined with count > 4");
+
 		munit_assert_not_null(joined);
 		munit_assert_size(joined->len, ==, strlen(expected));
 		munit_assert_memory_equal(joined->len, joined->data, expected);
@@ -659,14 +672,13 @@ test_bytes_joined(const MunitParameter *params, void *data)
 	}
 
 	/* when NULL is given */
-	munit_assert_null(bytes_joined(NULL, 1));
+	munit_assert_null(bytes_joined(1, NULL));
 
 	/* when one of the element is NULL */
 	struct bytes *buf = bytes_from_str("foobar");
 	if (buf == NULL)
 		munit_error("bytes_from_str");
-	struct bytes *array[] = { buf, NULL, buf };
-	munit_assert_null(bytes_joined(array, 3));
+	munit_assert_null(bytes_joined(3, buf, NULL, buf));
 
 	bytes_free(buf);
 	return (MUNIT_OK);

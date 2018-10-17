@@ -5,6 +5,7 @@
  *
  * About base16 (aka hex) and base64 encoding see RFC 4648.
  */
+#include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -571,42 +572,45 @@ bytes_pkcs7_unpadded(const struct bytes *src)
 
 
 struct bytes *
-bytes_joined(struct bytes *const *parts, size_t count)
+bytes_joined(size_t count, ...)
 {
-	const struct bytes *const *parts_c = (const struct bytes *const *)parts;
-	return (bytes_joined_const(parts_c, count));
-}
-
-
-struct bytes *
-bytes_joined_const(const struct bytes *const *parts, size_t count)
-{
+	va_list ap;
 	struct bytes *joined = NULL;
 	int success = 0;
 
 	/* sanity checks */
-	if (parts == NULL)
-		goto cleanup;
+	size_t n0 = 0;
+	va_start(ap, count);
 	for (size_t i = 0; i < count; i++) {
-		if (parts[i] == NULL)
-			goto cleanup;
+		const struct bytes *part = va_arg(ap, const struct bytes *);
+		if (part == NULL)
+			n0 += 1;
 	}
+	va_end(ap);
+	if (n0 > 0)
+		goto cleanup;
 
 	/* compute the total length needed */
+	va_start(ap, count);
 	size_t len = 0;
-	for (size_t i = 0; i < count; i++)
-		len += parts[i]->len;
+	for (size_t i = 0; i < count; i++) {
+		const struct bytes *part = va_arg(ap, const struct bytes *);
+		len += part->len;
+	}
+	va_end(ap);
 
 	joined = bytes_alloc(len);
 	if (joined == NULL)
 		goto cleanup;
 
+	va_start(ap, count);
 	uint8_t *p = joined->data;
 	for (size_t i = 0; i < count; i++) {
-		const struct bytes *part = parts[i];
+		const struct bytes *part = va_arg(ap, const struct bytes *);
 		(void)memcpy(p, part->data, part->len);
 		p += part->len;
 	}
+	va_end(ap);
 
 	success = 1;
 	/* FALLTHROUGH */

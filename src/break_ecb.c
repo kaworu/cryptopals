@@ -81,9 +81,8 @@ ecb_cbc_encryption_oracle(const struct bytes *input, int *ecb)
 	before = bytes_randomized(5 + random->data[0] % 6);
 	/* trailing pad */
 	after = bytes_randomized(5 + random->data[1] % 6);
-	const struct bytes *const parts[] = { before, input, after };
 	/* build the padded input */
-	padded = bytes_joined_const(parts, sizeof(parts) / sizeof(*parts));
+	padded = bytes_joined(3, before, input, after);
 
 	/* choose if we're using ECB mode with a 50% probability */
 	const int use_ecb_mode = random->data[2] & 0x1;
@@ -306,8 +305,7 @@ ecb_cut_and_paste_profile_breaker(const void *key)
 	 *     \_________________________/\_______________/
 	 *                head                  tail
 	 */
-	const struct bytes *const parts[] = { head, tail };
-	admin = bytes_joined_const(parts, sizeof(parts) / sizeof(*parts));
+	admin = bytes_joined(2, head, tail);
 
 	success = 1;
 	/* FALLTHROUGH */
@@ -337,8 +335,7 @@ ecb_byte_at_a_time_oracle14(
 	if (prefix == NULL || payload == NULL || message == NULL || key == NULL)
 		goto cleanup;
 
-	const struct bytes *const parts[] = { prefix, payload, message };
-	input = bytes_joined_const(parts, sizeof(parts) / sizeof(*parts));
+	input = bytes_joined(3, prefix, payload, message);
 
 	output = aes_128_ecb_encrypt(input, key);
 	if (output == NULL)

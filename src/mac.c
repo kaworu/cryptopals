@@ -151,11 +151,9 @@ hmac(hash_func_t *H, size_t B, size_t L,
 
 	/* H(K XOR opad, H(K XOR ipad, text)) */
 
-	const struct bytes *iparts[] = { k_ipad, msg };
-	in = bytes_joined_const(iparts, sizeof(iparts) / sizeof(*iparts));
+	in = bytes_joined(2, k_ipad, msg);
 	hin = H(in);
-	const struct bytes *oparts[] = { k_opad, hin };
-	out = bytes_joined_const(oparts, sizeof(oparts) / sizeof(*oparts));
+	out = bytes_joined(2, k_opad, hin);
 	mac = H(out);
 	if (mac == NULL)
 		goto cleanup;
@@ -187,8 +185,7 @@ mac_keyed_prefix(hash_func_t *hash,
 	if (hash == NULL || key == NULL || msg == NULL)
 		goto cleanup;
 
-	const struct bytes *const parts[] = { key, msg };
-	prefixed = bytes_joined_const(parts, sizeof(parts) / sizeof(*parts));
+	prefixed = bytes_joined(2, key, msg);
 	if (prefixed == NULL)
 		goto cleanup;
 
