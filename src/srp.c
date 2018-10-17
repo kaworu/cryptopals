@@ -356,8 +356,8 @@ srp_client_authenticate(struct srp_client *client, struct srp_server *server)
 	const struct bignum *N = client->params->N;
 	const struct bignum *g = client->params->g;
 	const struct bignum *k = client->params->k;
-	const struct bytes *I  = client->params->I;
-	const struct bytes *P  = client->params->P;
+	const struct bytes  *I = client->params->I;
+	const struct bytes  *P = client->params->P;
 
 
 	/* Send I, A=g**a % N (a la Diffie Hellman) */
