@@ -37,11 +37,11 @@ static char *port_params[]      = { "9000", NULL };
 static char *delay_params[] = { "2", NULL };
 /* all the server parameters */
 static MunitParameterEnum test_timing_leaking_server_params[] = {
-	{ "server",   server_params },
-	{ "filepath", filepath_params },
-	{ "hostname", hostname_params },
-	{ "port",     port_params },
-	{ "delay",    delay_params },
+	{ "mac_server",   server_params },
+	{ "mac_filepath", filepath_params },
+	{ "mac_hostname", hostname_params },
+	{ "mac_port",     port_params },
+	{ "mac_delay",    delay_params },
 	{ NULL, NULL },
 };
 
@@ -56,10 +56,10 @@ static MunitParameterEnum test_timing_leaking_server_params[] = {
 static void *
 server_setup(const MunitParameter *params, void *user_data)
 {
-	const char *exec     = munit_parameters_get(params, "server");
-	const char *hostname = munit_parameters_get(params, "hostname");
-	const char *port     = munit_parameters_get(params, "port");
-	const char *delay    = munit_parameters_get(params, "delay");
+	const char *exec     = munit_parameters_get(params, "mac_server");
+	const char *hostname = munit_parameters_get(params, "mac_hostname");
+	const char *port     = munit_parameters_get(params, "mac_port");
+	const char *delay    = munit_parameters_get(params, "mac_delay");
 
 	/* expected to be given from the cli */
 	if (exec == NULL)
@@ -240,12 +240,12 @@ test_timing_leaking_server(const MunitParameter *params, void *data)
 		munit_error("server started but down?");
 
 	/* expected to be given on the cli */
-	const char *filepath = munit_parameters_get(params, "filepath");
+	const char *filepath = munit_parameters_get(params, "mac_filepath");
 	if (filepath == NULL)
 		return (MUNIT_SKIP);
 
-	const char *hostname = munit_parameters_get(params, "hostname");
-	const char *port     = munit_parameters_get(params, "port");
+	const char *hostname = munit_parameters_get(params, "mac_hostname");
+	const char *port     = munit_parameters_get(params, "mac_port");
 	if (hostname == NULL || port == NULL)
 		return (MUNIT_ERROR);
 
