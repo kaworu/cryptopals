@@ -5,7 +5,7 @@
 
 import time, os, argparse
 import binascii, hashlib, hmac
-import httplib, bottle
+import bottle
 
 # short-cutting, byte-at-a-time, artificially delayed comparison function.
 def insecure_compare(known, unknown):
@@ -27,19 +27,19 @@ def test():
         filepath  = bottle.request.query['file']
         signature = bottle.request.query['signature']
     except KeyError:
-        bottle.abort(httplib.BAD_REQUEST)
+        bottle.abort(400) # Bad Request
     # read the requested file.
     try:
         fh = open(filepath, "r")
     except IOError:
-        bottle.abort(httplib.NOT_FOUND)
+        bottle.abort(404) # Not Found
     content = fh.read()
     fh.close()
     # verify the given signature.
     known_signature = hmac.new(config.key, content, hashlib.sha1).hexdigest()
     match = insecure_compare(known_signature.upper(), signature.upper())
-    # 200 if the signature is good, 500 otherwise.
-    status = httplib.OK if match else httplib.INTERNAL_SERVER_ERROR
+    # OK if the signature is good, Internal Server Error otherwise.
+    status = 200 if match else 500
     return bottle.HTTPResponse(status=status, body=known_signature)
 
 # script arguments handling.
