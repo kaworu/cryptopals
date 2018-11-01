@@ -54,7 +54,7 @@ test_srp_server_new(const MunitParameter *params, void *data)
 	munit_assert_null(server->key);
 	munit_assert_null(server->token);
 
-	srp_server_free(server);
+	server->free(server);
 	bytes_free(P);
 	bytes_free(I);
 	return (MUNIT_OK);
@@ -75,7 +75,7 @@ test_srp_client_new(const MunitParameter *params, void *data)
 	munit_assert_int(bytes_bcmp(P, client->P), ==, 0);
 	munit_assert_null(client->key);
 
-	srp_client_free(client);
+	client->free(client);
 	bytes_free(P);
 	bytes_free(I);
 	return (MUNIT_OK);
@@ -108,8 +108,8 @@ test_srp_auth(const MunitParameter *params, void *data)
 	munit_assert_memory_equal(client->key->len,
 		    client->key->data, server->key->data);
 
-	srp_client_free(client);
-	srp_server_free(server);
+	client->free(client);
+	server->free(server);
 	bytes_free(P);
 	bytes_free(I);
 	return (MUNIT_OK);
@@ -143,8 +143,8 @@ test_srp_auth_wrong_password(const MunitParameter *params, void *data)
 	munit_assert_null(server->key);
 	munit_assert_null(server->token);
 
-	srp_client_free(client);
-	srp_server_free(server);
+	client->free(client);
+	server->free(server);
 	bytes_free(client_P);
 	bytes_free(P);
 	bytes_free(I);
@@ -179,8 +179,8 @@ test_srp_auth_wrong_email(const MunitParameter *params, void *data)
 	munit_assert_null(server->key);
 	munit_assert_null(server->token);
 
-	srp_client_free(client);
-	srp_server_free(server);
+	client->free(client);
+	server->free(server);
 	bytes_free(client_I);
 	bytes_free(P);
 	bytes_free(I);

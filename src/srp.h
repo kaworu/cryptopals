@@ -62,6 +62,13 @@ struct srp_server {
 	 * Returns 0 on success (the token is valid), -1 on failure.
 	 */
 	int	(*finalize)(struct srp_server *server, const struct bytes *token);
+
+	/*
+	 * Free the resource associated with the given srp_server struct.
+	 *
+	 * If not NULL, the data will be zero'd before freed.
+	 */
+	void	(*free)(struct srp_server *server);
 };
 
 /*
@@ -92,6 +99,13 @@ struct srp_client {
 	 */
 	int	(*authenticate)(struct srp_client *client,
 			    struct srp_server *server);
+
+	/*
+	 * Free the resource associated with the given srp_client struct.
+	 *
+	 * If not NULL, the data will be zero'd before freed.
+	 */
+	void	(*free)(struct srp_client *client);
 };
 
 
@@ -108,34 +122,19 @@ int	srp_parameters(struct bignum **N_p, struct bignum **g_p,
 /*
  * Create a new SRP Server struct with the given parameters.
  *
- * Returns a new srp_server struct that must be passed to srp_server_free(), or
- * NULL on failure.
+ * Returns a new srp_server struct that must be passed to its free function
+ * member, or NULL on failure.
  */
 struct srp_server	*srp_server_new(const struct bytes *I,
 		    const struct bytes *P);
 
 /*
- * Free the resource associated with the given srp_server struct.
- *
- * If not NULL, the data will be zero'd before freed.
- */
-void	srp_server_free(struct srp_server *server);
-
-
-/*
  * Create a new SRP Client struct with the given parameters.
  *
- * Returns a new srp_client struct that must be passed to srp_client_free(), or
- * NULL on failure.
+ * Returns a new srp_client struct that must be passed to its free function
+ * member, or NULL on failure.
  */
 struct srp_client	*srp_client_new(const struct bytes *I,
 		    const struct bytes *P);
-
-/*
- * Free the resource associated with the given srp_client struct.
- *
- * If not NULL, the data will be zero'd before freed.
- */
-void	srp_client_free(struct srp_client *client);
 
 #endif /* ndef SRP_H */

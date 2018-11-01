@@ -24,9 +24,11 @@ static int	srp_server_start(struct srp_server *server,
 		    struct bytes **salt_p, struct bignum **B_p);
 static int	srp_server_finalize(struct srp_server *server,
 		    const struct bytes *token);
+static void	srp_server_free(struct srp_server *server);
 /* struct srp_client method members implementations */
 static int	srp_client_authenticate(struct srp_client *client,
 		    struct srp_server *server);
+static void	srp_client_free(struct srp_client *client);
 
 /* helpers to get a bignum from SHA-256(lhs concatenated to rhs) */
 static struct bignum	*srp_bignum_from_sha256_bytes(
@@ -100,6 +102,7 @@ srp_server_new(const struct bytes *I, const struct bytes *P)
 
 	server->start    = srp_server_start;
 	server->finalize = srp_server_finalize;
+	server->free     = srp_server_free;
 
 	success = 1;
 	/* FALLTHROUGH */
@@ -113,7 +116,7 @@ cleanup:
 
 
 void
-srp_server_free(struct srp_server *server)
+static srp_server_free(struct srp_server *server)
 {
 	if (server == NULL)
 		return;
@@ -146,6 +149,7 @@ srp_client_new(const struct bytes *I, const struct bytes *P)
 		goto cleanup;
 
 	client->authenticate = srp_client_authenticate;
+	client->free         = srp_client_free;
 
 	success = 1;
 	/* FALLTHROUGH */
@@ -158,7 +162,7 @@ cleanup:
 }
 
 
-void
+static void
 srp_client_free(struct srp_client *client)
 {
 	if (client == NULL)
