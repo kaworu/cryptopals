@@ -26,6 +26,7 @@ def bytes_to_hex(buf):
     return binascii.hexlify(buf)
 
 def hex_to_bytes(s):
+    # NOTE: binascii.unhexlify() expect an even count of byte.
     if len(s) % 2 == 1:
         s = b"0" + s
     return binascii.unhexlify(s)
