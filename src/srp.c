@@ -100,6 +100,10 @@ srp_server_new(const struct bytes *I, const struct bytes *P)
 	if (server->I == NULL || server->P == NULL)
 		goto cleanup;
 
+	server->opaque = calloc(1, sizeof(struct srp_server_opaque));
+	if (server->opaque == NULL)
+		goto cleanup;
+
 	server->start    = srp_server_start;
 	server->finalize = srp_server_finalize;
 	server->free     = srp_server_free;
@@ -123,8 +127,12 @@ static srp_server_free(struct srp_server *server)
 
 	bytes_free(server->I);
 	bytes_free(server->P);
-	bytes_free(server->key);
-	bytes_free(server->token);
+	if (server->opaque) {
+		struct srp_server_opaque *ad = server->opaque;
+		bytes_free(ad->key);
+		bytes_free(ad->token);
+		freezero(ad, sizeof(struct srp_server_opaque));
+	}
 	freezero(server, sizeof(struct srp_server));
 }
 
@@ -190,7 +198,7 @@ srp_server_start(struct srp_server *server,
 	int success = 0;
 
 	/* sanity checks */
-	if (server == NULL)
+	if (server == NULL || server->opaque == NULL)
 		goto cleanup;
 	if (I == NULL || A == NULL)
 		goto cleanup;
@@ -258,11 +266,12 @@ srp_server_start(struct srp_server *server,
 	success = 1;
 
 	/* save what we need for finalize() in the server */
-	bytes_free(server->key);
-	server->key = K;
+	struct srp_server_opaque *ad = server->opaque;
+	bytes_free(ad->key);
+	ad->key = K;
 	K = NULL;
-	bytes_free(server->token);
-	server->token = token;
+	bytes_free(ad->token);
+	ad->token = token;
 	token = NULL;
 
 	/* set "return" values for the caller */
@@ -296,22 +305,24 @@ srp_server_finalize(struct srp_server *server, const struct bytes *token)
 	int success = 0;
 
 	/* sanity checks */
-	if (server == NULL || token == NULL)
+	if (server == NULL || server->opaque == NULL || token == NULL)
 		goto cleanup;
-	if (server->token == NULL || server->key == NULL)
+
+	struct srp_server_opaque *ad = server->opaque;
+	if (ad->token == NULL || ad->key == NULL)
 		goto cleanup;
 
 	/* compare the given token to the one we have */
-	success = (bytes_timingsafe_bcmp(server->token, token) == 0);
+	success = (bytes_timingsafe_bcmp(ad->token, token) == 0);
 
 	/* regardless of the result, forget the server's token */
-	bytes_free(server->token);
-	server->token = NULL;
+	bytes_free(ad->token);
+	ad->token = NULL;
 
 	/* on failure, forget the server key too */
 	if (!success) {
-		bytes_free(server->key);
-		server->key = NULL;
+		bytes_free(ad->key);
+		ad->key = NULL;
 	}
 
 	/* FALLTHROUGH */

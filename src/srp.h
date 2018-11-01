@@ -10,7 +10,7 @@
 
 
 /*
- * Used to simulate a SRP server, having methods instead of network calls.
+ * Used to interface with a SRP server.
  */
 struct srp_server {
 	/*
@@ -18,17 +18,6 @@ struct srp_server {
 	 * communication is made.
 	 */
 	struct bytes *I, *P;
-
-	/*
-	 * The shared private key derived from the SRP protocol.
-	 */
-	struct bytes *key;
-
-	/*
-	 * The private challenge that is created by start() and checked by
-	 * finalize().
-	 */
-	struct bytes *token;
 
 	/*
 	 * Called by the client to start a SRP password-authenticated key
@@ -69,10 +58,30 @@ struct srp_server {
 	 * If not NULL, the data will be zero'd before freed.
 	 */
 	void	(*free)(struct srp_server *server);
+
+	/* implementation defined data */
+	void	*opaque;
 };
 
 /*
- * Used to simulate a SRP client, doing methods calls instead of network calls.
+ * opaque struct used by server created by srp_server_new().
+ */
+struct srp_server_opaque {
+	/*
+	 * The shared private key derived from the SRP protocol.
+	 */
+	struct bytes *key;
+
+	/*
+	 * The private challenge that is created by start() and checked by
+	 * finalize().
+	 */
+	struct bytes *token;
+};
+
+
+/*
+ * Used to interface with a SRP client.
  */
 struct srp_client {
 	/*
@@ -121,6 +130,9 @@ int	srp_parameters(struct bignum **N_p, struct bignum **g_p,
 
 /*
  * Create a new SRP Server struct with the given parameters.
+ *
+ * The returned server will not perform network calls etc. but has instead the
+ * SRP logic implemented directly in its member functions.
  *
  * Returns a new srp_server struct that must be passed to its free function
  * member, or NULL on failure.

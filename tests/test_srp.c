@@ -51,8 +51,11 @@ test_srp_server_new(const MunitParameter *params, void *data)
 	munit_assert_not_null(server);
 	munit_assert_int(bytes_bcmp(I, server->I), ==, 0);
 	munit_assert_int(bytes_bcmp(P, server->P), ==, 0);
-	munit_assert_null(server->key);
-	munit_assert_null(server->token);
+
+	munit_assert_not_null(server->opaque);
+	const struct srp_server_opaque *ad = server->opaque;
+	munit_assert_null(ad->key);
+	munit_assert_null(ad->token);
 
 	server->free(server);
 	bytes_free(P);
@@ -100,13 +103,18 @@ test_srp_auth(const MunitParameter *params, void *data)
 		munit_error("srp_client_new");
 
 	const int ret = client->authenticate(client, server);
+
 	munit_assert_int(ret, ==, 0);
 	munit_assert_not_null(client->key);
-	munit_assert_not_null(server->key);
-	munit_assert_null(server->token);
-	munit_assert_size(client->key->len, ==, server->key->len);
+
+	munit_assert_not_null(server->opaque);
+	const struct srp_server_opaque *ad = server->opaque;
+	munit_assert_not_null(ad->key);
+	munit_assert_null(ad->token);
+
+	munit_assert_size(client->key->len, ==, ad->key->len);
 	munit_assert_memory_equal(client->key->len,
-		    client->key->data, server->key->data);
+		    client->key->data, ad->key->data);
 
 	client->free(client);
 	server->free(server);
@@ -140,8 +148,11 @@ test_srp_auth_wrong_password(const MunitParameter *params, void *data)
 	const int ret = client->authenticate(client, server);
 	munit_assert_int(ret, ==, -1);
 	munit_assert_null(client->key);
-	munit_assert_null(server->key);
-	munit_assert_null(server->token);
+
+	munit_assert_not_null(server->opaque);
+	const struct srp_server_opaque *ad = server->opaque;
+	munit_assert_null(ad->key);
+	munit_assert_null(ad->token);
 
 	client->free(client);
 	server->free(server);
@@ -176,8 +187,11 @@ test_srp_auth_wrong_email(const MunitParameter *params, void *data)
 	const int ret = client->authenticate(client, server);
 	munit_assert_int(ret, ==, -1);
 	munit_assert_null(client->key);
-	munit_assert_null(server->key);
-	munit_assert_null(server->token);
+
+	munit_assert_not_null(server->opaque);
+	const struct srp_server_opaque *ad = server->opaque;
+	munit_assert_null(ad->key);
+	munit_assert_null(ad->token);
 
 	client->free(client);
 	server->free(server);
