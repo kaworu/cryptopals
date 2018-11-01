@@ -35,12 +35,12 @@ static struct bignum	*srp_bignum_from_sha256_bignums(
 		    const struct bignum *lhs, const struct bignum *rhs);
 
 
-struct srp_params *
-srp_params_new(const struct bignum *N, const struct bignum *g,
-		    const struct bignum *k, const struct bytes *I,
-		    const struct bytes *P)
+struct srp_server *
+srp_server_new(const struct bignum *N,
+		    const struct bignum *g, const struct bignum *k,
+		    const struct bytes *I, const struct bytes *P)
 {
-	struct srp_params *p = NULL;
+	struct srp_server *server = NULL;
 	int success = 0;
 
 	/* sanity checks */
@@ -49,80 +49,18 @@ srp_params_new(const struct bignum *N, const struct bignum *g,
 	if (I == NULL || P == NULL)
 		goto cleanup;
 
-	/*
-	 * NOTE: no check at all on values.
-	 */
-
-	p = calloc(1, sizeof(struct srp_params));
-	if (p == NULL)
-		goto cleanup;
-
-	p->N = bignum_dup(N);
-	p->g = bignum_dup(g);
-	p->k = bignum_dup(k);
-	if (p->N == NULL || p->g == NULL || p->k == NULL)
-		goto cleanup;
-	p->I = bytes_dup(I);
-	p->P = bytes_dup(P);
-	if (p->I == NULL || p->P == NULL)
-		goto cleanup;
-
-	success = 1;
-	/* FALLTHROUGH */
-cleanup:
-	if (!success) {
-		srp_params_free(p);
-		p = NULL;
-	}
-	return (p);
-}
-
-
-struct srp_params *
-srp_params_dup(const struct srp_params *p)
-{
-	struct srp_params *cpy = NULL;
-
-	/* sanity checks */
-	if (p == NULL)
-		return (NULL);
-
-	cpy = srp_params_new(p->N, p->g, p->k, p->I, p->P);
-	return (cpy);
-}
-
-
-void
-srp_params_free(struct srp_params *p)
-{
-	if (p == NULL)
-		return;
-
-	bignum_free(p->N);
-	bignum_free(p->g);
-	bignum_free(p->k);
-	bytes_free(p->I);
-	bytes_free(p->P);
-	freezero(p, sizeof(struct srp_params));
-}
-
-
-struct srp_server *
-srp_server_new(const struct srp_params *params)
-{
-	struct srp_server *server = NULL;
-	int success = 0;
-
-	/* sanity checks */
-	if (params == NULL)
-		goto cleanup;
-
 	server = calloc(1, sizeof(struct srp_server));
 	if (server == NULL)
 		goto cleanup;
 
-	server->params = srp_params_dup(params);
-	if (server->params == NULL)
+	server->N = bignum_dup(N);
+	server->g = bignum_dup(g);
+	server->k = bignum_dup(k);
+	if (server->N == NULL || server->g == NULL || server->k == NULL)
+		goto cleanup;
+	server->I = bytes_dup(I);
+	server->P = bytes_dup(P);
+	if (server->I == NULL || server->P == NULL)
 		goto cleanup;
 
 	server->start    = srp_server_start;
@@ -145,29 +83,43 @@ srp_server_free(struct srp_server *server)
 	if (server == NULL)
 		return;
 
+	bignum_free(server->N);
+	bignum_free(server->g);
+	bignum_free(server->k);
+	bytes_free(server->I);
+	bytes_free(server->P);
 	bytes_free(server->key);
 	bytes_free(server->token);
-	srp_params_free(server->params);
 	freezero(server, sizeof(struct srp_server));
 }
 
 
 struct srp_client *
-srp_client_new(const struct srp_params *params)
+srp_client_new(const struct bignum *N,
+		    const struct bignum *g, const struct bignum *k,
+		    const struct bytes *I, const struct bytes *P)
 {
 	struct srp_client *client = NULL;
 	int success = 0;
 
 	/* sanity checks */
-	if (params == NULL)
+	if (N == NULL || g == NULL || k == NULL)
+		goto cleanup;
+	if (I == NULL || P == NULL)
 		goto cleanup;
 
 	client = calloc(1, sizeof(struct srp_client));
 	if (client == NULL)
 		goto cleanup;
 
-	client->params = srp_params_dup(params);
-	if (client->params == NULL)
+	client->N = bignum_dup(N);
+	client->g = bignum_dup(g);
+	client->k = bignum_dup(k);
+	if (client->N == NULL || client->g == NULL || client->k == NULL)
+		goto cleanup;
+	client->I = bytes_dup(I);
+	client->P = bytes_dup(P);
+	if (client->I == NULL || client->P == NULL)
 		goto cleanup;
 
 	client->authenticate = srp_client_authenticate;
@@ -189,7 +141,11 @@ srp_client_free(struct srp_client *client)
 	if (client == NULL)
 		return;
 
-	srp_params_free(client->params);
+	bignum_free(client->N);
+	bignum_free(client->g);
+	bignum_free(client->k);
+	bytes_free(client->I);
+	bytes_free(client->P);
 	bytes_free(client->key);
 	freezero(client, sizeof(struct srp_client));
 }
@@ -217,13 +173,13 @@ srp_server_start(struct srp_server *server,
 		goto cleanup;
 
 	/* cosmetic shortcuts */
-	const struct bignum *N = server->params->N;
-	const struct bignum *g = server->params->g;
-	const struct bignum *k = server->params->k;
-	const struct bytes *P  = server->params->P;
+	const struct bignum *N = server->N;
+	const struct bignum *g = server->g;
+	const struct bignum *k = server->k;
+	const struct bytes *P  = server->P;
 
 	/* ensure that I is the correct email */
-	if (bytes_timingsafe_bcmp(server->params->I, I) != 0)
+	if (bytes_timingsafe_bcmp(server->I, I) != 0)
 		goto cleanup;
 
 	/* Generate salt as random integer */
@@ -353,11 +309,11 @@ srp_client_authenticate(struct srp_client *client, struct srp_server *server)
 		goto cleanup;
 
 	/* cosmetic shortcuts */
-	const struct bignum *N = client->params->N;
-	const struct bignum *g = client->params->g;
-	const struct bignum *k = client->params->k;
-	const struct bytes  *I = client->params->I;
-	const struct bytes  *P = client->params->P;
+	const struct bignum *N = client->N;
+	const struct bignum *g = client->g;
+	const struct bignum *k = client->k;
+	const struct bytes  *I = client->I;
+	const struct bytes  *P = client->P;
 
 
 	/* Send I, A=g**a % N (a la Diffie Hellman) */

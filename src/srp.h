@@ -10,14 +10,6 @@
 
 
 /*
- * Parameters that the server and client agree on.
- */
-struct srp_params {
-	struct bignum *N, *g, *k;
-	struct bytes *I, *P;
-};
-
-/*
  * Used to simulate a SRP server, having methods instead of network calls.
  */
 struct srp_server {
@@ -25,7 +17,8 @@ struct srp_server {
 	 * The SRP parameters agreed upon with the client before any
 	 * communication is made.
 	 */
-	struct srp_params *params;
+	struct bignum *N, *g, *k;
+	struct bytes *I, *P;
 
 	/*
 	 * The shared private key derived from the SRP protocol.
@@ -81,7 +74,8 @@ struct srp_client {
 	 * The SRP parameters agreed upon with the server before any
 	 * communication is made.
 	 */
-	struct srp_params *params;
+	struct bignum *N, *g, *k;
+	struct bytes *I, *P;
 
 	/*
 	 * The shared private key derived from the SRP protocol.
@@ -105,32 +99,6 @@ struct srp_client {
 
 
 /*
- * Create a new SRP parameter struct from all its members.
- *
- * Returns a new srp_params struct that must be passed to srp_params_free(), or
- * NULL on failure.
- */
-struct srp_params	*srp_params_new(const struct bignum *N,
-		     const struct bignum *g, const struct bignum *k,
-		     const struct bytes *I, const struct bytes *P);
-
-/*
- * Duplicate a SRP parameter struct.
- *
- * Returns a new srp_params struct that must be passed to srp_params_free(),
- * NULL if the provided argument is NULL or on failure.
- */
-struct srp_params	*srp_params_dup(const struct srp_params *p);
-
-/*
- * Free the resource associated with the given srp_params struct.
- *
- * If not NULL, the data will be zero'd before freed.
- */
-void	srp_params_free(struct srp_params *p);
-
-
-/*
  * Create a new SRP Server struct with the given parameters.
  *
  * The parameters are expected to be the same as the client that are going to
@@ -139,7 +107,9 @@ void	srp_params_free(struct srp_params *p);
  * Returns a new srp_server struct that must be passed to srp_server_free(), or
  * NULL on failure.
  */
-struct srp_server	*srp_server_new(const struct srp_params *params);
+struct srp_server	*srp_server_new(const struct bignum *N,
+		    const struct bignum *g, const struct bignum *k,
+		    const struct bytes *I, const struct bytes *P);
 
 /*
  * Free the resource associated with the given srp_server struct.
@@ -157,7 +127,9 @@ void	srp_server_free(struct srp_server *server);
  * Returns a new srp_client struct that must be passed to srp_client_free(), or
  * NULL on failure.
  */
-struct srp_client	*srp_client_new(const struct srp_params *params);
+struct srp_client	*srp_client_new(const struct bignum *N,
+		    const struct bignum *g, const struct bignum *k,
+		    const struct bytes *I, const struct bytes *P);
 
 /*
  * Free the resource associated with the given srp_client struct.

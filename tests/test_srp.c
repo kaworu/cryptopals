@@ -7,7 +7,7 @@
 #include "test_srp.h"
 
 
-/* helpers to generate testing parameters from Set 5 / Challenge 36 */
+/* helper to generate testing parameters from Set 5 / Challenge 36 */
 
 static void
 my_testing_srp_parameters(struct bignum **N_p, struct bignum **g_p, struct bignum **k_p,
@@ -32,136 +32,75 @@ my_testing_srp_parameters(struct bignum **N_p, struct bignum **g_p, struct bignu
 }
 
 
-static struct srp_params *
-my_testing_srp_params_new(void)
+static MunitResult
+test_srp_server_new(const MunitParameter *params, void *data)
 {
 	struct bignum *N, *g, *k;
-	struct bytes *I, *P;
+	struct bytes  *I, *P;
+
 	my_testing_srp_parameters(&N, &g, &k, &I, &P);
 
-	struct srp_params *params = srp_params_new(N, g, k, I, P);
-	if (params == NULL)
-		munit_error("srp_params_new");
-
-	bytes_free(P);
-	bytes_free(I);
-	bignum_free(k);
-	bignum_free(g);
-	bignum_free(N);
-	return (params);
-}
-
-
-static void
-my_assert_srp_params(const struct srp_params *params, const struct bignum *N,
-		    const struct bignum *g, const struct bignum *k,
-		    const struct bytes *I, const struct bytes *P)
-{
-	munit_assert_not_null(params);
-	munit_assert_int(bignum_cmp(N, params->N), ==, 0);
-	munit_assert_int(bignum_cmp(g, params->g), ==, 0);
-	munit_assert_int(bignum_cmp(k, params->k), ==, 0);
-	munit_assert_int(bytes_bcmp(I, params->I), ==, 0);
-	munit_assert_int(bytes_bcmp(P, params->P), ==, 0);
-}
-
-
-static void
-my_assert_srp_params_eq(const struct srp_params *x, const struct srp_params *y)
-{
-	munit_assert_not_null(x);
-	munit_assert_not_null(y);
-	my_assert_srp_params(x, y->N, y->g, y->k, y->I, y->P);
-}
-
-
-static MunitResult
-test_srp_params_new(const MunitParameter *munit_params, void *data)
-{
-	struct bignum *N, *g, *k;
-	struct bytes *I, *P;
-	my_testing_srp_parameters(&N, &g, &k, &I, &P);
-
-	struct srp_params *params = srp_params_new(N, g, k, I, P);
-	my_assert_srp_params(params, N, g, k, I, P);
-
-	srp_params_free(params);
-	bytes_free(I);
-	bytes_free(P);
-	bignum_free(k);
-	bignum_free(g);
-	bignum_free(N);
-	return (MUNIT_OK);
-}
-
-
-static MunitResult
-test_srp_params_dup(const MunitParameter *munit_params, void *data)
-{
-	struct srp_params *params = my_testing_srp_params_new();
-	if (params == NULL)
-		munit_error("my_testing_srp_params_new");
-
-	struct srp_params *cpy = srp_params_dup(params);
-	munit_assert_not_null(cpy);
-	my_assert_srp_params_eq(params, cpy);
-
-	srp_params_free(cpy);
-	srp_params_free(params);
-	return (MUNIT_OK);
-}
-
-
-static MunitResult
-test_srp_server_new(const MunitParameter *munit_params, void *data)
-{
-	struct srp_params *params = my_testing_srp_params_new();
-	if (params == NULL)
-		munit_error("my_testing_srp_params_new");
-
-	struct srp_server *server = srp_server_new(params);
+	struct srp_server *server = srp_server_new(N, g, k, I, P);
 	munit_assert_not_null(server);
-	my_assert_srp_params_eq(params, server->params);
+	munit_assert_int(bignum_cmp(N, server->N), ==, 0);
+	munit_assert_int(bignum_cmp(g, server->g), ==, 0);
+	munit_assert_int(bignum_cmp(k, server->k), ==, 0);
+	munit_assert_int(bytes_bcmp(I, server->I), ==, 0);
+	munit_assert_int(bytes_bcmp(P, server->P), ==, 0);
 	munit_assert_null(server->key);
 	munit_assert_null(server->token);
 
 	srp_server_free(server);
-	srp_params_free(params);
+	bytes_free(P);
+	bytes_free(I);
+	bignum_free(k);
+	bignum_free(g);
+	bignum_free(N);
 	return (MUNIT_OK);
 }
 
 
 static MunitResult
-test_srp_client_new(const MunitParameter *munit_params, void *data)
+test_srp_client_new(const MunitParameter *params, void *data)
 {
-	struct srp_params *params = my_testing_srp_params_new();
-	if (params == NULL)
-		munit_error("my_testing_srp_params_new");
+	struct bignum *N, *g, *k;
+	struct bytes  *I, *P;
 
-	struct srp_client *client = srp_client_new(params);
+	my_testing_srp_parameters(&N, &g, &k, &I, &P);
+
+	struct srp_client *client = srp_client_new(N, g, k, I, P);
 	munit_assert_not_null(client);
-	my_assert_srp_params_eq(params, client->params);
+	munit_assert_int(bignum_cmp(N, client->N), ==, 0);
+	munit_assert_int(bignum_cmp(g, client->g), ==, 0);
+	munit_assert_int(bignum_cmp(k, client->k), ==, 0);
+	munit_assert_int(bytes_bcmp(I, client->I), ==, 0);
+	munit_assert_int(bytes_bcmp(P, client->P), ==, 0);
 	munit_assert_null(client->key);
 
 	srp_client_free(client);
-	srp_params_free(params);
+	bytes_free(P);
+	bytes_free(I);
+	bignum_free(k);
+	bignum_free(g);
+	bignum_free(N);
 	return (MUNIT_OK);
 }
 
 
 /* Set 5 / Challenge 36 */
 static MunitResult
-test_srp_auth(const MunitParameter *munit_params, void *data)
+test_srp_auth(const MunitParameter *params, void *data)
 {
-	struct srp_params *params = my_testing_srp_params_new();
-	if (params == NULL)
-		munit_error("my_testing_srp_params_new");
+	struct bignum *N, *g, *k;
+	struct bytes  *I, *P;
 
-	struct srp_server *server = srp_server_new(params);
+	my_testing_srp_parameters(&N, &g, &k, &I, &P);
+
+	struct srp_server *server = srp_server_new(N, g, k, I, P);
 	if (server == NULL)
 		munit_error("srp_server_new");
 
-	struct srp_client *client = srp_client_new(params);
+	struct srp_client *client = srp_client_new(N, g, k, I, P);
 	if (client == NULL)
 		munit_error("srp_client_new");
 
@@ -176,29 +115,33 @@ test_srp_auth(const MunitParameter *munit_params, void *data)
 
 	srp_client_free(client);
 	srp_server_free(server);
-	srp_params_free(params);
+	bytes_free(P);
+	bytes_free(I);
+	bignum_free(k);
+	bignum_free(g);
+	bignum_free(N);
 	return (MUNIT_OK);
 }
 
 
 static MunitResult
-test_srp_auth_wrong_password(const MunitParameter *munit_params, void *data)
+test_srp_auth_wrong_password(const MunitParameter *params, void *data)
 {
-	struct srp_params *params = my_testing_srp_params_new();
-	if (params == NULL)
-		munit_error("my_testing_srp_params_new");
+	struct bignum *N, *g, *k;
+	struct bytes  *I, *P;
 
-	struct srp_server *server = srp_server_new(params);
+	my_testing_srp_parameters(&N, &g, &k, &I, &P);
+
+	struct srp_server *server = srp_server_new(N, g, k, I, P);
 	if (server == NULL)
 		munit_error("srp_server_new");
 
 	/* change the client's password */
-	bytes_free(params->P);
-	params->P = bytes_from_str("Open Barley!");
-	if (params->P == NULL)
+	struct bytes *client_P = bytes_from_str("Open Barley!");
+	if (client_P == NULL)
 		munit_error("byte_from_str");
 
-	struct srp_client *client = srp_client_new(params);
+	struct srp_client *client = srp_client_new(N, g, k, I, client_P);
 	if (client == NULL)
 		munit_error("srp_client_new");
 
@@ -210,29 +153,34 @@ test_srp_auth_wrong_password(const MunitParameter *munit_params, void *data)
 
 	srp_client_free(client);
 	srp_server_free(server);
-	srp_params_free(params);
+	bytes_free(client_P);
+	bytes_free(P);
+	bytes_free(I);
+	bignum_free(k);
+	bignum_free(g);
+	bignum_free(N);
 	return (MUNIT_OK);
 }
 
 
 static MunitResult
-test_srp_auth_wrong_email(const MunitParameter *munit_params, void *data)
+test_srp_auth_wrong_email(const MunitParameter *params, void *data)
 {
-	struct srp_params *params = my_testing_srp_params_new();
-	if (params == NULL)
-		munit_error("my_testing_srp_params_new");
+	struct bignum *N, *g, *k;
+	struct bytes  *I, *P;
 
-	struct srp_server *server = srp_server_new(params);
+	my_testing_srp_parameters(&N, &g, &k, &I, &P);
+
+	struct srp_server *server = srp_server_new(N, g, k, I, P);
 	if (server == NULL)
 		munit_error("srp_server_new");
 
 	/* change the client's email */
-	bytes_free(params->I);
-	params->I = bytes_from_str("cassim@1001nights.com");
-	if (params->I == NULL)
+	struct bytes *client_I = bytes_from_str("cassim@1001nights.com");
+	if (client_I == NULL)
 		munit_error("byte_from_str");
 
-	struct srp_client *client = srp_client_new(params);
+	struct srp_client *client = srp_client_new(N, g, k, client_I, P);
 	if (client == NULL)
 		munit_error("srp_client_new");
 
@@ -244,17 +192,20 @@ test_srp_auth_wrong_email(const MunitParameter *munit_params, void *data)
 
 	srp_client_free(client);
 	srp_server_free(server);
-	srp_params_free(params);
+	bytes_free(client_I);
+	bytes_free(P);
+	bytes_free(I);
+	bignum_free(k);
+	bignum_free(g);
+	bignum_free(N);
 	return (MUNIT_OK);
 }
 
 
 /* The test suite. */
 MunitTest test_srp_suite_tests[] = {
-	{ "params/new", test_srp_params_new, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
-	{ "params/dup", test_srp_params_dup, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
-	{ "server/new", test_srp_server_new, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
-	{ "client/new", test_srp_client_new, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "server", test_srp_server_new, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "client", test_srp_client_new, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "auth-0",     test_srp_auth,                srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "auth-1",     test_srp_auth_wrong_password, srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "auth-2",     test_srp_auth_wrong_email,    srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
