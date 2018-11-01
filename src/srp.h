@@ -17,7 +17,6 @@ struct srp_server {
 	 * The SRP parameters agreed upon with the client before any
 	 * communication is made.
 	 */
-	struct bignum *N, *g, *k;
 	struct bytes *I, *P;
 
 	/*
@@ -66,15 +65,13 @@ struct srp_server {
 };
 
 /*
- * Used to simulate a SRP server, having and using methods instead of network
- * calls.
+ * Used to simulate a SRP client, doing methods calls instead of network calls.
  */
 struct srp_client {
 	/*
 	 * The SRP parameters agreed upon with the server before any
 	 * communication is made.
 	 */
-	struct bignum *N, *g, *k;
 	struct bytes *I, *P;
 
 	/*
@@ -99,17 +96,23 @@ struct srp_client {
 
 
 /*
- * Create a new SRP Server struct with the given parameters.
+ * Set the SRP parameters N, g and k.
  *
- * The parameters are expected to be the same as the client that are going to
- * try to authenticate.
+ * Returns 0 on success, -1 on error. On success every non-NULL pointer given
+ * are set to their SRP parameter values and must be passed to bignum_free()
+ * after use.
+ */
+int	srp_parameters(struct bignum **N_p, struct bignum **g_p,
+		    struct bignum **k_p);
+
+/*
+ * Create a new SRP Server struct with the given parameters.
  *
  * Returns a new srp_server struct that must be passed to srp_server_free(), or
  * NULL on failure.
  */
-struct srp_server	*srp_server_new(const struct bignum *N,
-		    const struct bignum *g, const struct bignum *k,
-		    const struct bytes *I, const struct bytes *P);
+struct srp_server	*srp_server_new(const struct bytes *I,
+		    const struct bytes *P);
 
 /*
  * Free the resource associated with the given srp_server struct.
@@ -122,14 +125,11 @@ void	srp_server_free(struct srp_server *server);
 /*
  * Create a new SRP Client struct with the given parameters.
  *
- * The parameters are expected to be the same as the server.
- *
  * Returns a new srp_client struct that must be passed to srp_client_free(), or
  * NULL on failure.
  */
-struct srp_client	*srp_client_new(const struct bignum *N,
-		    const struct bignum *g, const struct bignum *k,
-		    const struct bytes *I, const struct bytes *P);
+struct srp_client	*srp_client_new(const struct bytes *I,
+		    const struct bytes *P);
 
 /*
  * Free the resource associated with the given srp_client struct.

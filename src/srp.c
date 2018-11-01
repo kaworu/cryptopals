@@ -35,17 +35,57 @@ static struct bignum	*srp_bignum_from_sha256_bignums(
 		    const struct bignum *lhs, const struct bignum *rhs);
 
 
+int
+srp_parameters(struct bignum **N_p, struct bignum **g_p, struct bignum **k_p)
+{
+	struct bignum *N = NULL, *g = NULL, *k = NULL;
+	int success = 0;
+
+	N = bignum_from_hex(
+		"ffffffffffffffffc90fdaa22168c234c4c6628b80dc1cd129024"
+		"e088a67cc74020bbea63b139b22514a08798e3404ddef9519b3cd"
+		"3a431b302b0a6df25f14374fe1356d6d51c245e485b576625e7ec"
+		"6f44c42e9a637ed6b0bff5cb6f406b7edee386bfb5a899fa5ae9f"
+		"24117c4b1fe649286651ece45b3dc2007cb8a163bf0598da48361"
+		"c55d39a69163fa8fd24cf5f83655d23dca3ad961c62f356208552"
+		"bb9ed529077096966d670c354e4abc9804f1746c08ca237327fff"
+		"fffffffffffff");
+	g = bignum_from_hex("2");
+	k = bignum_from_hex("3");
+
+	if (N == NULL || g == NULL || k == NULL)
+		goto cleanup;
+
+	success = 1;
+
+	if (N_p != NULL) {
+		*N_p = N;
+		N = NULL;
+	}
+	if (g_p != NULL) {
+		*g_p = g;
+		g = NULL;
+	}
+	if (k_p != NULL) {
+		*k_p = k;
+		k = NULL;
+	}
+	/* FALLTHROUGH */
+cleanup:
+	bignum_free(k);
+	bignum_free(g);
+	bignum_free(N);
+	return (success ? 0 : -1);
+}
+
+
 struct srp_server *
-srp_server_new(const struct bignum *N,
-		    const struct bignum *g, const struct bignum *k,
-		    const struct bytes *I, const struct bytes *P)
+srp_server_new(const struct bytes *I, const struct bytes *P)
 {
 	struct srp_server *server = NULL;
 	int success = 0;
 
 	/* sanity checks */
-	if (N == NULL || g == NULL || k == NULL)
-		goto cleanup;
 	if (I == NULL || P == NULL)
 		goto cleanup;
 
@@ -53,11 +93,6 @@ srp_server_new(const struct bignum *N,
 	if (server == NULL)
 		goto cleanup;
 
-	server->N = bignum_dup(N);
-	server->g = bignum_dup(g);
-	server->k = bignum_dup(k);
-	if (server->N == NULL || server->g == NULL || server->k == NULL)
-		goto cleanup;
 	server->I = bytes_dup(I);
 	server->P = bytes_dup(P);
 	if (server->I == NULL || server->P == NULL)
@@ -83,9 +118,6 @@ srp_server_free(struct srp_server *server)
 	if (server == NULL)
 		return;
 
-	bignum_free(server->N);
-	bignum_free(server->g);
-	bignum_free(server->k);
 	bytes_free(server->I);
 	bytes_free(server->P);
 	bytes_free(server->key);
@@ -95,16 +127,12 @@ srp_server_free(struct srp_server *server)
 
 
 struct srp_client *
-srp_client_new(const struct bignum *N,
-		    const struct bignum *g, const struct bignum *k,
-		    const struct bytes *I, const struct bytes *P)
+srp_client_new(const struct bytes *I, const struct bytes *P)
 {
 	struct srp_client *client = NULL;
 	int success = 0;
 
 	/* sanity checks */
-	if (N == NULL || g == NULL || k == NULL)
-		goto cleanup;
 	if (I == NULL || P == NULL)
 		goto cleanup;
 
@@ -112,11 +140,6 @@ srp_client_new(const struct bignum *N,
 	if (client == NULL)
 		goto cleanup;
 
-	client->N = bignum_dup(N);
-	client->g = bignum_dup(g);
-	client->k = bignum_dup(k);
-	if (client->N == NULL || client->g == NULL || client->k == NULL)
-		goto cleanup;
 	client->I = bytes_dup(I);
 	client->P = bytes_dup(P);
 	if (client->I == NULL || client->P == NULL)
@@ -141,9 +164,6 @@ srp_client_free(struct srp_client *client)
 	if (client == NULL)
 		return;
 
-	bignum_free(client->N);
-	bignum_free(client->g);
-	bignum_free(client->k);
 	bytes_free(client->I);
 	bytes_free(client->P);
 	bytes_free(client->key);
@@ -156,6 +176,7 @@ srp_server_start(struct srp_server *server,
 		    const struct bytes *I, const struct bignum *A,
 		    struct bytes **salt_p, struct bignum **B_p)
 {
+	struct bignum *N = NULL, *g = NULL, *k = NULL;
 	struct bytes *salt = NULL;
 	struct bignum *x = NULL, *v = NULL;
 	struct bignum *b = NULL, *B = NULL;
@@ -172,11 +193,8 @@ srp_server_start(struct srp_server *server,
 	if (salt_p == NULL || B_p == NULL)
 		goto cleanup;
 
-	/* cosmetic shortcuts */
-	const struct bignum *N = server->N;
-	const struct bignum *g = server->g;
-	const struct bignum *k = server->k;
-	const struct bytes *P  = server->P;
+	if (srp_parameters(&N, &g, &k) != 0)
+		goto cleanup;
 
 	/* ensure that I is the correct email */
 	if (bytes_timingsafe_bcmp(server->I, I) != 0)
@@ -189,7 +207,7 @@ srp_server_start(struct srp_server *server,
 
 	/* Generate string xH=SHA256(salt|password) */
 	/* Convert xH to integer x somehow */
-	x = srp_bignum_from_sha256_bytes(salt, P);
+	x = srp_bignum_from_sha256_bytes(salt, server->P);
 	if (x == NULL)
 		goto cleanup;
 
@@ -261,6 +279,9 @@ cleanup:
 	bignum_free(v);
 	bignum_free(x);
 	bytes_free(salt);
+	bignum_free(k);
+	bignum_free(g);
+	bignum_free(N);
 	return (success ? 0 : -1);
 }
 
@@ -298,6 +319,7 @@ cleanup:
 static int
 srp_client_authenticate(struct srp_client *client, struct srp_server *server)
 {
+	struct bignum *N = NULL, *g = NULL, *k = NULL;
 	struct bignum *a = NULL, *A = NULL, *B = NULL;
 	struct bignum *u = NULL, *x = NULL, *S = NULL;
 	struct bytes *salt = NULL;
@@ -308,18 +330,13 @@ srp_client_authenticate(struct srp_client *client, struct srp_server *server)
 	if (client == NULL || server == NULL)
 		goto cleanup;
 
-	/* cosmetic shortcuts */
-	const struct bignum *N = client->N;
-	const struct bignum *g = client->g;
-	const struct bignum *k = client->k;
-	const struct bytes  *I = client->I;
-	const struct bytes  *P = client->P;
-
+	if (srp_parameters(&N, &g, &k) != 0)
+		goto cleanup;
 
 	/* Send I, A=g**a % N (a la Diffie Hellman) */
 	a = bignum_rand(N);
 	A = bignum_modexp(g, a, N);
-	if (server->start(server, I, A, &salt, &B) != 0)
+	if (server->start(server, client->I, A, &salt, &B) != 0)
 		goto cleanup;
 
 	/* Compute string uH = SHA256(A|B), u = integer of uH */
@@ -329,7 +346,7 @@ srp_client_authenticate(struct srp_client *client, struct srp_server *server)
 
 	/* Generate string xH=SHA256(salt|password) */
 	/* Convert xH to integer x somehow */
-	x = srp_bignum_from_sha256_bytes(salt, P);
+	x = srp_bignum_from_sha256_bytes(salt, client->P);
 
 	/* Generate S = (B - k * g**x)**(a + u * x) % N */
 	struct bignum *g_pow_x = bignum_modexp(g, x, N);
@@ -376,6 +393,9 @@ cleanup:
 	bignum_free(B);
 	bignum_free(A);
 	bignum_free(a);
+	bignum_free(k);
+	bignum_free(g);
+	bignum_free(N);
 	return (success ? 0 : -1);
 }
 
