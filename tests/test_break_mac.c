@@ -15,20 +15,20 @@
 
 
 /*
- * Challenge 31 & 32 server stuff.
+ * Challenge 31 & 32 Python server stuff.
  *
  * We'll fork/exec the server from here (i.e. munit). We store the server
  * process id and the key it used for MAC'ing.
  */
-struct server_settings {
+struct py_server_settings {
 	pid_t pid;
 	struct bytes *key;
 };
 
 
-/* server parameters. server_params and filepath_params are expected to be
+/* server parameters. py_server_params and filepath_params are expected to be
    given from the cli, the other are "sane" defaults that may be overrided */
-static char *server_params[]    = { NULL };
+static char *py_server_params[]  = { NULL };
 static char *filepath_params[]  = { NULL };
 static char *hostname_params[]  = { "::1", NULL };
 static char *port_params[]      = { "9000", NULL };
@@ -37,7 +37,7 @@ static char *port_params[]      = { "9000", NULL };
 static char *delay_params[] = { "2", NULL };
 /* all the server parameters */
 static MunitParameterEnum test_timing_leaking_server_params[] = {
-	{ "mac_server",   server_params },
+	{ "mac_server",   py_server_params },
 	{ "mac_filepath", filepath_params },
 	{ "mac_hostname", hostname_params },
 	{ "mac_port",     port_params },
@@ -54,7 +54,7 @@ static MunitParameterEnum test_timing_leaking_server_params[] = {
  * otherwise.
  */
 static void *
-server_setup(const MunitParameter *params, void *user_data)
+py_server_setup(const MunitParameter *params, void *user_data)
 {
 	const char *exec     = munit_parameters_get(params, "mac_server");
 	const char *hostname = munit_parameters_get(params, "mac_hostname");
@@ -68,20 +68,20 @@ server_setup(const MunitParameter *params, void *user_data)
 	if (hostname == NULL || port == NULL || delay == NULL)
 		return (NULL);
 
-	struct server_settings *server = NULL;
-	server = munit_malloc(sizeof(struct server_settings));
+	struct py_server_settings *py_server = NULL;
+	py_server = munit_malloc(sizeof(struct py_server_settings));
 
 	/* NOTE: The recommended length for HMAC keys is the hash function's
 	   output length, see RFC 2104 § 3. */
-	server->key = bytes_randomized(sha1_hashlength());
-	if (server->key == NULL)
+	py_server->key = bytes_randomized(sha1_hashlength());
+	if (py_server->key == NULL)
 		munit_error("bytes_randomized");
-	char *key = bytes_to_hex(server->key);
+	char *key = bytes_to_hex(py_server->key);
 	if (key == NULL)
 		munit_error("bytes_to_hex");
 
-	server->pid = fork();
-	switch (server->pid) {
+	py_server->pid = fork();
+	switch (py_server->pid) {
 	case -1: /* error */
 		munit_error("fork");
 		/* NOTREACHED */
@@ -106,29 +106,31 @@ server_setup(const MunitParameter *params, void *user_data)
 		/* "yield" the CPU so that our child get a chance to run and
 		   start listening */
 		sleep(1);
-		return (server);
+		return (py_server);
 	}
 }
 
 
 /*
- * If the server was started by server_setup(), kill it and free the associated
- * resources.
+ * If the server was started by py_server_setup(), kill it and free the
+ * associated resources.
+ *
+ * FIXME: kinda duplicated in test_srp.c
  */
 static void
-server_tear_down(void *data)
+py_server_tear_down(void *data)
 {
-	struct server_settings *server = data;
+	struct py_server_settings *py_server = data;
 
-	if (server == NULL)
+	if (py_server == NULL)
 		return;
 
-	if (kill(server->pid, SIGTERM) == 0) {
-		if (waitpid(server->pid, NULL, 0) != server->pid)
+	if (kill(py_server->pid, SIGTERM) == 0) {
+		if (waitpid(py_server->pid, NULL, 0) != py_server->pid)
 			munit_error("waitpid");
 	}
-	bytes_free(server->key);
-	free(server);
+	bytes_free(py_server->key);
+	free(py_server);
 }
 
 
@@ -230,13 +232,13 @@ test_extend_md4_mac_keyed_prefix(const MunitParameter *params, void *data)
 static MunitResult
 test_timing_leaking_server(const MunitParameter *params, void *data)
 {
-	const struct server_settings *server = data;
+	const struct py_server_settings *py_server = data;
 	/* skip this test if the server was not started */
-	if (server == NULL)
+	if (py_server == NULL)
 		return (MUNIT_SKIP);
 
 	/* ensure that the server child process is up */
-	if (waitpid(server->pid, NULL, WNOHANG) != 0)
+	if (waitpid(py_server->pid, NULL, WNOHANG) != 0)
 		munit_error("server started but down?");
 
 	/* expected to be given on the cli */
@@ -265,7 +267,7 @@ test_timing_leaking_server(const MunitParameter *params, void *data)
 	munit_assert_size(guess->len, ==, sha1_hashlength());
 
 	/* test against our own HMAC-SHA1 implementation */
-	struct bytes *expected = hmac_sha1(server->key, content);
+	struct bytes *expected = hmac_sha1(py_server->key, content);
 	if (expected == NULL)
 		munit_error("hmac_sha1");
 	munit_assert_size(expected->len, ==, guess->len);
@@ -285,8 +287,8 @@ MunitTest test_break_mac_suite_tests[] = {
 	{
 		.name       = "timing_leaking_server",
 		.test       = test_timing_leaking_server,
-		.setup      = server_setup,
-		.tear_down  = server_tear_down,
+		.setup      = py_server_setup,
+		.tear_down  = py_server_tear_down,
 		.options    = MUNIT_TEST_OPTION_NONE,
 		.parameters = test_timing_leaking_server_params,
 	},
