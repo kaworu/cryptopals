@@ -32,7 +32,7 @@ struct py_server_settings {
    given from the cli, the other are "sane" defaults that may be overrided */
 static char *py_server_params[]  = { NULL };
 static char *filepath_params[]  = { NULL };
-static char *hostname_params[]  = { "::1", NULL };
+static char *hostname_params[]  = { "localhost", NULL };
 static char *port_params[]      = { "9000", NULL };
 /* A delay of 50 takes like 90 minutes to complete, 5 takes about 9 minutes. The
    default (2) is the minimum that is still working and take about 3 minutes. */

@@ -5,7 +5,7 @@ all: testrunner
 
 test: testrunner
 	./build/testrunner --show-stderr --log-visible debug
-#	--param mac_hostname 127.0.0.1                     \
+#	--param mac_hostname localhost                     \
 #	--param mac_server ./python/hmac_padding_oracle.py \
 #	--param mac_filepath ./README.md                   \
 #	--param mac_delay 2
