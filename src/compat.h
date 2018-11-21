@@ -6,6 +6,24 @@
  * Compatibility stuff.
  */
 
+#if defined(HAVE_REALLOCARRAY)
+#include <stdlib.h>
+#else
+#include "compat/reallocarray.h"
+#endif
+
+#if defined(HAVE_RECALLOCARRAY)
+#include <stdlib.h>
+#else
+#include "compat/recallocarray.h"
+#endif
+
+#if defined(HAVE_FREEZERO)
+#include <stdlib.h>
+#else
+#include "compat/freezero.h"
+#endif
+
 #if defined(HAVE_EXPLICIT_MEMSET)
 #include <string.h>
 #else
@@ -36,22 +54,10 @@
 #include "compat/strlcat.h"
 #endif
 
-#if defined(HAVE_REALLOCARRAY)
-#include <stdlib.h>
+#if defined(HAVE_ASPRINTF)
+#include <stdio.h>
 #else
-#include "compat/reallocarray.h"
-#endif
-
-#if defined(HAVE_RECALLOCARRAY)
-#include <stdlib.h>
-#else
-#include "compat/recallocarray.h"
-#endif
-
-#if defined(HAVE_FREEZERO)
-#include <stdlib.h>
-#else
-#include "compat/freezero.h"
+#include "compat/asprintf.h"
 #endif
 
 #endif /* ndef COMPAT_H */
