@@ -5,6 +5,8 @@
  *
  * Secure Remote Password (SRP) stuff for cryptopals.com challenges.
  */
+#include <sys/types.h>
+
 #include "bignum.h"
 #include "bytes.h"
 
@@ -79,6 +81,21 @@ struct srp_local_server_opaque {
 	struct bytes *token;
 };
 
+/*
+ * opaque struct used by server created by srp_remote_server_new().
+ */
+struct srp_remote_server_opaque {
+	/*
+	 * The hostname and port of the remote SRP server.
+	 */
+	char *hostname, *port;
+
+	/*
+	 * Socket to the remote server.
+	 */
+	int sock;
+};
+
 
 /*
  * Used to interface with a SRP client.
@@ -139,6 +156,16 @@ int	srp_parameters(struct bignum **N_p, struct bignum **g_p,
  */
 struct srp_server	*srp_local_server_new(const struct bytes *I,
 		    const struct bytes *P);
+
+/*
+ * Create a new SRP Server struct that is going to communicate with a remote
+ * server.
+ *
+ * Returns a new srp_server struct that must be passed to its free function
+ * member, or NULL on failure.
+ */
+struct srp_server	*srp_remote_server_new(const char *hostname,
+		    const char *port);
 
 /*
  * Create a new SRP Client struct with the given parameters.

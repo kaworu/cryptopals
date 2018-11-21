@@ -108,6 +108,8 @@ config = parser.parse_args()
 
 # Socket stuff
 server = socket.socket()
+# see https://stackoverflow.com/a/27360648
+server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 server.bind((config.hostname, config.port))
 try:
     server.listen(0)
@@ -116,7 +118,7 @@ try:
         client, addr = server.accept()
         print("===> connection", addr)
         try:
-            send = lambda msg: client.sendall(msg + b"\n")
+            send = lambda msg: client.sendall(msg)
             receive = lambda: client.recv(4096).rstrip(b"\n")
             srp(receive, send, config.id, config.password.encode())
         finally:

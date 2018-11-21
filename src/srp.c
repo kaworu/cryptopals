@@ -3,7 +3,12 @@
  *
  * Secure Remote Password (SRP) stuff for cryptopals.com challenges.
  */
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netdb.h>
 #include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
 
 #include "compat.h"
 #include "sha256.h"
@@ -25,6 +30,15 @@ static int	srp_local_server_start(struct srp_server *server,
 static int	srp_local_server_finalize(struct srp_server *server,
 		    const struct bytes *token);
 static void	srp_local_server_free(struct srp_server *server);
+
+/* remote struct srp_server method members implementations */
+static int	srp_remote_server_start(struct srp_server *server,
+		    const struct bytes *I, const struct bignum *A,
+		    struct bytes **salt_p, struct bignum **B_p);
+static int	srp_remote_server_finalize(struct srp_server *server,
+		    const struct bytes *token);
+static void	srp_remote_server_free(struct srp_server *server);
+
 /* struct srp_client method members implementations */
 static int	srp_client_authenticate(struct srp_client *client,
 		    struct srp_server *server);
@@ -114,6 +128,47 @@ srp_local_server_new(const struct bytes *I, const struct bytes *P)
 cleanup:
 	if (!success) {
 		srp_local_server_free(server);
+		server = NULL;
+	}
+	return (server);
+}
+
+
+struct srp_server *
+srp_remote_server_new(const char *hostname, const char *port)
+{
+	struct srp_server *server = NULL;
+	int success = 0;
+
+	/* sanity checks */
+	if (hostname == NULL || port == NULL)
+		goto cleanup;
+
+	server = calloc(1, sizeof(struct srp_server));
+	if (server == NULL)
+		goto cleanup;
+
+	server->opaque = calloc(1, sizeof(struct srp_remote_server_opaque));
+	if (server->opaque == NULL)
+		goto cleanup;
+	struct srp_remote_server_opaque *srvinfo = server->opaque;
+
+	srvinfo->hostname = strdup(hostname);
+	srvinfo->port     = strdup(port);
+	srvinfo->sock     = -1; /* we're not connected yet */
+	if (srvinfo->hostname == NULL || srvinfo->port == NULL)
+		goto cleanup;
+
+	success = 1;
+
+	server->start    = srp_remote_server_start;
+	server->finalize = srp_remote_server_finalize;
+	server->free     = srp_remote_server_free;
+
+	/* FALLTHROUGH */
+cleanup:
+	if (!success) {
+		srp_remote_server_free(server);
 		server = NULL;
 	}
 	return (server);
@@ -315,6 +370,180 @@ srp_local_server_free(struct srp_server *server)
 		bytes_free(srvinfo->P);
 		bytes_free(srvinfo->I);
 		freezero(srvinfo, sizeof(struct srp_local_server_opaque));
+	}
+	freezero(server, sizeof(struct srp_server));
+}
+
+
+static int
+srp_remote_server_start(struct srp_server *server,
+		    const struct bytes *I, const struct bignum *A,
+		    struct bytes **salt_p, struct bignum **B_p)
+{
+	struct addrinfo hints;
+	struct addrinfo *res0 = NULL, *res = NULL;
+	int s = -1;
+	char *hexI = NULL, *hexA = NULL, *msg = NULL;
+	int msglen = 0;
+	/* We expect to read "salt,B\n" from the server. the salt part is 32
+	   bytes in hex so 64 chars, B is at most as many hex characters as N
+	   (384) and counting "," and the terminal NUL we get 450. Let's take
+	   something that is at least twice this number and we should be ok. */
+	char rsp[1024] = { 0 };
+	struct bytes *salt = NULL;
+	struct bignum *B = NULL;
+	int success = 0;
+
+	/* sanity checks */
+	if (server == NULL || server->opaque == NULL)
+		goto cleanup;
+	if (I == NULL || A == NULL)
+		goto cleanup;
+	if (salt_p == NULL || B_p == NULL)
+		goto cleanup;
+
+	struct srp_remote_server_opaque *srvinfo = server->opaque;
+
+	/* if we have a previous connection open, close it */
+	if (srvinfo->sock != -1) {
+		(void)close(srvinfo->sock);
+		srvinfo->sock = -1;
+	}
+
+	/* find the addresses for the given hostname (both IPv6 and IPv4) and
+	   open a socket for it. Heavily based on OpenBSD's getaddrinfo(3)
+	   manpage example. */
+	(void)memset(&hints, 0, sizeof(struct addrinfo));
+	hints.ai_family = AF_UNSPEC;
+	hints.ai_socktype = SOCK_STREAM;
+	if (getaddrinfo(srvinfo->hostname, srvinfo->port, &hints, &res0) != 0)
+		goto cleanup;
+	for (res = res0; res != NULL; res = res->ai_next) {
+		s = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
+		if (s == -1)
+			continue;
+		const int ret = connect(s, res->ai_addr, res->ai_addrlen);
+		if (ret == 0) {
+			/* ok we got one */
+			break;
+		}
+		(void)close(s);
+		s = -1;
+	}
+	if (s == -1)
+		goto cleanup;
+
+	/* C->S: Send I, A=g**a % N (a la Diffie Hellman) */
+
+	hexI = bytes_to_str(I);
+	hexA = bignum_to_hex(A);
+	if (hexI == NULL || hexA == NULL)
+		goto cleanup;
+	msglen = asprintf(&msg, "%s,%s", hexI, hexA);
+	if (msglen == -1)
+		goto cleanup;
+	if (send(s, msg, msglen, /* flags */0) != msglen)
+		goto cleanup;
+
+	/* S->C: Send salt, B=kv + g**b % N */
+
+	if (recv(s, rsp, sizeof(rsp) - 1, /* flags */0) == -1)
+		goto cleanup;
+
+	char *comma = strrchr(rsp, ',');
+	if (comma == NULL)
+		goto cleanup;
+	/* overwrite the comma with NUL, the next char is the first of B */
+	*comma = '\0';
+	salt = bytes_from_hex(rsp);
+	B = bignum_from_hex(comma + 1);
+	if (salt == NULL || B == NULL)
+		goto cleanup;
+
+	success = 1;
+
+	/* take ownership of the socket */
+	srvinfo->sock = s;
+	s = -1;
+	/* set "return" values for the caller */
+	*salt_p = salt;
+	salt = NULL;
+	*B_p = B;
+	B = NULL;
+
+	/* FALLTHROUGH */
+cleanup:
+	bytes_free(salt);
+	bignum_free(B);
+	freezero(msg, msg == NULL ? 0 : strlen(msg));
+	freezero(hexA, hexA == NULL ? 0 : strlen(hexA));
+	freezero(hexI, hexI == NULL ? 0 : strlen(hexI));
+	if (s != -1)
+		(void)close(s);
+	freeaddrinfo(res0);
+	return (success ? 0 : -1);
+}
+
+
+static int
+srp_remote_server_finalize(struct srp_server *server, const struct bytes *token)
+{
+	char *msg = NULL;
+	/* just enough space to hold the response i.e "OK" or "NO" */
+	char rsp[2 + 1] = { 0 };
+	int success = 0;
+	int authenticated = 0;
+
+	/* sanity checks */
+	if (server == NULL || server->opaque == NULL || token == NULL)
+		goto cleanup;
+	if (token->len != sha256_hashlength())
+		goto cleanup;
+
+	struct srp_remote_server_opaque *srvinfo = server->opaque;
+	int s = srvinfo->sock;
+
+	msg = bytes_to_hex(token);
+	if (msg == NULL)
+		goto cleanup;
+	const int msglen = (int)strlen(msg);
+
+	/* C->S: Send HMAC-SHA256(K, salt) */
+	if (send(s, msg, msglen, /* flags */0) != msglen)
+		goto cleanup;
+
+	if (recv(s, rsp, sizeof(rsp) - 1, /* flags */0) == -1)
+		goto cleanup;
+
+	success = 1;
+
+	authenticated = (strcmp(rsp, "OK") == 0);
+
+	/* FALLTHROUGH */
+cleanup:
+	freezero(msg, msg == NULL ? 0 : strlen(msg));
+	if (!success)
+		return (-1);
+	return (authenticated ? 0 : -1);
+}
+
+
+static void
+srp_remote_server_free(struct srp_server *server)
+{
+	if (server == NULL)
+		return;
+
+	if (server->opaque != NULL) {
+		struct srp_remote_server_opaque *srvinfo = server->opaque;
+		if (srvinfo->hostname != NULL)
+			freezero(srvinfo->hostname, strlen(srvinfo->hostname));
+		if (srvinfo->port != NULL)
+			freezero(srvinfo->port, strlen(srvinfo->port));
+		/* close the socket if any */
+		if (srvinfo->sock != -1)
+			(void)close(srvinfo->sock);
+		freezero(srvinfo, sizeof(struct srp_remote_server_opaque));
 	}
 	freezero(server, sizeof(struct srp_server));
 }
