@@ -19,12 +19,12 @@
 
 
 /* struct srp_server method members implementations */
-static int	srp_server_start(struct srp_server *server,
+static int	srp_local_server_start(struct srp_server *server,
 		    const struct bytes *I, const struct bignum *A,
 		    struct bytes **salt_p, struct bignum **B_p);
-static int	srp_server_finalize(struct srp_server *server,
+static int	srp_local_server_finalize(struct srp_server *server,
 		    const struct bytes *token);
-static void	srp_server_free(struct srp_server *server);
+static void	srp_local_server_free(struct srp_server *server);
 /* struct srp_client method members implementations */
 static int	srp_client_authenticate(struct srp_client *client,
 		    struct srp_server *server);
@@ -82,7 +82,7 @@ cleanup:
 
 
 struct srp_server *
-srp_server_new(const struct bytes *I, const struct bytes *P)
+srp_local_server_new(const struct bytes *I, const struct bytes *P)
 {
 	struct srp_server *server = NULL;
 	int success = 0;
@@ -95,46 +95,28 @@ srp_server_new(const struct bytes *I, const struct bytes *P)
 	if (server == NULL)
 		goto cleanup;
 
-	server->opaque = calloc(1, sizeof(struct srp_server_opaque));
+	server->opaque = calloc(1, sizeof(struct srp_local_server_opaque));
 	if (server->opaque == NULL)
 		goto cleanup;
-	struct srp_server_opaque *ad = server->opaque;
+	struct srp_local_server_opaque *ad = server->opaque;
 
 	ad->I = bytes_dup(I);
 	ad->P = bytes_dup(P);
 	if (ad->I == NULL || ad->P == NULL)
 		goto cleanup;
 
-	server->start    = srp_server_start;
-	server->finalize = srp_server_finalize;
-	server->free     = srp_server_free;
+	server->start    = srp_local_server_start;
+	server->finalize = srp_local_server_finalize;
+	server->free     = srp_local_server_free;
 
 	success = 1;
 	/* FALLTHROUGH */
 cleanup:
 	if (!success) {
-		srp_server_free(server);
+		srp_local_server_free(server);
 		server = NULL;
 	}
 	return (server);
-}
-
-
-void
-static srp_server_free(struct srp_server *server)
-{
-	if (server == NULL)
-		return;
-
-	if (server->opaque) {
-		struct srp_server_opaque *ad = server->opaque;
-		bytes_free(ad->key);
-		bytes_free(ad->token);
-		bytes_free(ad->I);
-		bytes_free(ad->P);
-		freezero(ad, sizeof(struct srp_server_opaque));
-	}
-	freezero(server, sizeof(struct srp_server));
 }
 
 
@@ -171,21 +153,8 @@ cleanup:
 }
 
 
-static void
-srp_client_free(struct srp_client *client)
-{
-	if (client == NULL)
-		return;
-
-	bytes_free(client->I);
-	bytes_free(client->P);
-	bytes_free(client->key);
-	freezero(client, sizeof(struct srp_client));
-}
-
-
 static int
-srp_server_start(struct srp_server *server,
+srp_local_server_start(struct srp_server *server,
 		    const struct bytes *I, const struct bignum *A,
 		    struct bytes **salt_p, struct bignum **B_p)
 {
@@ -209,7 +178,7 @@ srp_server_start(struct srp_server *server,
 	if (srp_parameters(&N, &g, &k) != 0)
 		goto cleanup;
 
-	struct srp_server_opaque *ad = server->opaque;
+	struct srp_local_server_opaque *ad = server->opaque;
 
 	/* ensure that I is the correct email */
 	if (bytes_timingsafe_bcmp(ad->I, I) != 0)
@@ -302,7 +271,7 @@ cleanup:
 
 
 static int
-srp_server_finalize(struct srp_server *server, const struct bytes *token)
+srp_local_server_finalize(struct srp_server *server, const struct bytes *token)
 {
 	int success = 0;
 
@@ -310,7 +279,7 @@ srp_server_finalize(struct srp_server *server, const struct bytes *token)
 	if (server == NULL || server->opaque == NULL || token == NULL)
 		goto cleanup;
 
-	struct srp_server_opaque *ad = server->opaque;
+	struct srp_local_server_opaque *ad = server->opaque;
 	if (ad->token == NULL || ad->key == NULL)
 		goto cleanup;
 
@@ -330,6 +299,24 @@ srp_server_finalize(struct srp_server *server, const struct bytes *token)
 	/* FALLTHROUGH */
 cleanup:
 	return (success ? 0 : -1);
+}
+
+
+static void
+srp_local_server_free(struct srp_server *server)
+{
+	if (server == NULL)
+		return;
+
+	if (server->opaque) {
+		struct srp_local_server_opaque *ad = server->opaque;
+		bytes_free(ad->key);
+		bytes_free(ad->token);
+		bytes_free(ad->I);
+		bytes_free(ad->P);
+		freezero(ad, sizeof(struct srp_local_server_opaque));
+	}
+	freezero(server, sizeof(struct srp_server));
 }
 
 
@@ -414,6 +401,19 @@ cleanup:
 	bignum_free(g);
 	bignum_free(N);
 	return (success ? 0 : -1);
+}
+
+
+static void
+srp_client_free(struct srp_client *client)
+{
+	if (client == NULL)
+		return;
+
+	bytes_free(client->I);
+	bytes_free(client->P);
+	bytes_free(client->key);
+	freezero(client, sizeof(struct srp_client));
 }
 
 

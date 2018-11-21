@@ -58,9 +58,9 @@ struct srp_server {
 };
 
 /*
- * opaque struct used by server created by srp_server_new().
+ * opaque struct used by server created by srp_local_server_new().
  */
-struct srp_server_opaque {
+struct srp_local_server_opaque {
 	/*
 	 * The SRP parameters agreed upon with the client before any
 	 * communication is made.
@@ -137,7 +137,7 @@ int	srp_parameters(struct bignum **N_p, struct bignum **g_p,
  * Returns a new srp_server struct that must be passed to its free function
  * member, or NULL on failure.
  */
-struct srp_server	*srp_server_new(const struct bytes *I,
+struct srp_server	*srp_local_server_new(const struct bytes *I,
 		    const struct bytes *P);
 
 /*

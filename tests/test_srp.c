@@ -40,17 +40,17 @@ test_srp_parameters(const MunitParameter *params, void *data)
 
 
 static MunitResult
-test_srp_server_new(const MunitParameter *params, void *data)
+test_srp_local_server_new(const MunitParameter *params, void *data)
 {
 	struct bytes *I = bytes_from_str(srp_email);
 	struct bytes *P = bytes_from_str(srp_password);
 	if (I == NULL || P == NULL)
 		munit_error("bytes_from_str");
 
-	struct srp_server *server = srp_server_new(I, P);
+	struct srp_server *server = srp_local_server_new(I, P);
 	munit_assert_not_null(server);
 	munit_assert_not_null(server->opaque);
-	const struct srp_server_opaque *ad = server->opaque;
+	const struct srp_local_server_opaque *ad = server->opaque;
 	munit_assert_int(bytes_bcmp(I, ad->I), ==, 0);
 	munit_assert_int(bytes_bcmp(P, ad->P), ==, 0);
 	munit_assert_null(ad->key);
@@ -93,9 +93,9 @@ test_srp_auth(const MunitParameter *params, void *data)
 	if (I == NULL || P == NULL)
 		munit_error("bytes_from_str");
 
-	struct srp_server *server = srp_server_new(I, P);
+	struct srp_server *server = srp_local_server_new(I, P);
 	if (server == NULL)
-		munit_error("srp_server_new");
+		munit_error("srp_local_server_new");
 
 	struct srp_client *client = srp_client_new(I, P);
 	if (client == NULL)
@@ -107,7 +107,7 @@ test_srp_auth(const MunitParameter *params, void *data)
 	munit_assert_not_null(client->key);
 
 	munit_assert_not_null(server->opaque);
-	const struct srp_server_opaque *ad = server->opaque;
+	const struct srp_local_server_opaque *ad = server->opaque;
 	munit_assert_not_null(ad->key);
 	munit_assert_null(ad->token);
 
@@ -131,9 +131,9 @@ test_srp_auth_wrong_password(const MunitParameter *params, void *data)
 	if (I == NULL || P == NULL)
 		munit_error("bytes_from_str");
 
-	struct srp_server *server = srp_server_new(I, P);
+	struct srp_server *server = srp_local_server_new(I, P);
 	if (server == NULL)
-		munit_error("srp_server_new");
+		munit_error("srp_local_server_new");
 
 	/* change the client's password */
 	struct bytes *client_P = bytes_from_str("Open Barley!");
@@ -149,7 +149,7 @@ test_srp_auth_wrong_password(const MunitParameter *params, void *data)
 	munit_assert_null(client->key);
 
 	munit_assert_not_null(server->opaque);
-	const struct srp_server_opaque *ad = server->opaque;
+	const struct srp_local_server_opaque *ad = server->opaque;
 	munit_assert_null(ad->key);
 	munit_assert_null(ad->token);
 
@@ -170,9 +170,9 @@ test_srp_auth_wrong_email(const MunitParameter *params, void *data)
 	if (I == NULL || P == NULL)
 		munit_error("bytes_from_str");
 
-	struct srp_server *server = srp_server_new(I, P);
+	struct srp_server *server = srp_local_server_new(I, P);
 	if (server == NULL)
-		munit_error("srp_server_new");
+		munit_error("srp_local_server_new");
 
 	/* change the client's email */
 	struct bytes *client_I = bytes_from_str("cassim@1001nights.com");
@@ -188,7 +188,7 @@ test_srp_auth_wrong_email(const MunitParameter *params, void *data)
 	munit_assert_null(client->key);
 
 	munit_assert_not_null(server->opaque);
-	const struct srp_server_opaque *ad = server->opaque;
+	const struct srp_local_server_opaque *ad = server->opaque;
 	munit_assert_null(ad->key);
 	munit_assert_null(ad->token);
 
@@ -204,11 +204,11 @@ test_srp_auth_wrong_email(const MunitParameter *params, void *data)
 /* The test suite. */
 MunitTest test_srp_suite_tests[] = {
 	{ "params", test_srp_parameters, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
-	{ "server", test_srp_server_new, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "server", test_srp_local_server_new, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "client", test_srp_client_new, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
-	{ "auth-0",     test_srp_auth,                srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
-	{ "auth-1",     test_srp_auth_wrong_password, srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
-	{ "auth-2",     test_srp_auth_wrong_email,    srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "auth-0", test_srp_auth,                srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "auth-1", test_srp_auth_wrong_password, srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "auth-2", test_srp_auth_wrong_email,    srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{
 		.name       = NULL,
 		.test       = NULL,
