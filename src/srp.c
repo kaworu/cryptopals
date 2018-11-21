@@ -18,7 +18,7 @@
 #define	SRP_SALT_BYTES	32
 
 
-/* struct srp_server method members implementations */
+/* local struct srp_server method members implementations */
 static int	srp_local_server_start(struct srp_server *server,
 		    const struct bytes *I, const struct bignum *A,
 		    struct bytes **salt_p, struct bignum **B_p);
@@ -175,10 +175,10 @@ srp_local_server_start(struct srp_server *server,
 	if (salt_p == NULL || B_p == NULL)
 		goto cleanup;
 
+	struct srp_local_server_opaque *srvinfo = server->opaque;
+
 	if (srp_parameters(&N, &g, &k) != 0)
 		goto cleanup;
-
-	struct srp_local_server_opaque *srvinfo = server->opaque;
 
 	/* ensure that I is the correct email */
 	if (bytes_timingsafe_bcmp(srvinfo->I, I) != 0)
@@ -308,12 +308,12 @@ srp_local_server_free(struct srp_server *server)
 	if (server == NULL)
 		return;
 
-	if (server->opaque) {
+	if (server->opaque != NULL) {
 		struct srp_local_server_opaque *srvinfo = server->opaque;
 		bytes_free(srvinfo->key);
 		bytes_free(srvinfo->token);
-		bytes_free(srvinfo->I);
 		bytes_free(srvinfo->P);
+		bytes_free(srvinfo->I);
 		freezero(srvinfo, sizeof(struct srp_local_server_opaque));
 	}
 	freezero(server, sizeof(struct srp_server));
@@ -410,8 +410,8 @@ srp_client_free(struct srp_client *client)
 	if (client == NULL)
 		return;
 
-	bytes_free(client->I);
 	bytes_free(client->P);
+	bytes_free(client->I);
 	bytes_free(client->key);
 	freezero(client, sizeof(struct srp_client));
 }
