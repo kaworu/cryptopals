@@ -14,12 +14,6 @@
  */
 struct srp_server {
 	/*
-	 * The SRP parameters agreed upon with the client before any
-	 * communication is made.
-	 */
-	struct bytes *I, *P;
-
-	/*
 	 * Called by the client to start a SRP password-authenticated key
 	 * agreement.
 	 *
@@ -67,6 +61,12 @@ struct srp_server {
  * opaque struct used by server created by srp_server_new().
  */
 struct srp_server_opaque {
+	/*
+	 * The SRP parameters agreed upon with the client before any
+	 * communication is made.
+	 */
+	struct bytes *I, *P;
+
 	/*
 	 * The shared private key derived from the SRP protocol.
 	 */

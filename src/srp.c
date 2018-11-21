@@ -95,13 +95,14 @@ srp_server_new(const struct bytes *I, const struct bytes *P)
 	if (server == NULL)
 		goto cleanup;
 
-	server->I = bytes_dup(I);
-	server->P = bytes_dup(P);
-	if (server->I == NULL || server->P == NULL)
-		goto cleanup;
-
 	server->opaque = calloc(1, sizeof(struct srp_server_opaque));
 	if (server->opaque == NULL)
+		goto cleanup;
+	struct srp_server_opaque *ad = server->opaque;
+
+	ad->I = bytes_dup(I);
+	ad->P = bytes_dup(P);
+	if (ad->I == NULL || ad->P == NULL)
 		goto cleanup;
 
 	server->start    = srp_server_start;
@@ -125,12 +126,12 @@ static srp_server_free(struct srp_server *server)
 	if (server == NULL)
 		return;
 
-	bytes_free(server->I);
-	bytes_free(server->P);
 	if (server->opaque) {
 		struct srp_server_opaque *ad = server->opaque;
 		bytes_free(ad->key);
 		bytes_free(ad->token);
+		bytes_free(ad->I);
+		bytes_free(ad->P);
 		freezero(ad, sizeof(struct srp_server_opaque));
 	}
 	freezero(server, sizeof(struct srp_server));
@@ -208,8 +209,10 @@ srp_server_start(struct srp_server *server,
 	if (srp_parameters(&N, &g, &k) != 0)
 		goto cleanup;
 
+	struct srp_server_opaque *ad = server->opaque;
+
 	/* ensure that I is the correct email */
-	if (bytes_timingsafe_bcmp(server->I, I) != 0)
+	if (bytes_timingsafe_bcmp(ad->I, I) != 0)
 		goto cleanup;
 
 	/* Generate salt as random integer */
@@ -219,7 +222,7 @@ srp_server_start(struct srp_server *server,
 
 	/* Generate string xH=SHA256(salt|password) */
 	/* Convert xH to integer x somehow */
-	x = srp_bignum_from_sha256_bytes(salt, server->P);
+	x = srp_bignum_from_sha256_bytes(salt, ad->P);
 	if (x == NULL)
 		goto cleanup;
 
@@ -266,7 +269,6 @@ srp_server_start(struct srp_server *server,
 	success = 1;
 
 	/* save what we need for finalize() in the server */
-	struct srp_server_opaque *ad = server->opaque;
 	bytes_free(ad->key);
 	ad->key = K;
 	K = NULL;

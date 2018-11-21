@@ -49,11 +49,10 @@ test_srp_server_new(const MunitParameter *params, void *data)
 
 	struct srp_server *server = srp_server_new(I, P);
 	munit_assert_not_null(server);
-	munit_assert_int(bytes_bcmp(I, server->I), ==, 0);
-	munit_assert_int(bytes_bcmp(P, server->P), ==, 0);
-
 	munit_assert_not_null(server->opaque);
 	const struct srp_server_opaque *ad = server->opaque;
+	munit_assert_int(bytes_bcmp(I, ad->I), ==, 0);
+	munit_assert_int(bytes_bcmp(P, ad->P), ==, 0);
 	munit_assert_null(ad->key);
 	munit_assert_null(ad->token);
 
