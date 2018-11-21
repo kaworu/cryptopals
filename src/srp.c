@@ -98,11 +98,11 @@ srp_local_server_new(const struct bytes *I, const struct bytes *P)
 	server->opaque = calloc(1, sizeof(struct srp_local_server_opaque));
 	if (server->opaque == NULL)
 		goto cleanup;
-	struct srp_local_server_opaque *ad = server->opaque;
+	struct srp_local_server_opaque *srvinfo = server->opaque;
 
-	ad->I = bytes_dup(I);
-	ad->P = bytes_dup(P);
-	if (ad->I == NULL || ad->P == NULL)
+	srvinfo->I = bytes_dup(I);
+	srvinfo->P = bytes_dup(P);
+	if (srvinfo->I == NULL || srvinfo->P == NULL)
 		goto cleanup;
 
 	server->start    = srp_local_server_start;
@@ -178,10 +178,10 @@ srp_local_server_start(struct srp_server *server,
 	if (srp_parameters(&N, &g, &k) != 0)
 		goto cleanup;
 
-	struct srp_local_server_opaque *ad = server->opaque;
+	struct srp_local_server_opaque *srvinfo = server->opaque;
 
 	/* ensure that I is the correct email */
-	if (bytes_timingsafe_bcmp(ad->I, I) != 0)
+	if (bytes_timingsafe_bcmp(srvinfo->I, I) != 0)
 		goto cleanup;
 
 	/* Generate salt as random integer */
@@ -191,7 +191,7 @@ srp_local_server_start(struct srp_server *server,
 
 	/* Generate string xH=SHA256(salt|password) */
 	/* Convert xH to integer x somehow */
-	x = srp_bignum_from_sha256_bytes(salt, ad->P);
+	x = srp_bignum_from_sha256_bytes(salt, srvinfo->P);
 	if (x == NULL)
 		goto cleanup;
 
@@ -238,11 +238,11 @@ srp_local_server_start(struct srp_server *server,
 	success = 1;
 
 	/* save what we need for finalize() in the server */
-	bytes_free(ad->key);
-	ad->key = K;
+	bytes_free(srvinfo->key);
+	srvinfo->key = K;
 	K = NULL;
-	bytes_free(ad->token);
-	ad->token = token;
+	bytes_free(srvinfo->token);
+	srvinfo->token = token;
 	token = NULL;
 
 	/* set "return" values for the caller */
@@ -279,21 +279,21 @@ srp_local_server_finalize(struct srp_server *server, const struct bytes *token)
 	if (server == NULL || server->opaque == NULL || token == NULL)
 		goto cleanup;
 
-	struct srp_local_server_opaque *ad = server->opaque;
-	if (ad->token == NULL || ad->key == NULL)
+	struct srp_local_server_opaque *srvinfo = server->opaque;
+	if (srvinfo->token == NULL || srvinfo->key == NULL)
 		goto cleanup;
 
 	/* compare the given token to the one we have */
-	success = (bytes_timingsafe_bcmp(ad->token, token) == 0);
+	success = (bytes_timingsafe_bcmp(srvinfo->token, token) == 0);
 
 	/* regardless of the result, forget the server's token */
-	bytes_free(ad->token);
-	ad->token = NULL;
+	bytes_free(srvinfo->token);
+	srvinfo->token = NULL;
 
 	/* on failure, forget the server key too */
 	if (!success) {
-		bytes_free(ad->key);
-		ad->key = NULL;
+		bytes_free(srvinfo->key);
+		srvinfo->key = NULL;
 	}
 
 	/* FALLTHROUGH */
@@ -309,12 +309,12 @@ srp_local_server_free(struct srp_server *server)
 		return;
 
 	if (server->opaque) {
-		struct srp_local_server_opaque *ad = server->opaque;
-		bytes_free(ad->key);
-		bytes_free(ad->token);
-		bytes_free(ad->I);
-		bytes_free(ad->P);
-		freezero(ad, sizeof(struct srp_local_server_opaque));
+		struct srp_local_server_opaque *srvinfo = server->opaque;
+		bytes_free(srvinfo->key);
+		bytes_free(srvinfo->token);
+		bytes_free(srvinfo->I);
+		bytes_free(srvinfo->P);
+		freezero(srvinfo, sizeof(struct srp_local_server_opaque));
 	}
 	freezero(server, sizeof(struct srp_server));
 }

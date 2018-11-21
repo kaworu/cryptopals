@@ -37,13 +37,14 @@ mitm_dh_helper(const MunitParameter *params, void *data, enum dh_mitm_type type)
 	ret = alice->challenge(alice, mallory, message);
 	munit_assert_int(ret, ==, 0);
 
-	const struct dh_mitm_opaque *ad = mallory->opaque;
-	munit_assert_not_null(ad);
-	munit_assert_size(ad->count, ==, 1);
-	munit_assert_not_null(ad->messages);
-	munit_assert_not_null(ad->messages[0]);
-	munit_assert_size(ad->messages[0]->len, ==, message->len);
-	munit_assert_memory_equal(message->len, ad->messages[0]->data, message->data);
+	const struct dh_mitm_opaque *dhinfo = mallory->opaque;
+	munit_assert_not_null(dhinfo);
+	munit_assert_size(dhinfo->count, ==, 1);
+	munit_assert_not_null(dhinfo->messages);
+	munit_assert_not_null(dhinfo->messages[0]);
+	munit_assert_size(dhinfo->messages[0]->len, ==, message->len);
+	munit_assert_memory_equal(message->len,
+		    dhinfo->messages[0]->data, message->data);
 
 	bytes_free(message);
 	mallory->free(mallory);

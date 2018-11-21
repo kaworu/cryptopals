@@ -25,7 +25,7 @@ static void		 dh_mitm_free(struct dh *self);
 struct dh *
 dh_mitm_new(enum dh_mitm_type type, struct dh *bob)
 {
-	struct dh_mitm_opaque *ad = NULL;
+	struct dh_mitm_opaque *dhinfo = NULL;
 	struct dh *client = NULL;
 
 	/* sanity checks */
@@ -36,8 +36,8 @@ dh_mitm_new(enum dh_mitm_type type, struct dh *bob)
 	if (client == NULL)
 		return (NULL);
 
-	ad = calloc(1, sizeof(struct dh_mitm_opaque));
-	if (ad == NULL) {
+	dhinfo = calloc(1, sizeof(struct dh_mitm_opaque));
+	if (dhinfo == NULL) {
 		freezero(client, sizeof(struct dh));
 		return (NULL);
 	}
@@ -46,9 +46,9 @@ dh_mitm_new(enum dh_mitm_type type, struct dh *bob)
 	client->receive   = dh_mitm_receive;
 	client->echo      = dh_mitm_echo;
 	client->free      = dh_mitm_free;
-	client->opaque    = ad;
-	ad->type = type;
-	ad->bob  = bob;
+	client->opaque    = dhinfo;
+	dhinfo->type = type;
+	dhinfo->bob  = bob;
 
 	return (client);
 }
@@ -59,7 +59,7 @@ dh_mitm_negociate(struct dh *self,
 		    const struct bignum *p, const struct bignum *g,
 		    struct bignum **np_p, struct bignum **ng_p)
 {
-	struct dh_mitm_opaque *ad = NULL;
+	struct dh_mitm_opaque *dhinfo = NULL;
 	struct bignum *spoofed_g = NULL, *np = NULL, *ng = NULL;
 	int success = 0;
 
@@ -73,9 +73,9 @@ dh_mitm_negociate(struct dh *self,
 	if (self->opaque == NULL)
 		goto cleanup;
 
-	ad = self->opaque;
-	struct dh *bob = ad->bob;
-	switch (ad->type) {
+	dhinfo = self->opaque;
+	struct dh *bob = dhinfo->bob;
+	switch (dhinfo->type) {
 	case DH_MITM_P_AS_A:
 		/* simply pass the negociation parameters to bob, this attack is
 		   about the public numbers at the exchange step. */
@@ -126,7 +126,7 @@ static struct bignum *
 dh_mitm_receive(struct dh *self, const struct bignum *p, const struct bignum *g,
 		    const struct bignum *A)
 {
-	struct dh_mitm_opaque *ad = NULL;
+	struct dh_mitm_opaque *dhinfo = NULL;
 	struct bignum *p_minus_one = NULL, *s = NULL, *B = NULL;
 	int success = 0;
 
@@ -136,9 +136,9 @@ dh_mitm_receive(struct dh *self, const struct bignum *p, const struct bignum *g,
 	if (self->opaque == NULL)
 		goto cleanup;
 
-	ad = self->opaque;
-	struct dh *bob = ad->bob;
-	switch (ad->type) {
+	dhinfo = self->opaque;
+	struct dh *bob = dhinfo->bob;
+	switch (dhinfo->type) {
 	case DH_MITM_P_AS_A:
 		/* This is the attack, send (p, g, p) to Bob */
 		B = bob->receive(bob, p, g, p);
@@ -209,7 +209,7 @@ cleanup:
 static struct bytes *
 dh_mitm_echo(const struct dh *self, const struct bytes *alice_iv_ct)
 {
-	struct dh_mitm_opaque *ad = NULL;
+	struct dh_mitm_opaque *dhinfo = NULL;
 	struct bytes *alice_iv = NULL, *alice_ct = NULL;
 	struct bytes *msg = NULL, *bob_iv_ct = NULL;
 	int success = 0;
@@ -220,8 +220,8 @@ dh_mitm_echo(const struct dh *self, const struct bytes *alice_iv_ct)
 	if (self->opaque == NULL)
 		goto cleanup;
 
-	ad = self->opaque;
-	struct dh *bob = ad->bob;
+	dhinfo = self->opaque;
+	struct dh *bob = dhinfo->bob;
 	const size_t ivlen = aes_128_blocksize();
 
 	/* split and decrypt the message */
@@ -232,15 +232,15 @@ dh_mitm_echo(const struct dh *self, const struct bytes *alice_iv_ct)
 		goto cleanup;
 
 	/* grow the messages array so that we can append the current one */
-	struct bytes **messages = recallocarray(ad->messages, ad->count,
-			ad->count + 1, sizeof(*ad->messages));
+	struct bytes **messages = recallocarray(dhinfo->messages, dhinfo->count,
+			dhinfo->count + 1, sizeof(*dhinfo->messages));
 	if (messages == NULL)
 		goto cleanup;
-	ad->messages = messages;
+	dhinfo->messages = messages;
 	messages = NULL;
-	ad->messages[ad->count] = msg;
+	dhinfo->messages[dhinfo->count] = msg;
 	msg = NULL;
-	ad->count += 1;
+	dhinfo->count += 1;
 
 	/* forward the echo message to Bob */
 	bob_iv_ct = bob->echo(bob, alice_iv_ct);
@@ -268,15 +268,16 @@ dh_mitm_free(struct dh *self)
 		return;
 
 	bytes_free(self->key);
-	struct dh_mitm_opaque *ad = self->opaque;
-	if (ad != NULL) {
-		struct dh *bob = ad->bob;
+	struct dh_mitm_opaque *dhinfo = self->opaque;
+	if (dhinfo != NULL) {
+		struct dh *bob = dhinfo->bob;
 		if (bob != NULL)
 			bob->free(bob);
-		for (size_t i = 0; i < ad->count; i++)
-			bytes_free(ad->messages[i]);
-		freezero(ad->messages, ad->count * sizeof(struct bytes *));
+		for (size_t i = 0; i < dhinfo->count; i++)
+			bytes_free(dhinfo->messages[i]);
+		freezero(dhinfo->messages,
+			    dhinfo->count * sizeof(struct bytes *));
 	}
-	freezero(ad, sizeof(struct dh_mitm_opaque));
+	freezero(dhinfo, sizeof(struct dh_mitm_opaque));
 	freezero(self, sizeof(struct dh));
 }
