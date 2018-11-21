@@ -390,8 +390,7 @@ request_timing_leaking_server(const struct addrinfo *res,
 		    struct timeval *tdiff_p)
 {
 	char *hex = NULL, *path = NULL, *req = NULL;
-	int plen = 0, rlen = 0;
-	size_t psize = 0, rsize = 0;
+	int reqlen = 0;
 	struct timeval t1, t2;
 	int s = -1; /* socket */
 	int success = 0, status = 0;
@@ -407,25 +406,11 @@ request_timing_leaking_server(const struct addrinfo *res,
 	hex = bytes_to_hex(mac);
 	if (hex == NULL)
 		goto cleanup;
-	plen = snprintf(NULL, 0, fmt, hex);
-	if (plen == -1)
-		goto cleanup;
-	psize = (size_t)plen + 1;
-	path = calloc(psize, sizeof(char));
-	if (path == NULL)
-		goto cleanup;
-	if (snprintf(path, psize, fmt, hex) != plen)
+	if (asprintf(&path, fmt, hex) == -1)
 		goto cleanup;
 	/* now build the full request */
-	const char *req_fmt = "GET %s HTTP/1.0\r\n\r\n";
-	rlen = snprintf(NULL, 0, req_fmt, path);
-	if (rlen == -1)
-		goto cleanup;
-	rsize = (size_t)rlen + 1;
-	req = calloc(rsize, sizeof(char));
-	if (req == NULL)
-		goto cleanup;
-	if (snprintf(req, rsize, req_fmt, path) != rlen)
+	reqlen = asprintf(&req, "GET %s HTTP/1.0\r\n\r\n", path);
+	if (reqlen == -1)
 		goto cleanup;
 
 	/* initiate the connection to the server */
@@ -438,7 +423,7 @@ request_timing_leaking_server(const struct addrinfo *res,
 	/* perform the request while timing it */
 	if (gettimeofday(&t1, NULL) != 0)
 		goto cleanup;
-	if (send(s, req, rlen, /* flags */0) != rlen)
+	if (send(s, req, reqlen, /* flags */0) != reqlen)
 		goto cleanup;
 	/* waste no time in reading the data, we just want to get back as soon
 	   as there is an answer from the server */

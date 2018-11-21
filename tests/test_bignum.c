@@ -3,10 +3,9 @@
  */
 #include "munit.h"
 #include "helpers.h"
-#include "bignum.h"
 
-#include <stdio.h>
-#include <stdlib.h>
+#include "bignum.h"
+#include "compat.h"
 
 
 /* helper to create a bignum from an int */
@@ -17,21 +16,11 @@ my_bignum_from_int(int x)
 	 * Use decimal printf(3) format so that negative values are handled
 	 * correctly.
 	 */
-	const char *fmt = "%d";
 	char *buf = NULL;
 	struct bignum *num = NULL;
 	int success = 0;
 
-	/* compute the required size */
-	const int size = snprintf(NULL, 0, fmt, x);
-	if (size < 0)
-		goto cleanup;
-
-	const size_t buflen = (size_t)size + 1;
-	buf = malloc(buflen);
-	if (buf == NULL)
-		goto cleanup;
-	if (snprintf(buf, buflen, fmt, x) != size)
+	if (asprintf(&buf, "%d", x) == -1)
 		goto cleanup;
 
 	num = bignum_from_dec(buf);

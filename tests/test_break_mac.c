@@ -9,6 +9,8 @@
 
 #include "munit.h"
 #include "helpers.h"
+
+#include "compat.h"
 #include "sha1.h"
 #include "mac.h"
 #include "break_mac.h"
@@ -255,10 +257,9 @@ test_timing_leaking_server(const MunitParameter *params, void *data)
 	if (content == NULL)
 		munit_error("fs_read");
 
-	char query[BUFSIZ] = { 0 };
-	int ret = snprintf(query, sizeof(query), "/test?file=%s&signature=%%s", filepath);
-	if (ret == -1 || (size_t)ret >= sizeof(query))
-		munit_error("snprintf");
+	char *query = NULL;
+	if (asprintf(&query, "/test?file=%s&signature=%%s", filepath) == -1)
+		munit_error("asprintf");
 
 	struct bytes *guess = break_timing_leaking_server(hostname, port, query,
 		    sha1_hashlength());
@@ -275,6 +276,7 @@ test_timing_leaking_server(const MunitParameter *params, void *data)
 
 	bytes_free(expected);
 	bytes_free(guess);
+	free(query);
 	bytes_free(content);
 	return (MUNIT_OK);
 }
