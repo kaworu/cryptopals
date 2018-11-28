@@ -44,6 +44,7 @@ static int	srp_client_authenticate(struct srp_client *client,
 		    struct srp_server *server);
 static void	srp_client_free(struct srp_client *client);
 
+
 /* helpers to get a bignum from SHA-256(lhs concatenated to rhs) */
 static struct bignum	*srp_bignum_from_sha256_bytes(
 		    const struct bytes *lhs, const struct bytes *rhs);
@@ -189,13 +190,18 @@ srp_client_new(const struct bytes *I, const struct bytes *P)
 	if (client == NULL)
 		goto cleanup;
 
-	client->I = bytes_dup(I);
-	client->P = bytes_dup(P);
-	if (client->I == NULL || client->P == NULL)
+	client->opaque = calloc(1, sizeof(struct srp_client_opaque));
+	if (client->opaque == NULL)
+		goto cleanup;
+	struct srp_client_opaque *clientinfo = client->opaque;
+
+	clientinfo->I = bytes_dup(I);
+	clientinfo->P = bytes_dup(P);
+	if (clientinfo->I == NULL || clientinfo->P == NULL)
 		goto cleanup;
 
 	client->authenticate = srp_client_authenticate;
-	client->free         = srp_client_free;
+	client->free = srp_client_free;
 
 	success = 1;
 	/* FALLTHROUGH */
@@ -285,7 +291,7 @@ srp_local_server_start(struct srp_server *server,
 	if (K == NULL)
 		goto cleanup;
 
-	/* generate the HMAC-SHA256(K, salt) token */
+	/* Generate the HMAC-SHA256(K, salt) token */
 	token = hmac_sha256(K, salt);
 	if (token == NULL)
 		goto cleanup;
@@ -560,16 +566,18 @@ srp_client_authenticate(struct srp_client *client, struct srp_server *server)
 	int success = 0;
 
 	/* sanity checks */
-	if (client == NULL || server == NULL)
+	if (client == NULL || client->opaque == NULL || server == NULL)
 		goto cleanup;
 
 	if (srp_parameters(&N, &g, &k) != 0)
 		goto cleanup;
 
+	const struct srp_client_opaque *clientinfo = client->opaque;
+
 	/* Send I, A=g**a % N (a la Diffie Hellman) */
 	a = bignum_rand(N);
 	A = bignum_modexp(g, a, N);
-	if (server->start(server, client->I, A, &salt, &B) != 0)
+	if (server->start(server, clientinfo->I, A, &salt, &B) != 0)
 		goto cleanup;
 
 	/* Compute string uH = SHA256(A|B), u = integer of uH */
@@ -579,7 +587,7 @@ srp_client_authenticate(struct srp_client *client, struct srp_server *server)
 
 	/* Generate string xH=SHA256(salt|password) */
 	/* Convert xH to integer x somehow */
-	x = srp_bignum_from_sha256_bytes(salt, client->P);
+	x = srp_bignum_from_sha256_bytes(salt, clientinfo->P);
 
 	/* Generate S = (B - k * g**x)**(a + u * x) % N */
 	struct bignum *g_pow_x = bignum_modexp(g, x, N);
@@ -639,8 +647,12 @@ srp_client_free(struct srp_client *client)
 	if (client == NULL)
 		return;
 
-	bytes_free(client->P);
-	bytes_free(client->I);
+	if (client->opaque != NULL) {
+		struct srp_client_opaque *clientinfo = client->opaque;
+		bytes_free(clientinfo->P);
+		bytes_free(clientinfo->I);
+		freezero(clientinfo, sizeof(struct srp_client_opaque));
+	}
 	bytes_free(client->key);
 	freezero(client, sizeof(struct srp_client));
 }

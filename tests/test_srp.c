@@ -186,8 +186,10 @@ test_srp_client_new(const MunitParameter *params, void *data)
 
 	struct srp_client *client = srp_client_new(I, P);
 	munit_assert_not_null(client);
-	munit_assert_int(bytes_bcmp(I, client->I), ==, 0);
-	munit_assert_int(bytes_bcmp(P, client->P), ==, 0);
+	munit_assert_not_null(client->opaque);
+	const struct srp_client_opaque *clientinfo = client->opaque;
+	munit_assert_int(bytes_bcmp(I, clientinfo->I), ==, 0);
+	munit_assert_int(bytes_bcmp(P, clientinfo->P), ==, 0);
 	munit_assert_null(client->key);
 
 	client->free(client);

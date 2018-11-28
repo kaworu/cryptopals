@@ -56,7 +56,7 @@ struct srp_server {
 	void	(*free)(struct srp_server *server);
 
 	/* implementation defined data */
-	void	*opaque;
+	void *opaque;
 };
 
 /*
@@ -102,12 +102,6 @@ struct srp_remote_server_opaque {
  */
 struct srp_client {
 	/*
-	 * The SRP parameters agreed upon with the server before any
-	 * communication is made.
-	 */
-	struct bytes *I, *P;
-
-	/*
 	 * The shared private key derived from the SRP protocol.
 	 */
 	struct bytes *key;
@@ -132,6 +126,20 @@ struct srp_client {
 	 * If not NULL, the data will be zero'd before freed.
 	 */
 	void	(*free)(struct srp_client *client);
+
+	/* implementation defined data */
+	void *opaque;
+};
+
+/*
+ * opaque struct used by client created by srp_client_new().
+ */
+struct srp_client_opaque {
+	/*
+	 * The SRP parameters agreed upon with the server before any
+	 * communication is made.
+	 */
+	struct bytes *I, *P;
 };
 
 
