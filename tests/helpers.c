@@ -76,7 +76,8 @@ fs_read(const char *path)
 	success = 1;
 	/* FALLTHROUGH */
 cleanup:
-	(void)close(fd);
+	if (fd != -1)
+		(void)close(fd);
 	if (!success) {
 		bytes_free(content);
 		content = NULL;
