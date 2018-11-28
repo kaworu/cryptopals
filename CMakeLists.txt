@@ -7,8 +7,10 @@ add_compile_options(-std=c11 -Wall -Wextra -Werror -fno-strict-aliasing -D_DEFAU
 add_compile_options(-fstack-protector-strong -o aslr -fPIC)
 set(CMAKE_EXE_LINKER_FLAGS ${CMAKE_EXE_LINKER_FLAGS} -pie)
 # Per build type flags.
-set(CMAKE_C_FLAGS_DEBUG    "${CMAKE_C_FLAGS} -O0 -g -fno-omit-frame-pointer -fsanitize=undefined -fsanitize=address")
-set(CMAKE_C_FLAGS_COVERAGE "${CMAKE_C_FLAGS} -O0 -g -fprofile-arcs -ftest-coverage")
+set(CMAKE_C_FLAGS_DEBUG    "${CMAKE_C_FLAGS} -O0 -g -fno-omit-frame-pointer")
+set(CMAKE_C_FLAGS_ASAN     "${CMAKE_C_FLAGS} -O1 -g -fno-omit-frame-pointer -fno-optimize-sibling-calls -fsanitize=address -fsanitize=undefined")
+set(CMAKE_C_FLAGS_VALGRIND "${CMAKE_C_FLAGS_RELEASE} -g -fno-omit-frame-pointer")
+set(CMAKE_C_FLAGS_COVERAGE "${CMAKE_C_FLAGS_DEBUG} -fprofile-arcs -ftest-coverage")
 if(CMAKE_BUILD_TYPE MATCHES COVERAGE)
     set(CMAKE_EXE_LINKER_FLAGS ${CMAKE_EXE_LINKER_FLAGS} --coverage)
 endif()
