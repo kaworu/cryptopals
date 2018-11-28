@@ -13,43 +13,9 @@
 #include "test_srp.h"
 
 
-/*
- * Challenge 37 python server stuff.
- *
- * We'll fork/exec the server from here (i.e. munit). We store the server
- * process id.
- */
-struct py_server_settings {
-	pid_t pid;
-};
-
-
-/* server parameters. py_server_params is expected to be given from the cli, the
-   other are "sane" defaults that may be overrided */
-static char *network_params[]   = { "no", "yes", NULL };
-static char *py_server_params[] = { NULL };
-static char *hostname_params[]  = { "localhost", NULL };
-static char *port_params[]      = { "9001", NULL };
-/* all the server parameters */
-static MunitParameterEnum test_srp_py_server_params[] = {
-	{ "srp_network",  network_params },
-	{ "srp_server",   py_server_params },
-	{ "srp_hostname", hostname_params },
-	{ "srp_port",     port_params },
-	{ NULL, NULL },
-};
-
-/*
- * fork/exec the Python SRP server.
- *
- * Returns NULL if the server could not started, a pointer to a struct
- * py_server_settings (provided as user_data to the test and tear down function)
- * otherwise.
- */
-static void *
-py_server_setup(const MunitParameter *params, void *user_data)
+void *
+py_srp_server_setup(const MunitParameter *params, void *user_data)
 {
-	const char *network  = munit_parameters_get(params, "srp_network");
 	const char *exec     = munit_parameters_get(params, "srp_server");
 	const char *hostname = munit_parameters_get(params, "srp_hostname");
 	const char *port     = munit_parameters_get(params, "srp_port");
@@ -59,15 +25,12 @@ py_server_setup(const MunitParameter *params, void *user_data)
 	/* expected to be given from the cli */
 	if (exec == NULL)
 		return (NULL);
-	/* only fork a python server if we need to */
-	if (strcmp(network, "yes") != 0)
-		return (NULL);
 	/* have defaults, see test_srp_py_server_params */
 	if (hostname == NULL || port == NULL)
 		return (NULL);
 
-	struct py_server_settings *py_server = NULL;
-	py_server = munit_malloc(sizeof(struct py_server_settings));
+	struct py_srp_server_settings *py_server = NULL;
+	py_server = munit_malloc(sizeof(struct py_srp_server_settings));
 	py_server->pid = fork();
 	switch (py_server->pid) {
 	case -1: /* error */
@@ -99,15 +62,15 @@ py_server_setup(const MunitParameter *params, void *user_data)
 
 
 /*
- * If the py_server was started by py_server_setup(), kill it and free the
+ * If the py_server was started by py_srp_server_setup(), kill it and free the
  * associated resources.
  *
  * FIXME: kinda duplicated from test_break_mac.c
  */
-static void
-py_server_tear_down(void *data)
+void
+py_srp_server_tear_down(void *data)
 {
-	struct py_server_settings *py_server = data;
+	struct py_srp_server_settings *py_server = data;
 
 	if (py_server == NULL)
 		return;
@@ -201,32 +164,16 @@ test_srp_client_new(const MunitParameter *params, void *data)
 
 /* Set 5 / Challenge 36 */
 static MunitResult
-test_srp_auth(const MunitParameter *params, void *data)
+test_local_srp_auth(const MunitParameter *params, void *data)
 {
-	const char *network = munit_parameters_get(params, "srp_network");
-	const int networked = (strcmp(network, "yes") == 0);
-	const struct py_server_settings *py_server = data;
-
-	if (networked && py_server == NULL)
-		return (MUNIT_SKIP);
-
 	struct bytes *I = bytes_from_str(srp_email);
 	struct bytes *P = bytes_from_str(srp_password);
 	if (I == NULL || P == NULL)
 		munit_error("bytes_from_str");
 
-	struct srp_server *server = NULL;
-	if (networked) {
-		const char *hostname = munit_parameters_get(params, "srp_hostname");
-		const char *port     = munit_parameters_get(params, "srp_port");
-		server = srp_remote_server_new(hostname, port);
-		if (server == NULL)
-			munit_error("srp_remote_server_new");
-	} else {
-		server = srp_local_server_new(I, P);
-		if (server == NULL)
-			munit_error("srp_local_server_new");
-	}
+	struct srp_server *server = srp_local_server_new(I, P);
+	if (server == NULL)
+		munit_error("srp_local_server_new");
 
 	struct srp_client *client = srp_client_new(I, P);
 	if (client == NULL)
@@ -237,15 +184,13 @@ test_srp_auth(const MunitParameter *params, void *data)
 	munit_assert_int(ret, ==, 0);
 	munit_assert_not_null(client->key);
 
-	if (!networked) {
-		const struct srp_local_server_opaque *srvinfo = server->opaque;
-		munit_assert_not_null(server->opaque);
-		munit_assert_not_null(srvinfo->key);
-		munit_assert_null(srvinfo->token);
-		munit_assert_size(client->key->len, ==, srvinfo->key->len);
-		munit_assert_memory_equal(client->key->len,
-			    client->key->data, srvinfo->key->data);
-	}
+	const struct srp_local_server_opaque *srvinfo = server->opaque;
+	munit_assert_not_null(server->opaque);
+	munit_assert_not_null(srvinfo->key);
+	munit_assert_null(srvinfo->token);
+	munit_assert_size(client->key->len, ==, srvinfo->key->len);
+	munit_assert_memory_equal(client->key->len,
+		    client->key->data, srvinfo->key->data);
 
 	client->free(client);
 	server->free(server);
@@ -256,32 +201,16 @@ test_srp_auth(const MunitParameter *params, void *data)
 
 
 static MunitResult
-test_srp_auth_wrong_password(const MunitParameter *params, void *data)
+test_local_srp_auth_wrong_password(const MunitParameter *params, void *data)
 {
-	const char *network = munit_parameters_get(params, "srp_network");
-	const int networked = (strcmp(network, "yes") == 0);
-	const struct py_server_settings *py_server = data;
-
-	if (networked && py_server == NULL)
-		return (MUNIT_SKIP);
-
 	struct bytes *I = bytes_from_str(srp_email);
 	struct bytes *P = bytes_from_str(srp_password);
 	if (I == NULL || P == NULL)
 		munit_error("bytes_from_str");
 
-	struct srp_server *server = NULL;
-	if (networked) {
-		const char *hostname = munit_parameters_get(params, "srp_hostname");
-		const char *port     = munit_parameters_get(params, "srp_port");
-		server = srp_remote_server_new(hostname, port);
-		if (server == NULL)
-			munit_error("srp_remote_server_new");
-	} else {
-		server = srp_local_server_new(I, P);
-		if (server == NULL)
-			munit_error("srp_local_server_new");
-	}
+	struct srp_server *server = srp_local_server_new(I, P);
+	if (server == NULL)
+		munit_error("srp_local_server_new");
 
 	/* change the client's password */
 	struct bytes *client_P = bytes_from_str("Open Barley!");
@@ -295,12 +224,10 @@ test_srp_auth_wrong_password(const MunitParameter *params, void *data)
 	munit_assert_int(ret, ==, -1);
 	munit_assert_null(client->key);
 
-	if (!networked) {
-		const struct srp_local_server_opaque *srvinfo = server->opaque;
-		munit_assert_not_null(server->opaque);
-		munit_assert_null(srvinfo->key);
-		munit_assert_null(srvinfo->token);
-	}
+	const struct srp_local_server_opaque *srvinfo = server->opaque;
+	munit_assert_not_null(server->opaque);
+	munit_assert_null(srvinfo->key);
+	munit_assert_null(srvinfo->token);
 
 	client->free(client);
 	server->free(server);
@@ -312,32 +239,16 @@ test_srp_auth_wrong_password(const MunitParameter *params, void *data)
 
 
 static MunitResult
-test_srp_auth_wrong_email(const MunitParameter *params, void *data)
+test_local_srp_auth_wrong_email(const MunitParameter *params, void *data)
 {
-	const char *network = munit_parameters_get(params, "srp_network");
-	const int networked = (strcmp(network, "yes") == 0);
-	const struct py_server_settings *py_server = data;
-
-	if (networked && py_server == NULL)
-		return (MUNIT_SKIP);
-
 	struct bytes *I = bytes_from_str(srp_email);
 	struct bytes *P = bytes_from_str(srp_password);
 	if (I == NULL || P == NULL)
 		munit_error("bytes_from_str");
 
-	struct srp_server *server = NULL;
-	if (networked) {
-		const char *hostname = munit_parameters_get(params, "srp_hostname");
-		const char *port     = munit_parameters_get(params, "srp_port");
-		server = srp_remote_server_new(hostname, port);
-		if (server == NULL)
-			munit_error("srp_remote_server_new");
-	} else {
-		server = srp_local_server_new(I, P);
-		if (server == NULL)
-			munit_error("srp_local_server_new");
-	}
+	struct srp_server *server = srp_local_server_new(I, P);
+	if (server == NULL)
+		munit_error("srp_local_server_new");
 
 	/* change the client's email */
 	struct bytes *client_I = bytes_from_str("cassim@1001nights.com");
@@ -352,12 +263,126 @@ test_srp_auth_wrong_email(const MunitParameter *params, void *data)
 	munit_assert_int(ret, ==, -1);
 	munit_assert_null(client->key);
 
-	if (!networked) {
-		const struct srp_local_server_opaque *srvinfo = server->opaque;
-		munit_assert_not_null(server->opaque);
-		munit_assert_null(srvinfo->key);
-		munit_assert_null(srvinfo->token);
-	}
+	const struct srp_local_server_opaque *srvinfo = server->opaque;
+	munit_assert_not_null(server->opaque);
+	munit_assert_null(srvinfo->key);
+	munit_assert_null(srvinfo->token);
+
+	client->free(client);
+	server->free(server);
+	bytes_free(client_I);
+	bytes_free(P);
+	bytes_free(I);
+	return (MUNIT_OK);
+}
+
+
+static MunitResult
+test_py_srp_auth(const MunitParameter *params, void *data)
+{
+	const struct py_srp_server_settings *py_server = data;
+
+	if (py_server == NULL)
+		return (MUNIT_SKIP);
+
+	struct bytes *I = bytes_from_str(srp_email);
+	struct bytes *P = bytes_from_str(srp_password);
+	if (I == NULL || P == NULL)
+		munit_error("bytes_from_str");
+
+	const char *hostname = munit_parameters_get(params, "srp_hostname");
+	const char *port     = munit_parameters_get(params, "srp_port");
+	struct srp_server *server = srp_remote_server_new(hostname, port);
+	if (server == NULL)
+		munit_error("srp_remote_server_new");
+
+	struct srp_client *client = srp_client_new(I, P);
+	if (client == NULL)
+		munit_error("srp_client_new");
+
+	const int ret = client->authenticate(client, server);
+
+	munit_assert_int(ret, ==, 0);
+	munit_assert_not_null(client->key);
+
+	client->free(client);
+	server->free(server);
+	bytes_free(P);
+	bytes_free(I);
+	return (MUNIT_OK);
+}
+
+
+static MunitResult
+test_py_srp_auth_wrong_password(const MunitParameter *params, void *data)
+{
+	const struct py_srp_server_settings *py_server = data;
+
+	if (py_server == NULL)
+		return (MUNIT_SKIP);
+
+	struct bytes *I = bytes_from_str(srp_email);
+	struct bytes *P = bytes_from_str(srp_password);
+	if (I == NULL || P == NULL)
+		munit_error("bytes_from_str");
+
+	const char *hostname = munit_parameters_get(params, "srp_hostname");
+	const char *port     = munit_parameters_get(params, "srp_port");
+	struct srp_server *server = srp_remote_server_new(hostname, port);
+	if (server == NULL)
+		munit_error("srp_remote_server_new");
+
+	/* change the client's password */
+	struct bytes *client_P = bytes_from_str("Open Barley!");
+	if (client_P == NULL)
+		munit_error("byte_from_str");
+	struct srp_client *client = srp_client_new(I, client_P);
+	if (client == NULL)
+		munit_error("srp_client_new");
+
+	const int ret = client->authenticate(client, server);
+	munit_assert_int(ret, ==, -1);
+	munit_assert_null(client->key);
+
+	client->free(client);
+	server->free(server);
+	bytes_free(client_P);
+	bytes_free(P);
+	bytes_free(I);
+	return (MUNIT_OK);
+}
+
+
+static MunitResult
+test_py_srp_auth_wrong_email(const MunitParameter *params, void *data)
+{
+	const struct py_srp_server_settings *py_server = data;
+
+	if (py_server == NULL)
+		return (MUNIT_SKIP);
+
+	struct bytes *I = bytes_from_str(srp_email);
+	struct bytes *P = bytes_from_str(srp_password);
+	if (I == NULL || P == NULL)
+		munit_error("bytes_from_str");
+
+	const char *hostname = munit_parameters_get(params, "srp_hostname");
+	const char *port     = munit_parameters_get(params, "srp_port");
+	struct srp_server *server = srp_remote_server_new(hostname, port);
+	if (server == NULL)
+		munit_error("srp_remote_server_new");
+
+	/* change the client's email */
+	struct bytes *client_I = bytes_from_str("cassim@1001nights.com");
+	if (client_I == NULL)
+		munit_error("byte_from_str");
+	struct srp_client *client = srp_client_new(client_I, P);
+	if (client == NULL)
+		munit_error("srp_client_new");
+
+	const int ret = client->authenticate(client, server);
+	munit_assert_int(ret, ==, -1);
+	munit_assert_null(client->key);
 
 	client->free(client);
 	server->free(server);
@@ -373,27 +398,30 @@ MunitTest test_srp_suite_tests[] = {
 	{ "params", test_srp_parameters, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "server", test_srp_local_server_new, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "client", test_srp_client_new, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "local/auth",             test_local_srp_auth,                srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "local/wrong-password",   test_local_srp_auth_wrong_password, srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "local/wrong-identifier", test_local_srp_auth_wrong_email,    srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{
-		.name       = "auth-0",
-		.test       = test_srp_auth,
-		.setup      = py_server_setup,
-		.tear_down  = py_server_tear_down,
+		.name       = "py/auth",
+		.test       = test_py_srp_auth,
+		.setup      = py_srp_server_setup,
+		.tear_down  = py_srp_server_tear_down,
 		.options    = MUNIT_TEST_OPTION_NONE,
 		.parameters = test_srp_py_server_params,
 	},
 	{
-		.name       = "auth-1",
-		.test       = test_srp_auth_wrong_password,
-		.setup      = py_server_setup,
-		.tear_down  = py_server_tear_down,
+		.name       = "py/wrong-password",
+		.test       = test_py_srp_auth_wrong_password,
+		.setup      = py_srp_server_setup,
+		.tear_down  = py_srp_server_tear_down,
 		.options    = MUNIT_TEST_OPTION_NONE,
 		.parameters = test_srp_py_server_params,
 	},
 	{
-		.name       = "auth-2",
-		.test       = test_srp_auth_wrong_email,
-		.setup      = py_server_setup,
-		.tear_down  = py_server_tear_down,
+		.name       = "py/wrong-identifier",
+		.test       = test_py_srp_auth_wrong_email,
+		.setup      = py_srp_server_setup,
+		.tear_down  = py_srp_server_tear_down,
 		.options    = MUNIT_TEST_OPTION_NONE,
 		.parameters = test_srp_py_server_params,
 	},
