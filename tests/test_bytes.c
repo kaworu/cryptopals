@@ -52,8 +52,9 @@ static MunitResult
 test_bytes_from_raw(const MunitParameter *params, void *data)
 {
 	const char *input = "foobar";
+	const size_t inlen = strlen(input);
 
-	for (size_t i = 0; i <= sizeof(input); i++) {
+	for (size_t i = 0; i <= inlen; i++) {
 		struct bytes *buf = bytes_from_raw(input, i);
 		munit_assert_not_null(buf);
 		munit_assert_size(buf->len, ==, i);
