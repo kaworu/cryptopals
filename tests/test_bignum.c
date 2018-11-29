@@ -499,9 +499,20 @@ test_bignum_to_bytes_be(const MunitParameter *params, void *data)
 		bytes_free(buf);
 	}
 
+	/* when zero is given */
+	struct bignum *z = bignum_zero();
+	if (z == NULL)
+		munit_error("bignum_zero");
+	struct bytes *zbuf = bignum_to_bytes_be(z);
+	munit_assert_not_null(zbuf);
+	munit_assert_size(zbuf->len, ==, 1);
+	munit_assert_uint8(zbuf->data[0], ==, 0x00);
+
 	/* when NULL is given */
 	munit_assert_null(bignum_to_dec(NULL));
 
+	bytes_free(zbuf);
+	bignum_free(z);
 	return (MUNIT_OK);
 }
 

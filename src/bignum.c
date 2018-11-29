@@ -451,16 +451,22 @@ bignum_to_bytes_be(const struct bignum *num)
 	if (num == NULL)
 		goto cleanup;
 
-	const int n = BN_num_bytes(num->bn);
-	if (n < 0)
-		goto cleanup;
+	/* XXX: OpenSSL will produce an empty buffer for zero instead of one 0x0
+	   value. So we check explicitely for zero. */
+	if (bignum_is_zero(num) == 0) {
+		buf = bytes_zeroed(1);
+	} else {
+		const int n = BN_num_bytes(num->bn);
+		if (n < 0)
+			goto cleanup;
 
-	buf = bytes_zeroed((size_t)n);
-	if (buf == NULL)
-		goto cleanup;
+		buf = bytes_zeroed((size_t)n);
+		if (buf == NULL)
+			goto cleanup;
 
-	if (BN_bn2bin(num->bn, buf->data) != n)
-		goto cleanup;
+		if (BN_bn2bin(num->bn, buf->data) != n)
+			goto cleanup;
+	}
 
 	success = 1;
 	/* FALLTHROUGH */
