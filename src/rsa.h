@@ -1,7 +1,7 @@
 #ifndef SRC_RSA_H
 #define SRC_RSA_H
 /*
- * src/rsa.h
+ * rsa.h
  *
  * RSA stuff for cryptopals.com challenges.
  */

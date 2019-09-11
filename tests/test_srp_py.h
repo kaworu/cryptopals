@@ -1,7 +1,7 @@
 #ifndef TESTS_TEST_SRP_PY_H
 #define TESTS_TEST_SRP_PY_H
 /*
- * tests/test_srp_py.h
+ * test_srp_py.h
  *
  * Python SRP server stuff.
  */
