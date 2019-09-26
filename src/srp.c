@@ -16,13 +16,6 @@
 #include "srp.h"
 
 
-/*
- * 32 bytes long salt, inspired by the test vectors from SRP for TLS
- * Authentication (see https://tools.ietf.org/html/rfc5054#appendix-B).
- */
-#define	SRP_SALT_BYTES	32
-
-
 /* local struct srp_server method members implementations */
 static int	srp_local_server_start(struct srp_server *server,
 		    const struct bytes *I, const struct bignum *A,
@@ -43,13 +36,6 @@ static void	srp_remote_server_free(struct srp_server *server);
 static int	srp_client_authenticate(struct srp_client *client,
 		    struct srp_server *server);
 static void	srp_client_free(struct srp_client *client);
-
-
-/* helpers to get a bignum from SHA-256(lhs concatenated to rhs) */
-static struct bignum	*srp_bignum_from_sha256_bytes(
-		    const struct bytes *lhs, const struct bytes *rhs);
-static struct bignum	*srp_bignum_from_sha256_bignums(
-		    const struct bignum *lhs, const struct bignum *rhs);
 
 
 int
@@ -658,7 +644,7 @@ srp_client_free(struct srp_client *client)
 }
 
 
-static struct bignum *
+struct bignum *
 srp_bignum_from_sha256_bytes(const struct bytes *lhs, const struct bytes *rhs)
 {
 	struct bytes *lhs_rhs = NULL, *hash = NULL;
@@ -674,7 +660,7 @@ srp_bignum_from_sha256_bytes(const struct bytes *lhs, const struct bytes *rhs)
 }
 
 
-static struct bignum *
+struct bignum *
 srp_bignum_from_sha256_bignums(const struct bignum *lhs,
 		    const struct bignum *rhs)
 {

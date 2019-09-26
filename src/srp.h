@@ -12,6 +12,13 @@
 
 
 /*
+ * 32 bytes long salt, inspired by the test vectors from SRP for TLS
+ * Authentication (see https://tools.ietf.org/html/rfc5054#appendix-B).
+ */
+#define	SRP_SALT_BYTES	32
+
+
+/*
  * Used to interface with a SRP server.
  */
 struct srp_server {
@@ -183,5 +190,16 @@ struct srp_server	*srp_remote_server_new(const char *hostname,
  */
 struct srp_client	*srp_client_new(const struct bytes *I,
 		    const struct bytes *P);
+
+/*
+ * helpers to get a bignum from SHA-256(lhs concatenated to rhs)
+ *
+ * They are exposed here so that the Simplified SRP implementation can use them
+ * too.
+ */
+struct bignum	*srp_bignum_from_sha256_bytes(const struct bytes *lhs,
+		    const struct bytes *rhs);
+struct bignum	*srp_bignum_from_sha256_bignums(const struct bignum *lhs,
+		    const struct bignum *rhs);
 
 #endif /* ndef SRP_H */
