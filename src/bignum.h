@@ -141,7 +141,7 @@ struct bignum	*bignum_mod_mul(const struct bignum *a, const struct bignum *b,
  * Returns a pointer to a newly allocated bignum struct that should passed to
  * bignum_free(). Returns NULL if any argument is NULL, or malloc(3) failed.
  */
-struct bignum	*bignum_modexp(const struct bignum *base,
+struct bignum	*bignum_mod_exp(const struct bignum *base,
 		    const struct bignum *exp, const struct bignum *mod);
 
 /*

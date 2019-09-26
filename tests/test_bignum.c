@@ -441,7 +441,7 @@ test_bignum_mod_mul(const MunitParameter *params, void *data)
 
 
 static MunitResult
-test_bignum_modexp(const MunitParameter *params, void *data)
+test_bignum_mod_exp(const MunitParameter *params, void *data)
 {
 	/* example from https://en.wikipedia.org/wiki/Modular_exponentiation */
 	struct bignum *base = bignum_from_dec("4");
@@ -449,15 +449,15 @@ test_bignum_modexp(const MunitParameter *params, void *data)
 	struct bignum *mod  = bignum_from_dec("497");
 	struct bignum *expected = bignum_from_dec("445");
 
-	struct bignum *result = bignum_modexp(base, exp, mod);
+	struct bignum *result = bignum_mod_exp(base, exp, mod);
 	munit_assert_not_null(result);
 	munit_assert_int(bignum_cmp(result, expected), ==, 0);
 	bignum_free(result);
 
 	/* when NULL is given */
-	munit_assert_null(bignum_modexp(NULL, exp, mod));
-	munit_assert_null(bignum_modexp(base, NULL, mod));
-	munit_assert_null(bignum_modexp(base, exp, NULL));
+	munit_assert_null(bignum_mod_exp(NULL, exp, mod));
+	munit_assert_null(bignum_mod_exp(base, NULL, mod));
+	munit_assert_null(bignum_mod_exp(base, exp, NULL));
 
 	bignum_free(expected);
 	bignum_free(mod);
@@ -612,7 +612,7 @@ MunitTest test_bignum_suite_tests[] = {
 	{ "bignum_sub",        test_bignum_sub,              srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bignum_sub_one",    test_bignum_sub_one,          srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bignum_mod_mul",    test_bignum_mod_mul,          NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
-	{ "bignum_modexp",     test_bignum_modexp,           NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "bignum_mod_exp",    test_bignum_mod_exp,          NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bignum_to_bytes",   test_bignum_to_bytes_be,      srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bignum_to_dec",     test_bignum_to_dec,           NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bignum_to_hex",     test_bignum_to_hex,           NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },

@@ -357,7 +357,7 @@ cleanup:
 
 
 struct bignum *
-bignum_modexp(const struct bignum *base, const struct bignum *exp,
+bignum_mod_exp(const struct bignum *base, const struct bignum *exp,
 		    const struct bignum *mod)
 {
 	struct bignum *num = NULL;

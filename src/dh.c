@@ -100,13 +100,13 @@ dh_exchange(struct dh *self, struct dh *bob, const struct bignum *p,
 	/* generate Alice's private number a */
 	a = bignum_rand(np);
 	/* compute Alice's public number A */
-	A = bignum_modexp(ng, a, np);
+	A = bignum_mod_exp(ng, a, np);
 	/* send the DH parameters to Bob, he'll answer with his own public
 	   number B */
 	B = bob->receive(bob, np, ng, A);
 	/* compute the shared secret using Bob's public number B and Alice's
 	   private number a */
-	s = bignum_modexp(B, a, np);
+	s = bignum_mod_exp(B, a, np);
 
 	/* reset associated data for Alice */
 	bytes_free(self->key);
@@ -179,9 +179,9 @@ dh_receive(struct dh *self, const struct bignum *p, const struct bignum *g,
 	b = bignum_rand(p);
 	/* compute the shared secret using Alice's public number A and Bob's
 	   private number b */
-	s = bignum_modexp(A, b, p);
+	s = bignum_mod_exp(A, b, p);
 	/* compute Bob's public number B to be sent back to Alice */
-	B = bignum_modexp(g, b, p);
+	B = bignum_mod_exp(g, b, p);
 	if (B == NULL)
 		goto cleanup;
 

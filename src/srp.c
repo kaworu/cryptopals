@@ -257,14 +257,14 @@ srp_local_server_start(struct srp_server *server,
 		goto cleanup;
 
 	/* Generate v=g**x % N */
-	v = bignum_modexp(g, x, N);
+	v = bignum_mod_exp(g, x, N);
 	if (v == NULL)
 		goto cleanup;
 
 	/* B=kv + g**b % N */
 	b = bignum_rand(N);
 	struct bignum *kv = bignum_mod_mul(k, v, N);
-	struct bignum *g_pow_b = bignum_modexp(g, b, N);
+	struct bignum *g_pow_b = bignum_mod_exp(g, b, N);
 	B = bignum_mod_add(kv, g_pow_b, N);
 	bignum_free(g_pow_b);
 	bignum_free(kv);
@@ -277,9 +277,9 @@ srp_local_server_start(struct srp_server *server,
 		goto cleanup;
 
 	/* Generate S = (A * v**u) ** b % N */
-	struct bignum *v_pow_u = bignum_modexp(v, u, N);
+	struct bignum *v_pow_u = bignum_mod_exp(v, u, N);
 	struct bignum *A_times_v_pow_u = bignum_mod_mul(A, v_pow_u, N);
-	S = bignum_modexp(A_times_v_pow_u, b, N);
+	S = bignum_mod_exp(A_times_v_pow_u, b, N);
 	bignum_free(A_times_v_pow_u);
 	bignum_free(v_pow_u);
 	if (S == NULL)
@@ -576,7 +576,7 @@ srp_client_authenticate(struct srp_client *client, struct srp_server *server)
 
 	/* Send I, A=g**a % N (a la Diffie Hellman) */
 	a = bignum_rand(N);
-	A = bignum_modexp(g, a, N);
+	A = bignum_mod_exp(g, a, N);
 	if (server->start(server, clientinfo->I, A, &salt, &B) != 0)
 		goto cleanup;
 
@@ -590,12 +590,12 @@ srp_client_authenticate(struct srp_client *client, struct srp_server *server)
 	x = srp_bignum_from_sha256_bytes(salt, clientinfo->P);
 
 	/* Generate S = (B - k * g**x)**(a + u * x) % N */
-	struct bignum *g_pow_x = bignum_modexp(g, x, N);
+	struct bignum *g_pow_x = bignum_mod_exp(g, x, N);
 	struct bignum *k_times_g_pow_x = bignum_mod_mul(k, g_pow_x, N);
 	struct bignum *lhs = bignum_sub(B, k_times_g_pow_x);
 	struct bignum *u_times_x = bignum_mod_mul(u, x, N);
 	struct bignum *rhs = bignum_mod_add(a, u_times_x, N);
-	S = bignum_modexp(lhs, rhs, N);
+	S = bignum_mod_exp(lhs, rhs, N);
 	bignum_free(rhs);
 	bignum_free(u_times_x);
 	bignum_free(lhs);
