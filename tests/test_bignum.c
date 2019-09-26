@@ -273,6 +273,44 @@ test_bignum_is_one(const MunitParameter *params, void *data)
 
 
 static MunitResult
+test_bignum_add(const MunitParameter *params, void *data)
+{
+	for (size_t i = 0; i < 100; i++) {
+		const int ai = munit_rand_int_range(INT_MIN / 2, INT_MAX / 2);
+		const int bi = munit_rand_int_range(INT_MIN / 2, INT_MAX / 2);
+
+		int ri = (ai + bi);
+
+		struct bignum *a = my_bignum_from_int(ai);
+		struct bignum *b = my_bignum_from_int(bi);
+		struct bignum *r = my_bignum_from_int(ri);
+		if (a == NULL || b == NULL || r == NULL)
+			munit_error("my_bignum_from_int");
+
+		struct bignum *result = bignum_add(a, b);
+		munit_assert_not_null(result);
+		munit_assert_int(bignum_cmp(result, r), ==, 0);
+
+		bignum_free(result);
+		bignum_free(r);
+		bignum_free(b);
+		bignum_free(a);
+	}
+
+	struct bignum *one = bignum_one();
+	if (one == NULL)
+		munit_error("bignum_one");
+	/* when NULL is given */
+	munit_assert_null(bignum_add(NULL, one));
+	munit_assert_null(bignum_add(one, NULL));
+	munit_assert_null(bignum_add(NULL, NULL));
+
+	bignum_free(one);
+	return (MUNIT_OK);
+}
+
+
+static MunitResult
 test_bignum_mod_add(const MunitParameter *params, void *data)
 {
 	for (size_t i = 0; i < 100; i++) {
@@ -389,6 +427,44 @@ test_bignum_sub_one(const MunitParameter *params, void *data)
 	bignum_free(one);
 	bignum_free(n);
 	bignum_free(limit);
+	return (MUNIT_OK);
+}
+
+
+static MunitResult
+test_bignum_mul(const MunitParameter *params, void *data)
+{
+	for (size_t i = 0; i < 100; i++) {
+		const int ai = munit_rand_int_range(-256, 256);
+		const int bi = munit_rand_int_range(-256, 256);
+
+		int ri = (ai * bi);
+
+		struct bignum *a = my_bignum_from_int(ai);
+		struct bignum *b = my_bignum_from_int(bi);
+		struct bignum *r = my_bignum_from_int(ri);
+		if (a == NULL || b == NULL || r == NULL)
+			munit_error("my_bignum_from_int");
+
+		struct bignum *result = bignum_mul(a, b);
+		munit_assert_not_null(result);
+		munit_assert_int(bignum_cmp(result, r), ==, 0);
+
+		bignum_free(result);
+		bignum_free(r);
+		bignum_free(b);
+		bignum_free(a);
+	}
+
+	struct bignum *one = bignum_one();
+	if (one == NULL)
+		munit_error("bignum_one");
+	/* when NULL is given */
+	munit_assert_null(bignum_mul(NULL, one));
+	munit_assert_null(bignum_mul(one, NULL));
+	munit_assert_null(bignum_mul(NULL, NULL));
+
+	bignum_free(one);
 	return (MUNIT_OK);
 }
 
@@ -608,9 +684,11 @@ MunitTest test_bignum_suite_tests[] = {
 	{ "bignum_cmp",        test_bignum_cmp,              srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bignum_is_zero",    test_bignum_is_zero,          NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bignum_is_one",     test_bignum_is_one,           NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "bignum_add",        test_bignum_add,              NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bignum_mod_add",    test_bignum_mod_add,          NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bignum_sub",        test_bignum_sub,              srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bignum_sub_one",    test_bignum_sub_one,          srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "bignum_mul",        test_bignum_mul,              NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bignum_mod_mul",    test_bignum_mod_mul,          NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bignum_mod_exp",    test_bignum_mod_exp,          NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "bignum_to_bytes",   test_bignum_to_bytes_be,      srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },

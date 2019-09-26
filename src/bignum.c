@@ -231,6 +231,34 @@ bignum_is_one(const struct bignum *n)
 
 
 struct bignum *
+bignum_add(const struct bignum *a, const struct bignum *b)
+{
+	struct bignum *result = NULL;
+	int success = 0;
+
+	/* sanity checks */
+	if (a == NULL || b == NULL)
+		goto cleanup;
+
+	result = bignum_zero();
+	if (result == NULL)
+		goto cleanup;
+
+	if (BN_add(result->bn, a->bn, b->bn) == 0)
+		goto cleanup;
+
+	success = 1;
+	/* FALLTHROUGH */
+cleanup:
+	if (!success) {
+		bignum_free(result);
+		result = NULL;
+	}
+	return (result);
+}
+
+
+struct bignum *
 bignum_mod_add(const struct bignum *a, const struct bignum *b,
 		    const struct bignum *mod)
 {
@@ -313,6 +341,40 @@ bignum_sub_one(const struct bignum *n)
 	success = 1;
 	/* FALLTHROUGH */
 cleanup:
+	if (!success) {
+		bignum_free(result);
+		result = NULL;
+	}
+	return (result);
+}
+
+
+struct bignum *
+bignum_mul(const struct bignum *a, const struct bignum *b)
+{
+	struct bignum *result = NULL;
+	BN_CTX *ctx = NULL;
+	int success = 0;
+
+	/* sanity checks */
+	if (a == NULL || b == NULL)
+		goto cleanup;
+
+	ctx = BN_CTX_new();
+	if (ctx == NULL)
+		goto cleanup;
+
+	result = bignum_zero();
+	if (result == NULL)
+		goto cleanup;
+
+	if (BN_mul(result->bn, a->bn, b->bn, ctx) == 0)
+		goto cleanup;
+
+	success = 1;
+	/* FALLTHROUGH */
+cleanup:
+	BN_CTX_free(ctx);
 	if (!success) {
 		bignum_free(result);
 		result = NULL;
