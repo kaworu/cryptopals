@@ -36,7 +36,7 @@ struct srp_server {
 	 * Finalize a SRP password-authenticated key agreement by verifying the
 	 * provided token.
 	 *
-	 * ON both success and failure, the token created by start() (if any) is
+	 * On both success and failure, the token created by start() (if any) is
 	 * forgotten by the server once this function returns. Thus, if
 	 * finalize() failed the client must re-start() the SRP agreement if
 	 * desired.

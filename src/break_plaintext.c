@@ -131,7 +131,7 @@ english_char_freq(const struct bytes *buf, double *score_p)
 int
 english_word_lengths_freq(const struct bytes *buf, double *score_p)
 {
-	/* Some english word lengths , taken from
+	/* Some english word lengths, taken from
 	   http://norvig.com/mayzner.html */
 	static const double english_word_lengths_freq_table[11] = {
 		/* len =  1 */  2.998,
