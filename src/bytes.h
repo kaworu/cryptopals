@@ -41,7 +41,7 @@ struct bytes	*bytes_repeated(size_t len, uint8_t byte);
  * bytes_free(). Returns NULL if the given buffer pointer is NULL, or malloc(3)
  * failed.
  */
-struct bytes	*bytes_from_raw(const void *p, size_t len);
+struct bytes	*bytes_from_ptr(const void *p, size_t len);
 
 /*
  * Create a bytes struct from an array of 32-bits values, least significant byte

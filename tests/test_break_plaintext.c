@@ -16,7 +16,7 @@ break_plaintext_test_helper(const MunitParameter *params, void *data,
 	if (english == NULL || german == NULL)
 		munit_error("bytes_from_str");
 	if (random == NULL)
-		munit_error("bytes_from_raw");
+		munit_error("bytes_from_ptr");
 
 	double english_score = 0, german_score = 0, random_score = 0;
 	munit_assert_int(f(english, &english_score), ==, 0);
@@ -85,7 +85,7 @@ setup(const MunitParameter *params, void *data)
 	const size_t len = 1024; /* FIXME: could by #defined */
 	uint8_t *buf = munit_calloc(len, sizeof(uint8_t));
 	munit_rand_memory(len, buf);
-	struct bytes *rnd = bytes_from_raw(buf, len);
+	struct bytes *rnd = bytes_from_ptr(buf, len);
 	munit_assert_not_null(rnd);
 	free(buf);
 	return (rnd);

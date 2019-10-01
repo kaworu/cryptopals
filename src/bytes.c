@@ -103,7 +103,7 @@ bytes_repeated(size_t len, uint8_t byte)
 
 
 struct bytes *
-bytes_from_raw(const void *p, size_t len)
+bytes_from_ptr(const void *p, size_t len)
 {
 	struct bytes *buf = NULL;
 
@@ -175,7 +175,7 @@ bytes_from_uint32_be(const uint32_t *words, size_t count)
 struct bytes *
 bytes_from_single(uint8_t byte)
 {
-	return (bytes_from_raw(&byte, 1));
+	return (bytes_from_ptr(&byte, 1));
 }
 
 
@@ -186,7 +186,7 @@ bytes_from_str(const char *s)
 	if (s == NULL)
 		return (NULL);
 
-	return (bytes_from_raw(s, strlen(s)));
+	return (bytes_from_ptr(s, strlen(s)));
 }
 
 
@@ -438,7 +438,7 @@ bytes_slice(const struct bytes *src, size_t offset, size_t len)
 	if (offset + len > src->len)
 		return (NULL);
 
-	return (bytes_from_raw(src->data + offset, len));
+	return (bytes_from_ptr(src->data + offset, len));
 }
 
 

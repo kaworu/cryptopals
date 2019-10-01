@@ -242,7 +242,7 @@ break_known_keysize(const struct bytes *ciphertext,
 	}
 
 	/* build the guessed key and then decrypt the ciphertext with it */
-	key = bytes_from_raw(keybuf, keysize * sizeof(uint8_t));
+	key = bytes_from_ptr(keybuf, keysize * sizeof(uint8_t));
 	decrypted = bytes_dup(ciphertext);
 	if (key == NULL || decrypted == NULL)
 		goto cleanup;
