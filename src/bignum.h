@@ -71,6 +71,20 @@ struct bignum	*bignum_from_bytes_be(const struct bytes *buf);
 struct bignum	*bignum_rand(const struct bignum *limit);
 
 /*
+ * Returns a probable prime number of the given length in bits.
+ *
+ * Random search for a prime using the Miller–Rabin primality test, see the
+ * Handbook of Applied Cryptography §4.44.
+ *
+ * XXX: OpenSSL represent bits as int and we require the first two bits to be 1.
+ * Thus, bits must be in the range [2, INT_MAX].
+ *
+ * Returns a pointer to a newly allocated bignum struct that should passed to
+ * bignum_free(). Returns NULL if bits is too small, too long, or on failure.
+ */
+struct bignum	*bignum_probable_prime(const size_t bits);
+
+/*
  * Create a bignum struct from another bignum struct by duplicating it.
  *
  * Returns a pointer to a newly allocated bignum struct that should passed to
@@ -100,6 +114,14 @@ int	bignum_is_zero(const struct bignum *n);
  * Returns 0 if the given bignum struct is one, 1 otherwise.
  */
 int	bignum_is_one(const struct bignum *n);
+
+/*
+ * Test if the given bignum is probably prime.
+ *
+ * Returns 0 if the given bignum is probably prime, 1 if it is composite, -1 on
+ * error (n is NULL or malloc(3) failed).
+ */
+int	bignum_is_probably_prime(const struct bignum *n);
 
 /*
  * Compute and returns the result (a + b).

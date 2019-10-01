@@ -673,27 +673,46 @@ test_bignum_to_hex(const MunitParameter *params, void *data)
 }
 
 
+static MunitResult
+test_bignum_probable_prime(const MunitParameter *params, void *data)
+{
+	for (size_t bits = 2; bits <= 1024; bits *= 2) {
+		struct bignum *n = bignum_probable_prime(bits);
+		munit_assert_not_null(n);
+		munit_assert_int(bignum_is_probably_prime(n), ==, 0);
+		bignum_free(n);
+	}
+
+	/* error cases */
+	munit_assert_null(bignum_probable_prime(1));
+	munit_assert_null(bignum_probable_prime((size_t)INT_MAX + 1));
+
+	return (MUNIT_OK);
+}
+
+
 /* The test suite. */
 MunitTest test_bignum_suite_tests[] = {
-	{ "bignum_zero",       test_bignum_zero,             NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
-	{ "bignum_one",        test_bignum_one,              NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
-	{ "bignum_from_hex",   test_bignum_from_hex_and_dec, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
-	{ "bignum_from_dec",   test_bignum_from_hex_and_dec, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
-	{ "bignum_from_bytes", test_bignum_from_bytes_be,    srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
-	{ "bignum_dup",        test_bignum_dup,              NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
-	{ "bignum_cmp",        test_bignum_cmp,              srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
-	{ "bignum_is_zero",    test_bignum_is_zero,          NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
-	{ "bignum_is_one",     test_bignum_is_one,           NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
-	{ "bignum_add",        test_bignum_add,              NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
-	{ "bignum_mod_add",    test_bignum_mod_add,          NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
-	{ "bignum_sub",        test_bignum_sub,              srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
-	{ "bignum_sub_one",    test_bignum_sub_one,          srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
-	{ "bignum_mul",        test_bignum_mul,              NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
-	{ "bignum_mod_mul",    test_bignum_mod_mul,          NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
-	{ "bignum_mod_exp",    test_bignum_mod_exp,          NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
-	{ "bignum_to_bytes",   test_bignum_to_bytes_be,      srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
-	{ "bignum_to_dec",     test_bignum_to_dec,           NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
-	{ "bignum_to_hex",     test_bignum_to_hex,           NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "bignum_zero",           test_bignum_zero,             NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "bignum_one",            test_bignum_one,              NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "bignum_from_hex",       test_bignum_from_hex_and_dec, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "bignum_from_dec",       test_bignum_from_hex_and_dec, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "bignum_from_bytes",     test_bignum_from_bytes_be,    srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "bignum_dup",            test_bignum_dup,              NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "bignum_cmp",            test_bignum_cmp,              srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "bignum_is_zero",        test_bignum_is_zero,          NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "bignum_is_one",         test_bignum_is_one,           NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "bignum_add",            test_bignum_add,              NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "bignum_mod_add",        test_bignum_mod_add,          NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "bignum_sub",            test_bignum_sub,              srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "bignum_sub_one",        test_bignum_sub_one,          srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "bignum_mul",            test_bignum_mul,              NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "bignum_mod_mul",        test_bignum_mod_mul,          NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "bignum_mod_exp",        test_bignum_mod_exp,          NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "bignum_to_bytes",       test_bignum_to_bytes_be,      srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "bignum_to_dec",         test_bignum_to_dec,           NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "bignum_to_hex",         test_bignum_to_hex,           NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "bignum_probable_prime", test_bignum_probable_prime,   srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{
 		.name       = NULL,
 		.test       = NULL,
