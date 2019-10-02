@@ -13,7 +13,7 @@
 static const char *
 random_password(void)
 {
-	const int index = munit_rand_int_range(0, passwordslen);
+	const int index = munit_rand_int_range(0, passwordslen - 1);
 	return passwords[index];
 }
 
