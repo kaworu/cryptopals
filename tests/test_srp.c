@@ -10,7 +10,9 @@
 #include "munit.h"
 #include "helpers.h"
 #include "srp.h"
+#include "test_dh.h"
 #include "test_srp.h"
+#include "test_srp_py.h"
 
 
 void *
@@ -86,9 +88,9 @@ py_srp_server_tear_down(void *data)
 static MunitResult
 test_srp_parameters(const MunitParameter *params, void *data)
 {
-	struct bignum *expected_N = bignum_from_hex(srp_nist_prime_hex);
-	struct bignum *expected_g = bignum_from_hex(srp_g_hex);
-	struct bignum *expected_k = bignum_from_hex(srp_k_hex);
+	struct bignum *expected_N = bignum_from_hex(nist_p_hex);
+	struct bignum *expected_g = bignum_from_hex(nist_g_hex);
+	struct bignum *expected_k = bignum_from_hex("3");
 	if (expected_N == NULL || expected_g == NULL || expected_k == NULL)
 		munit_error("bignum_from_hex");
 

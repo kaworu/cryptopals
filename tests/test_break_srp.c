@@ -6,6 +6,7 @@
 #include "break_srp.h"
 
 #include "test_srp.h"
+#include "test_srp_py.h"
 
 
 /* Set 5 / Challenge 37 */
