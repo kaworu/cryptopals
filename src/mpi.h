@@ -175,7 +175,8 @@ int	mpi_sign(const struct mpi *n);
 /*
  * Test if n is probably prime.
  *
- * Returns 0 if n is probably prime, 1 if it is composite, -1 on failure.
+ * Returns 0 if n is probably prime, 1 if it is composite, -1 on failure
+ * (including when n = 0 and n is negative).
  */
 int	mpi_test_probably_prime(const struct mpi *n);
 

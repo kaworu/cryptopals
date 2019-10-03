@@ -164,7 +164,7 @@ mpi_rand_range_from_zero_to(const struct mpi *limit)
 	int success = 0;
 
 	/* sanity check */
-	if (limit == NULL)
+	if (limit == NULL || mpi_sign(limit) < 0)
 		goto cleanup;
 
 	n = mpi_zero();
@@ -330,6 +330,10 @@ mpi_test_probably_prime(const struct mpi *n)
 
 	/* sanity check */
 	if (n == NULL)
+		goto cleanup;
+
+	/* negative numbers and 0 are considered a failure */
+	if (mpi_sign(n) != 1)
 		goto cleanup;
 
 	ctx = BN_CTX_new();

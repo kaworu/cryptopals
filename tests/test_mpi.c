@@ -40,13 +40,6 @@ cleanup:
 
 
 static MunitResult
-test_mpi_skip(const MunitParameter *params, void *data)
-{
-	return (MUNIT_SKIP);
-}
-
-
-static MunitResult
 test_mpi_zero(const MunitParameter *params, void *data)
 {
 	struct mpi *zero = mpi_zero();
@@ -138,7 +131,7 @@ test_mpi_from_hex_and_dec(const MunitParameter *params, void *data)
 static MunitResult
 test_mpi_from_bytes_be(const MunitParameter *params, void *data)
 {
-	for (size_t i = 1; i < 100; i++) {
+	for (size_t i = 1; i <= 128; i++) {
 		struct bytes *buf = bytes_randomized(i);
 		if (buf == NULL)
 			munit_error("bytes_randomized");
@@ -174,6 +167,161 @@ test_mpi_from_bytes_be(const MunitParameter *params, void *data)
 
 
 static MunitResult
+test_mpi_rand_range(const MunitParameter *params, void *data)
+{
+	for (size_t i = 0; i < 128; i++) {
+		const int xi = munit_rand_int_range(INT_MIN, INT_MAX);
+		const int yi = munit_rand_int_range(INT_MIN, INT_MAX);
+		struct mpi *x = my_mpi_from_int(xi);
+		struct mpi *y = my_mpi_from_int(yi);
+		if (x == NULL || y == NULL)
+			munit_error("my_mpi_from_int");
+
+		const struct mpi *min = (xi < yi ? x : y);
+		const struct mpi *max = (xi < yi ? y : x);
+		struct mpi *r = mpi_rand_range(min, max);
+		munit_assert_not_null(r);
+		munit_assert_int(mpi_cmp(min, r), <=, 0);
+		munit_assert_int(mpi_cmp(max, r),  >, 0);
+		mpi_free(r);
+		mpi_free(y);
+		mpi_free(x);
+	}
+
+	struct mpi *zero = mpi_zero();
+	if (zero == NULL)
+		munit_error("mpi_zero");
+	struct mpi *one = mpi_one();
+	if (one == NULL)
+		munit_error("mpi_one");
+	/* when NULL is given */
+	munit_assert_null(mpi_rand_range(NULL, NULL));
+	munit_assert_null(mpi_rand_range(zero, NULL));
+	munit_assert_null(mpi_rand_range(NULL, one));
+	/* when min > max */
+	munit_assert_null(mpi_rand_range(one, zero));
+
+	mpi_free(one);
+	mpi_free(zero);
+	return (MUNIT_OK);
+}
+
+
+static MunitResult
+test_mpi_rand_range_from_zero_to(const MunitParameter *params, void *data)
+{
+	struct mpi *zero = mpi_zero();
+	if (zero == NULL)
+		munit_error("mpi_zero");
+
+	for (size_t i = 0; i < 128; i++) {
+		const int xi = munit_rand_int_range(0, INT_MAX);
+		struct mpi *x = my_mpi_from_int(xi);
+		if (x == NULL)
+			munit_error("my_mpi_from_int");
+
+		struct mpi *r = mpi_rand_range_from_zero_to(x);
+		munit_assert_not_null(r);
+		munit_assert_int(mpi_cmp(zero, r), <=, 0);
+		munit_assert_int(mpi_cmp(x, r),     >, 0);
+		mpi_free(r);
+		mpi_free(x);
+	}
+
+	struct mpi *neg = mpi_from_dec("-1");
+	if (neg == NULL)
+		munit_error("mpi_from_dec");
+	/* when NULL is given */
+	munit_assert_null(mpi_rand_range_from_zero_to(NULL));
+	munit_assert_null(mpi_rand_range_from_zero_to(neg));
+
+	mpi_free(neg);
+	mpi_free(zero);
+	return (MUNIT_OK);
+}
+
+
+static MunitResult
+test_mpi_rand_range_from_one_to(const MunitParameter *params, void *data)
+{
+	struct mpi *one = mpi_zero();
+	if (one == NULL)
+		munit_error("mpi_zero");
+
+	for (size_t i = 0; i < 128; i++) {
+		const int xi = munit_rand_int_range(1, INT_MAX);
+		struct mpi *x = my_mpi_from_int(xi);
+		if (x == NULL)
+			munit_error("my_mpi_from_int");
+
+		struct mpi *r = mpi_rand_range_from_one_to(x);
+		munit_assert_not_null(r);
+		munit_assert_int(mpi_cmp(one, r), <=, 0);
+		munit_assert_int(mpi_cmp(x, r),    >, 0);
+		mpi_free(r);
+		mpi_free(x);
+	}
+
+	struct mpi *zero = mpi_zero();
+	if (zero == NULL)
+		munit_error("mpi_zero");
+	/* when NULL is given */
+	munit_assert_null(mpi_rand_range_from_one_to(NULL));
+	munit_assert_null(mpi_rand_range_from_one_to(zero));
+
+	mpi_free(zero);
+	mpi_free(one);
+	return (MUNIT_OK);
+}
+
+
+static MunitResult
+test_mpi_rand_odd_top2(const MunitParameter *params, void *data)
+{
+	struct mpi *two = mpi_from_hex("2");
+	if (two == NULL)
+		munit_error("mpi_from_hex");
+
+	for (int bits = 2; bits <= 256; bits++) {
+		struct mpi *n   = my_mpi_from_int(bits);
+		struct mpi *n_1 = my_mpi_from_int(bits - 1);
+		struct mpi *n_2 = my_mpi_from_int(bits - 2);
+		if (n == NULL || n_1 == NULL || n_2 == NULL)
+			munit_error("my_mpi_from_int");
+		struct mpi *max = mpi_exp(two, n);
+		struct mpi *two_pow_n_1 = mpi_exp(two, n_1);
+		struct mpi *two_pow_n_2 = mpi_exp(two, n_2);
+		if (max == NULL || two_pow_n_1 == NULL || two_pow_n_2 == NULL)
+			munit_error("mpi_exp");
+		struct mpi *min = mpi_add(two_pow_n_1, two_pow_n_2);
+		if (min == NULL)
+			munit_error("mpi_add");
+
+		struct mpi *r = mpi_rand_odd_top2((size_t)bits);
+		munit_assert_not_null(r);
+		munit_assert_int(mpi_test_odd(r), ==, 0);
+		munit_assert_int(mpi_cmp(min, r), <=, 0);
+		munit_assert_int(mpi_cmp(max, r),  >, 0);
+		mpi_free(r);
+		mpi_free(min);
+		mpi_free(two_pow_n_2);
+		mpi_free(two_pow_n_1);
+		mpi_free(max);
+		mpi_free(n_2);
+		mpi_free(n_1);
+		mpi_free(n);
+	}
+
+	/* invalid bits values */
+	munit_assert_null(mpi_rand_odd_top2(1));
+	munit_assert_null(mpi_rand_odd_top2((size_t)INT_MAX + 1));
+
+	mpi_free(two);
+	return (MUNIT_OK);
+}
+
+
+static MunitResult
 test_mpi_dup(const MunitParameter *params, void *data)
 {
 	struct mpi *n = mpi_rand_odd_top2(128);
@@ -194,9 +342,35 @@ test_mpi_dup(const MunitParameter *params, void *data)
 
 
 static MunitResult
+test_mpi_setn(const MunitParameter *params, void *data)
+{
+	for (int i = 0; i < 128; i++) {
+		const int xi = munit_rand_int_range(0, INT_MAX);
+		struct mpi *x = my_mpi_from_int(xi);
+		if (x == NULL)
+			munit_error("my_mpi_from_int");
+		struct mpi *r = mpi_zero();
+		if (r == NULL)
+			munit_error("mpi_zero");
+
+		const int ret = mpi_setn(r, (uint64_t)xi);
+		munit_assert_int(ret, ==, 0);
+		munit_assert_int(mpi_cmp(r, x), ==, 0);
+		mpi_free(r);
+		mpi_free(x);
+	}
+
+	/* when NULL is given */
+	munit_assert_int(mpi_setn(NULL, 42), ==, -1);
+
+	return (MUNIT_OK);
+}
+
+
+static MunitResult
 test_mpi_cmp(const MunitParameter *params, void *data)
 {
-	for (size_t i = 0; i < 100; i++) {
+	for (size_t i = 0; i < 128; i++) {
 		const int xi = munit_rand_int_range(INT_MIN, INT_MAX);
 		const int yi = munit_rand_int_range(INT_MIN, INT_MAX);
 		struct mpi *x = my_mpi_from_int(xi);
@@ -223,6 +397,28 @@ test_mpi_cmp(const MunitParameter *params, void *data)
 	munit_assert_int(mpi_cmp(zero, NULL), ==, INT_MIN);
 	munit_assert_int(mpi_cmp(NULL, NULL), ==, INT_MIN);
 	mpi_free(zero);
+
+	return (MUNIT_OK);
+}
+
+
+static MunitResult
+test_mpi_testn(const MunitParameter *params, void *data)
+{
+	for (size_t i = 0; i < 128; i++) {
+		const int xi = munit_rand_int_range(1, INT_MAX - 1);
+		struct mpi *x = my_mpi_from_int(xi);
+		if (x == NULL)
+			munit_error("my_mpi_from_int");
+
+		munit_assert_int(mpi_testn(x, xi),     ==, 0);
+		munit_assert_int(mpi_testn(x, xi + 1), ==, 1);
+		munit_assert_int(mpi_testn(x, xi - 1), ==, 1);
+		mpi_free(x);
+	}
+
+	/* when NULL is given */
+	munit_assert_int(mpi_testn(NULL, 42), ==, 1);
 
 	return (MUNIT_OK);
 }
@@ -275,13 +471,200 @@ test_mpi_test_one(const MunitParameter *params, void *data)
 
 
 static MunitResult
+test_mpi_test_odd(const MunitParameter *params, void *data)
+{
+	for (size_t i = 0; i < 128; i++) {
+		const int xi = munit_rand_int_range(INT_MIN, INT_MAX);
+		const int is_odd = xi % 2;
+		struct mpi *x = my_mpi_from_int(xi);
+		if (x == NULL)
+			munit_error("my_mpi_from_int");
+		munit_assert_int(mpi_test_odd(x), ==, (is_odd ? 0 : 1));
+		mpi_free(x);
+	}
+
+	/* when NULL is given */
+	munit_assert_int(mpi_test_odd(NULL), ==, 1);
+
+	return (MUNIT_OK);
+}
+
+
+static MunitResult
+test_mpi_sign(const MunitParameter *params, void *data)
+{
+	for (size_t i = 0; i < 128; i++) {
+		const int xi = munit_rand_int_range(INT_MIN, INT_MAX);
+		const int sign = xi < 0 ? -1 : (xi > 0 ? 1 : 0);
+		struct mpi *x = my_mpi_from_int(xi);
+		if (x == NULL)
+			munit_error("my_mpi_from_int");
+		munit_assert_int(mpi_sign(x), ==, sign);
+		mpi_free(x);
+	}
+
+	struct mpi *zero = mpi_zero();
+	if (zero == NULL)
+		munit_error("mpi_zero");
+	/* when 0 is given */
+	munit_assert_int(mpi_sign(zero), ==, 0);
+	/* when NULL is given */
+	munit_assert_int(mpi_sign(NULL), ==, 0);
+
+	mpi_free(zero);
+	return (MUNIT_OK);
+}
+
+
+static MunitResult
+test_mpi_test_probably_prime(const MunitParameter *params, void *data)
+{
+	/*
+	 * some primes picked at
+	 * https://en.wikipedia.org/wiki/List_of_prime_numbers
+	 */
+	static const char *primes[] = {
+		/* Carole primes */
+		"7", "47", "223", "3967", "16127", "1046527", "16769023",
+		"1073676287", "68718952447", "274876858367", "4398042316799",
+		"1125899839733759", "18014398241046527",
+		"1298074214633706835075030044377087",
+		/* Chen primes */
+		"2", "3", "5", "7", "11", "13", "17", "19", "23", "29", "31",
+		"37", "41", "47", "53", "59", "67", "71", "83", "89", "101",
+		"107", "109", "113", "127", "131", "137", "139", "149", "157",
+		"167", "179", "181", "191", "197", "199", "211", "227", "233",
+		"239", "251", "257", "263", "269", "281", "293", "307", "311",
+		"317", "337", "347", "353", "359", "379", "389", "401", "409",
+		/* Factorial primes */
+		"2", "3", "5", "7", "23", "719", "5039", "39916801",
+		"479001599", "87178291199", "10888869450418352160768000001",
+		"265252859812191058636308479999999",
+		"263130836933693530167218012159999999",
+		"8683317618811886495518194401279999999",
+		/* Fermat primes */
+		"3", "5", "17", "257", "65537",
+		/* Kynea primes */
+		"2", "7", "23", "79", "1087", "66047", "263167", "16785407",
+		"1073807359", "17180131327", "68720001023", "4398050705407",
+		"70368760954879", "18014398777917439", "18446744082299486207",
+		/* Lucas primes */
+		"2", "3", "7", "11", "29", "47", "199", "521", "2207", "3571",
+		"9349", "3010349", "54018521", "370248451", "6643838879",
+		"119218851371", "5600748293801", "688846502588399",
+		"32361122672259149",
+		/* Mersenne primes */
+		"3", "7", "31", "127", "8191", "131071", "524287", "2147483647",
+		"2305843009213693951", "618970019642690137449562111",
+		"162259276829213363391578010288127",
+		"170141183460469231731687303715884105727",
+	};
+	static const size_t primeslen = (sizeof(primes) / sizeof(*primes));
+
+	/* test each primes */
+	for (size_t i = 0; i < primeslen; i++) {
+		struct mpi *x = mpi_from_dec(primes[i]);
+		if (x == NULL)
+			munit_error("mpi_from_dec");
+		munit_assert_int(mpi_test_probably_prime(x), ==, 0);
+		mpi_free(x);
+	}
+
+	/* non-prime numbers (p * q) where p and q are picked from primes */
+	for (size_t i = 0; i < 128; i++) {
+		const size_t j = munit_rand_int_range(0, primeslen - 1);
+		const size_t k = munit_rand_int_range(0, primeslen - 1);
+		struct mpi *p = mpi_from_dec(primes[j]);
+		struct mpi *q = mpi_from_dec(primes[k]);
+		if (p == NULL || q == NULL)
+			munit_error("mpi_from_dec");
+		struct mpi *n = mpi_mul(p, q);
+		if (n == NULL)
+			munit_error("mpi_mul");
+		munit_assert_int(mpi_test_probably_prime(n), ==, 1);
+		mpi_free(n);
+		mpi_free(q);
+		mpi_free(p);
+	}
+
+	struct mpi *zero      = mpi_from_dec("0");
+	struct mpi *minus_one = mpi_from_dec("-1");
+	if (zero == NULL || minus_one == NULL)
+		munit_error("mpi_from_dec");
+	/* when 0 is given */
+	munit_assert_int(mpi_test_probably_prime(zero), ==, -1);
+	/* when a negative number is given */
+	munit_assert_int(mpi_test_probably_prime(minus_one), ==, -1);
+	/* when NULL is given */
+	munit_assert_int(mpi_test_probably_prime(NULL), ==, -1);
+
+	mpi_free(minus_one);
+	mpi_free(zero);
+	return (MUNIT_OK);
+}
+
+
+static MunitResult
+test_mpi_modn(const MunitParameter *params, void *data)
+{
+	for (size_t i = 0; i < 128; i++) {
+		const int ai  = munit_rand_int_range(0, INT_MAX);
+		const uint64_t mod = (uint64_t)munit_rand_int_range(0, INT_MAX);
+		struct mpi *a = my_mpi_from_int(ai);
+		if (a == NULL)
+			munit_error("my_mpi_from_int");
+
+		const uint64_t rem = (uint64_t)ai % mod;
+		const uint64_t result = mpi_modn(a, mod);
+		munit_assert_uint64(result, ==, rem);
+
+		mpi_free(a);
+	}
+
+	struct mpi *one = mpi_one();
+	if (one == NULL)
+		munit_error("mpi_one");
+	/* when 0 is given as mod */
+	munit_assert_uint64(mpi_modn(one, 0), ==, UINT64_MAX);
+	/* when NULL is given */
+	munit_assert_uint64(mpi_modn(NULL, 42), ==, UINT64_MAX);
+
+	mpi_free(one);
+	return (MUNIT_OK);
+}
+
+
+static MunitResult
+test_mpi_rshift1_mut(const MunitParameter *params, void *data)
+{
+	for (size_t i = 0; i < 128; i++) {
+		const int ai  = munit_rand_int_range(0, INT_MAX);
+		const int ri  = ai >> 1;
+		struct mpi *a = my_mpi_from_int(ai);
+		if (a == NULL)
+			munit_error("my_mpi_from_int");
+
+		const int ret = mpi_rshift1_mut(a);
+		munit_assert_int(ret, ==, 0);
+		munit_assert_int(mpi_testn(a, (uint64_t)ri), ==, 0);
+		mpi_free(a);
+	}
+
+	/* when NULL is given */
+	munit_assert_int(mpi_rshift1_mut(NULL), ==, -1);
+
+	return (MUNIT_OK);
+}
+
+
+static MunitResult
 test_mpi_add(const MunitParameter *params, void *data)
 {
-	for (size_t i = 0; i < 100; i++) {
+	for (size_t i = 0; i < 128; i++) {
 		const int ai = munit_rand_int_range(INT_MIN / 2, INT_MAX / 2);
 		const int bi = munit_rand_int_range(INT_MIN / 2, INT_MAX / 2);
 
-		int ri = (ai + bi);
+		const int ri = ai + bi;
 
 		struct mpi *a = my_mpi_from_int(ai);
 		struct mpi *b = my_mpi_from_int(bi);
@@ -313,9 +696,105 @@ test_mpi_add(const MunitParameter *params, void *data)
 
 
 static MunitResult
+test_mpi_add_mut(const MunitParameter *params, void *data)
+{
+	for (size_t i = 0; i < 128; i++) {
+		const int ai = munit_rand_int_range(INT_MIN / 2, INT_MAX / 2);
+		const int bi = munit_rand_int_range(INT_MIN / 2, INT_MAX / 2);
+
+		const int ri = ai + bi;
+
+		struct mpi *a = my_mpi_from_int(ai);
+		struct mpi *b = my_mpi_from_int(bi);
+		struct mpi *r = my_mpi_from_int(ri);
+		if (a == NULL || b == NULL || r == NULL)
+			munit_error("my_mpi_from_int");
+
+		const int ret = mpi_add_mut(a, b);
+		munit_assert_int(ret, ==, 0);
+		munit_assert_int(mpi_cmp(a, r), ==, 0);
+
+		mpi_free(r);
+		mpi_free(b);
+		mpi_free(a);
+	}
+
+	struct mpi *one = mpi_one();
+	if (one == NULL)
+		munit_error("mpi_one");
+	/* when NULL is given */
+	munit_assert_int(mpi_add_mut(NULL, one),  ==, -1);
+	munit_assert_int(mpi_add_mut(one, NULL),  ==, -1);
+	munit_assert_int(mpi_add_mut(NULL, NULL), ==, -1);
+
+	mpi_free(one);
+	return (MUNIT_OK);
+}
+
+
+static MunitResult
+test_mpi_addn(const MunitParameter *params, void *data)
+{
+	for (size_t i = 0; i < 128; i++) {
+		const int ai = munit_rand_int_range(INT_MIN / 2, INT_MAX / 2);
+		const int bi = munit_rand_int_range(0, INT_MAX / 2);
+
+		const int ri = ai + bi;
+
+		struct mpi *a = my_mpi_from_int(ai);
+		struct mpi *r = my_mpi_from_int(ri);
+		if (a == NULL || r == NULL)
+			munit_error("my_mpi_from_int");
+
+		struct mpi *result = mpi_addn(a, (uint64_t)bi);
+		munit_assert_not_null(result);
+		munit_assert_int(mpi_cmp(result, r), ==, 0);
+
+		mpi_free(result);
+		mpi_free(r);
+		mpi_free(a);
+	}
+
+	/* when NULL is given */
+	munit_assert_null(mpi_addn(NULL, 42));
+
+	return (MUNIT_OK);
+}
+
+
+static MunitResult
+test_mpi_addn_mut(const MunitParameter *params, void *data)
+{
+	for (size_t i = 0; i < 128; i++) {
+		const int ai = munit_rand_int_range(INT_MIN / 2, INT_MAX / 2);
+		const int bi = munit_rand_int_range(0, INT_MAX / 2);
+
+		const int ri = ai + bi;
+
+		struct mpi *a = my_mpi_from_int(ai);
+		struct mpi *r = my_mpi_from_int(ri);
+		if (a == NULL || r == NULL)
+			munit_error("my_mpi_from_int");
+
+		const int ret = mpi_addn_mut(a, (uint64_t)bi);
+		munit_assert_int(ret, ==, 0);
+		munit_assert_int(mpi_cmp(a, r), ==, 0);
+
+		mpi_free(r);
+		mpi_free(a);
+	}
+
+	/* when NULL is given */
+	munit_assert_int(mpi_addn_mut(NULL, 42), ==, -1);
+
+	return (MUNIT_OK);
+}
+
+
+static MunitResult
 test_mpi_mod_add(const MunitParameter *params, void *data)
 {
-	for (size_t i = 0; i < 100; i++) {
+	for (size_t i = 0; i < 128; i++) {
 		const int ai = munit_rand_int_range(INT_MIN / 2, INT_MAX / 2);
 		const int bi = munit_rand_int_range(INT_MIN / 2, INT_MAX / 2);
 		const int mi = munit_rand_int_range(2, 16);
@@ -362,7 +841,7 @@ test_mpi_mod_add(const MunitParameter *params, void *data)
 static MunitResult
 test_mpi_sub(const MunitParameter *params, void *data)
 {
-	for (size_t i = 0; i < 100; i++) {
+	for (size_t i = 0; i < 128; i++) {
 		const int ai = munit_rand_int_range(INT_MIN / 2, INT_MAX / 2);
 		const int bi = munit_rand_int_range(INT_MIN / 2, INT_MAX / 2);
 		const int ri = ai - bi;
@@ -398,9 +877,105 @@ test_mpi_sub(const MunitParameter *params, void *data)
 
 
 static MunitResult
+test_mpi_sub_mut(const MunitParameter *params, void *data)
+{
+	for (size_t i = 0; i < 128; i++) {
+		const int ai = munit_rand_int_range(INT_MIN / 2, INT_MAX / 2);
+		const int bi = munit_rand_int_range(INT_MIN / 2, INT_MAX / 2);
+		const int ri = ai - bi;
+
+		struct mpi *a = my_mpi_from_int(ai);
+		struct mpi *b = my_mpi_from_int(bi);
+		struct mpi *r = my_mpi_from_int(ri);
+		if (a == NULL || b == NULL || r == NULL)
+			munit_error("my_mpi_from_int");
+
+		const int ret = mpi_sub_mut(a, b);
+
+		munit_assert_int(ret, ==, 0);
+		munit_assert_int(mpi_cmp(a, r), ==, 0);
+
+		mpi_free(r);
+		mpi_free(b);
+		mpi_free(a);
+	}
+
+	struct mpi *one = mpi_one();
+	if (one == NULL)
+		munit_error("mpi_one");
+	/* when NULL is given */
+	munit_assert_int(mpi_sub_mut(one, NULL),  ==, -1);
+	munit_assert_int(mpi_sub_mut(NULL, one),  ==, -1);
+	munit_assert_int(mpi_sub_mut(NULL, NULL), ==, -1);
+
+	mpi_free(one);
+	return (MUNIT_OK);
+}
+
+
+static MunitResult
+test_mpi_subn(const MunitParameter *params, void *data)
+{
+	for (size_t i = 0; i < 128; i++) {
+		const int ai = munit_rand_int_range(INT_MIN / 2, INT_MAX / 2);
+		const int bi = munit_rand_int_range(0, INT_MAX / 2);
+		const int ri = ai - bi;
+
+		struct mpi *a = my_mpi_from_int(ai);
+		struct mpi *r = my_mpi_from_int(ri);
+		if (a == NULL || r == NULL)
+			munit_error("my_mpi_from_int");
+
+		struct mpi *result = mpi_subn(a, (uint64_t)bi);
+
+		munit_assert_not_null(result);
+		munit_assert_int(mpi_cmp(result, r), ==, 0);
+
+		mpi_free(result);
+		mpi_free(r);
+		mpi_free(a);
+	}
+
+	/* when NULL is given */
+	munit_assert_null(mpi_subn(NULL, 42));
+
+	return (MUNIT_OK);
+}
+
+
+static MunitResult
+test_mpi_subn_mut(const MunitParameter *params, void *data)
+{
+	for (size_t i = 0; i < 128; i++) {
+		const int ai = munit_rand_int_range(INT_MIN / 2, INT_MAX / 2);
+		const int bi = munit_rand_int_range(0, INT_MAX / 2);
+		const int ri = ai - bi;
+
+		struct mpi *a = my_mpi_from_int(ai);
+		struct mpi *r = my_mpi_from_int(ri);
+		if (a == NULL || r == NULL)
+			munit_error("my_mpi_from_int");
+
+		const int ret = mpi_subn_mut(a, (uint64_t)bi);
+
+		munit_assert_int(ret, ==, 0);
+		munit_assert_int(mpi_cmp(a, r), ==, 0);
+
+		mpi_free(r);
+		mpi_free(a);
+	}
+
+	/* when NULL is given */
+	munit_assert_int(mpi_subn_mut(NULL, 42), ==, -1);
+
+	return (MUNIT_OK);
+}
+
+
+static MunitResult
 test_mpi_mul(const MunitParameter *params, void *data)
 {
-	for (size_t i = 0; i < 100; i++) {
+	for (size_t i = 0; i < 128; i++) {
 		const int ai = munit_rand_int_range(-256, 256);
 		const int bi = munit_rand_int_range(-256, 256);
 
@@ -438,7 +1013,7 @@ test_mpi_mul(const MunitParameter *params, void *data)
 static MunitResult
 test_mpi_mod_mul(const MunitParameter *params, void *data)
 {
-	for (size_t i = 0; i < 100; i++) {
+	for (size_t i = 0; i < 128; i++) {
 		const int ai = munit_rand_int_range(-256, 256);
 		const int bi = munit_rand_int_range(-256, 256);
 		const int mi = munit_rand_int_range(2, 16);
@@ -483,6 +1058,50 @@ test_mpi_mod_mul(const MunitParameter *params, void *data)
 
 
 static MunitResult
+test_mpi_exp(const MunitParameter *params, void *data)
+{
+	/* see https://en.wikipedia.org/wiki/Exponentiation#List_of_whole-number_powers */
+	const uint64_t powers[11][11] = {
+		 [2] = { 1,  2,   4,    8,    16,     32,      64,      128,       256,        512,        1024 },
+		 [3] = { 1,  3,   9,   27,    81,    243,     729,     2187,      6561,      19683,       59049 },
+		 [4] = { 1,  4,  16,   64,   256,   1024,    4096,    16384,     65536,     262144,     1048576 },
+		 [5] = { 1,  5,  25,  125,   625,   3125,   15625,    78125,    390625,    1953125,     9765625 },
+		 [6] = { 1,  6,  36,  216,  1296,   7776,   46656,   279936,   1679616,   10077696,    60466176 },
+		 [7] = { 1,  7,  49,  343,  2401,  16807,  117649,   823543,   5764801,   40353607,   282475249 },
+		 [8] = { 1,  8,  64,  512,  4096,  32768,  262144,  2097152,  16777216,  134217728,  1073741824 },
+		 [9] = { 1,  9,  81,  729,  6561,  59049,  531441,  4782969,  43046721,  387420489,  3486784401 },
+		[10] = { 1, 10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000, 1000000000, 10000000000 },
+	};
+
+	struct mpi *base = mpi_zero();
+	struct mpi *exp  = mpi_zero();
+	if (base == NULL || exp == NULL)
+	for (int ibase = 2; ibase <= 10; ibase++) {
+		if (mpi_setn(base, (uint64_t)ibase) != 0)
+			munit_error("mpi_setn");
+		for (int iexp = 0; iexp <= 10; iexp++) {
+			const uint64_t expected = powers[ibase][iexp];
+			if (mpi_setn(exp, (uint64_t)iexp) != 0)
+				munit_error("mpi_setn");
+			struct mpi *result = mpi_exp(base, exp);
+			munit_assert_not_null(result);
+			munit_assert_int(mpi_testn(result, expected), ==, 0);
+			mpi_free(result);
+		}
+	}
+
+	/* when NULL is given */
+	munit_assert_null(mpi_exp(base, NULL));
+	munit_assert_null(mpi_exp(NULL, exp));
+	munit_assert_null(mpi_exp(NULL, NULL));
+
+	mpi_free(exp);
+	mpi_free(base);
+	return MUNIT_OK;
+}
+
+
+static MunitResult
 test_mpi_mod_exp(const MunitParameter *params, void *data)
 {
 	/* example from https://en.wikipedia.org/wiki/Modular_exponentiation */
@@ -505,6 +1124,48 @@ test_mpi_mod_exp(const MunitParameter *params, void *data)
 	mpi_free(mod);
 	mpi_free(exp);
 	mpi_free(base);
+	return (MUNIT_OK);
+}
+
+
+static MunitResult
+test_mpi_mod_sqr_mut(const MunitParameter *params, void *data)
+{
+	struct mpi *two = mpi_from_hex("2");
+	if (two == NULL)
+		munit_error("mpi_from_hex");
+
+	for (size_t i = 1; i <= 128; i++) {
+		struct bytes *xbuf   = bytes_randomized(i);
+		struct bytes *modbuf = bytes_randomized(i);
+		if (xbuf == NULL || modbuf == NULL)
+			munit_error("bytes_randomized");
+
+		struct mpi *x   = mpi_from_bytes_be(xbuf);
+		struct mpi *mod = mpi_from_bytes_be(modbuf);
+		if (x == NULL || mod == NULL)
+			munit_error("mpi_from_bytes_be");
+		struct mpi *expected = mpi_mod_exp(x, two, mod);
+		if (expected == NULL)
+			munit_error("mpi_mod_exp");
+
+		const int ret = mpi_mod_sqr_mut(x, mod);
+		munit_assert_int(ret, ==, 0);
+		munit_assert_int(mpi_cmp(expected, x), ==, 0);
+
+		mpi_free(expected);
+		mpi_free(mod);
+		mpi_free(x);
+		bytes_free(modbuf);
+		bytes_free(xbuf);
+	}
+
+	/* when NULL is given */
+	munit_assert_int(mpi_mod_sqr_mut(two, NULL),  ==, -1);
+	munit_assert_int(mpi_mod_sqr_mut(NULL, two),  ==, -1);
+	munit_assert_int(mpi_mod_sqr_mut(NULL, NULL), ==, -1);
+
+	mpi_free(two);
 	return (MUNIT_OK);
 }
 
@@ -659,43 +1320,43 @@ test_mpi_probable_prime(const MunitParameter *params, void *data)
 
 /* The test suite. */
 MunitTest test_mpi_suite_tests[] = {
-	{ "mpi_zero",           test_mpi_zero,             NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
-	{ "mpi_one",            test_mpi_one,              NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
-	{ "mpi_from_hex",       test_mpi_from_hex_and_dec, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
-	{ "mpi_from_bytes",     test_mpi_from_bytes_be,    srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
-	{ "mpi_rand_range",     test_mpi_skip,             NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
-	{ "mpi_rand_range_from_zero_to",     test_mpi_skip,             NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
-	{ "mpi_rand_range_from_one_to",     test_mpi_skip,             NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
-	{ "mpi_rand_odd_top2",  test_mpi_skip,             NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
-	{ "mpi_dup",            test_mpi_dup,              NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
-	{ "mpi_setn",           test_mpi_skip,              NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
-	{ "mpi_probable_prime", test_mpi_probable_prime,   srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
-	{ "mpi_cmp",            test_mpi_cmp,              srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
-	{ "mpi_testn",          test_mpi_skip,              NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
-	{ "mpi_test_zero",      test_mpi_test_zero,        NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
-	{ "mpi_test_one",       test_mpi_test_one,         NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
-	{ "mpi_test_odd",       test_mpi_skip,              NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
-	{ "mpi_sign",           test_mpi_skip,              NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
-	{ "mpi_test_probably_prime", test_mpi_skip,        NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
-	{ "mpi_modn",           test_mpi_skip,        NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
-	{ "mpi_rshift1_mut",    test_mpi_skip,        NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
-	{ "mpi_add",            test_mpi_add,              NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
-	{ "mpi_add_mut",        test_mpi_skip,  NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
-	{ "mpi_addn",        test_mpi_skip,  NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
-	{ "mpi_addn_mut",        test_mpi_skip,  NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
-	{ "mpi_mod_add",        test_mpi_mod_add,          NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
-	{ "mpi_sub",            test_mpi_sub,              srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
-	{ "mpi_sub_mut",        test_mpi_skip,  NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
-	{ "mpi_subn",        test_mpi_skip,  NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
-	{ "mpi_subn_mut",        test_mpi_skip,  NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
-	{ "mpi_mul",            test_mpi_mul,              NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
-	{ "mpi_mod_mul",        test_mpi_mod_mul,          NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
-	{ "mpi_exp",        test_mpi_skip,          NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
-	{ "mpi_mod_exp",        test_mpi_mod_exp,          NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
-	{ "mpi_mod_sqr_mut",        test_mpi_skip,  NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
-	{ "mpi_to_dec",         test_mpi_to_dec,           NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
-	{ "mpi_to_hex",         test_mpi_to_hex,           NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
-	{ "mpi_to_bytes",       test_mpi_to_bytes_be,      srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "mpi_zero",       test_mpi_zero,             NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "mpi_one",        test_mpi_one,              NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "mpi_from_hex",   test_mpi_from_hex_and_dec, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "mpi_from_bytes", test_mpi_from_bytes_be,    srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "mpi_rand_range",              test_mpi_rand_range,              srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "mpi_rand_range_from_zero_to", test_mpi_rand_range_from_zero_to, srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "mpi_rand_range_from_one_to",  test_mpi_rand_range_from_one_to,  srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "mpi_rand_odd_top2",           test_mpi_rand_odd_top2,           srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "mpi_dup",            test_mpi_dup,            srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "mpi_setn",           test_mpi_setn,           srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "mpi_probable_prime", test_mpi_probable_prime, srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "mpi_cmp",            test_mpi_cmp,            srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "mpi_testn",          test_mpi_testn,          srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "mpi_test_zero",      test_mpi_test_zero,      srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "mpi_test_one",       test_mpi_test_one,       srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "mpi_test_odd",       test_mpi_test_odd,       srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "mpi_sign",           test_mpi_sign,           srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "mpi_test_probably_prime", test_mpi_test_probably_prime, srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "mpi_modn",        test_mpi_modn,        srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "mpi_rshift1_mut", test_mpi_rshift1_mut, srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "mpi_add",         test_mpi_add,         srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "mpi_add_mut",     test_mpi_add_mut,     srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "mpi_addn",        test_mpi_addn,        srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "mpi_addn_mut",    test_mpi_addn_mut,    srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "mpi_mod_add",     test_mpi_mod_add,     srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "mpi_sub",         test_mpi_sub,         srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "mpi_sub_mut",     test_mpi_sub_mut,     srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "mpi_subn",        test_mpi_subn,        srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "mpi_subn_mut",    test_mpi_subn_mut,    srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "mpi_mul",         test_mpi_mul,         srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "mpi_mod_mul",     test_mpi_mod_mul,     srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "mpi_exp",         test_mpi_exp,         srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "mpi_mod_exp",     test_mpi_mod_exp,     srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "mpi_mod_sqr_mut", test_mpi_mod_sqr_mut, srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "mpi_to_dec",      test_mpi_to_dec,      srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "mpi_to_hex",      test_mpi_to_hex,      srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "mpi_to_bytes",    test_mpi_to_bytes_be, srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{
 		.name       = NULL,
 		.test       = NULL,
