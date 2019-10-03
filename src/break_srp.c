@@ -59,7 +59,7 @@ static int
 srp_spoof_client_authenticate(struct srp_client *client,
 		    struct srp_server *server)
 {
-	struct bignum *A = NULL, *B = NULL, *S = NULL;
+	struct mpi *A = NULL, *B = NULL, *S = NULL;
 	struct bytes *salt = NULL, *Sb = NULL, *K = NULL, *token = NULL;
 	int success = 0;
 
@@ -72,13 +72,12 @@ srp_spoof_client_authenticate(struct srp_client *client,
 	/* Pick A depending on our attack type */
 	switch (clientinfo->type) {
 	case SRP_SPOOF_CLIENT_0_AS_A:
-		A = bignum_zero();
-		S = bignum_zero();
+		A = mpi_zero();
+		S = mpi_zero();
 		break;
 	case SRP_SPOOF_CLIENT_N_AS_A:
-		if (srp_parameters(&A, NULL, NULL) != 0)
-			goto cleanup;
-		S = bignum_zero();
+		(void)srp_parameters(&A, NULL, NULL);
+		S = mpi_zero();
 		break;
 	}
 	if (A == NULL || S == NULL)
@@ -88,7 +87,7 @@ srp_spoof_client_authenticate(struct srp_client *client,
 		goto cleanup;
 
 	/* Generate K = SHA256(S) */
-	Sb = bignum_to_bytes_be(S);
+	Sb = mpi_to_bytes_be(S);
 	K  = sha256_hash(Sb);
 	if (K == NULL)
 		goto cleanup;
@@ -110,10 +109,10 @@ cleanup:
 	bytes_free(token);
 	bytes_free(K);
 	bytes_free(Sb);
-	bignum_free(S);
+	mpi_free(S);
 	bytes_free(salt);
-	bignum_free(B);
-	bignum_free(A);
+	mpi_free(B);
+	mpi_free(A);
 	return (success ? 0 : -1);
 }
 

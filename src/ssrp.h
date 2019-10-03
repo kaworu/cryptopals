@@ -5,7 +5,7 @@
  *
  * Simplified Secure Remote Password (SSRP) stuff for cryptopals.com challenges.
  */
-#include "bignum.h"
+#include "mpi.h"
 #include "bytes.h"
 
 
@@ -26,10 +26,9 @@ struct ssrp_server {
 	 *
 	 * Returns 0 on success, -1 if the identity is invalid or on failure.
 	 */
-	int	(*start)(struct ssrp_server *server,
-			    const struct bytes *I, const struct bignum *A,
-			    struct bytes **salt_p, struct bignum **B_p,
-			    struct bignum **u_p);
+	int	(*start)(struct ssrp_server *server, const struct bytes *I,
+			    const struct mpi *A, struct bytes **salt_p,
+			    struct mpi **B_p, struct mpi **u_p);
 
 	/*
 	 * Finalize a SSRP password-authenticated key agreement by verifying the

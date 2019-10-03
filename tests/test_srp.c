@@ -88,31 +88,31 @@ py_srp_server_tear_down(void *data)
 static MunitResult
 test_srp_parameters(const MunitParameter *params, void *data)
 {
-	struct bignum *expected_N = bignum_from_hex(nist_p_hex);
-	struct bignum *expected_g = bignum_from_hex(nist_g_hex);
-	struct bignum *expected_k = bignum_from_hex("3");
+	struct mpi *expected_N = mpi_from_hex(nist_p_hex);
+	struct mpi *expected_g = mpi_from_hex(nist_g_hex);
+	struct mpi *expected_k = mpi_from_hex("3");
 	if (expected_N == NULL || expected_g == NULL || expected_k == NULL)
-		munit_error("bignum_from_hex");
+		munit_error("mpi_from_hex");
 
-	struct bignum *N = NULL, *g = NULL, *k = NULL;
+	struct mpi *N = NULL, *g = NULL, *k = NULL;
 	const int ret = srp_parameters(&N, &g, &k);
 
 	munit_assert_int(ret, ==, 0);
 	munit_assert_not_null(N);
 	munit_assert_not_null(g);
 	munit_assert_not_null(k);
-	munit_assert_int(bignum_cmp(expected_N, N), ==, 0);
-	munit_assert_int(bignum_cmp(expected_g, g), ==, 0);
-	munit_assert_int(bignum_cmp(expected_k, k), ==, 0);
+	munit_assert_int(mpi_cmp(expected_N, N), ==, 0);
+	munit_assert_int(mpi_cmp(expected_g, g), ==, 0);
+	munit_assert_int(mpi_cmp(expected_k, k), ==, 0);
 
 	/* XXX: not testing that passing NULL is OK */
 
-	bignum_free(k);
-	bignum_free(g);
-	bignum_free(N);
-	bignum_free(expected_k);
-	bignum_free(expected_g);
-	bignum_free(expected_N);
+	mpi_free(k);
+	mpi_free(g);
+	mpi_free(N);
+	mpi_free(expected_k);
+	mpi_free(expected_g);
+	mpi_free(expected_N);
 	return (MUNIT_OK);
 }
 

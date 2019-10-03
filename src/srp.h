@@ -7,7 +7,7 @@
  */
 #include <sys/types.h>
 
-#include "bignum.h"
+#include "mpi.h"
 #include "bytes.h"
 
 
@@ -35,9 +35,9 @@ struct srp_server {
 	 *
 	 * Returns 0 on success, -1 if the identity is invalid or on failure.
 	 */
-	int	(*start)(struct srp_server *server,
-			    const struct bytes *I, const struct bignum *A,
-			    struct bytes **salt_p, struct bignum **B_p);
+	int	(*start)(struct srp_server *server, const struct bytes *I,
+			const struct mpi *A, struct bytes **salt_p,
+			struct mpi **B_p);
 
 	/*
 	 * Finalize a SRP password-authenticated key agreement by verifying the
@@ -154,11 +154,10 @@ struct srp_client_opaque {
  * Set the SRP parameters N, g and k.
  *
  * Returns 0 on success, -1 on error. On success every non-NULL pointer given
- * are set to their SRP parameter values and must be passed to bignum_free()
- * after use.
+ * are set to their SRP parameter values and must be passed to mpi_free() after
+ * use.
  */
-int	srp_parameters(struct bignum **N_p, struct bignum **g_p,
-		    struct bignum **k_p);
+int	srp_parameters(struct mpi **N_p, struct mpi **g_p, struct mpi **k_p);
 
 /*
  * Create a new SRP Server struct with the given parameters.
@@ -192,14 +191,14 @@ struct srp_client	*srp_client_new(const struct bytes *I,
 		    const struct bytes *P);
 
 /*
- * helpers to get a bignum from SHA-256(lhs concatenated to rhs)
+ * helpers to get a mpi from SHA-256(lhs concatenated to rhs)
  *
  * They are exposed here so that the Simplified SRP implementation can use them
  * too.
  */
-struct bignum	*srp_bignum_from_sha256_bytes(const struct bytes *lhs,
+struct mpi	*srp_mpi_from_sha256_bytes(const struct bytes *lhs,
 		    const struct bytes *rhs);
-struct bignum	*srp_bignum_from_sha256_bignums(const struct bignum *lhs,
-		    const struct bignum *rhs);
+struct mpi	*srp_mpi_from_sha256_mpis(const struct mpi *lhs,
+		    const struct mpi *rhs);
 
 #endif /* ndef SRP_H */

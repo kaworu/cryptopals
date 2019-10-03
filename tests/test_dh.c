@@ -11,10 +11,10 @@
 static MunitResult
 test_small_dh(const MunitParameter *params, void *data)
 {
-	struct bignum *p = bignum_from_dec("37");
-	struct bignum *g = bignum_from_dec("5");
+	struct mpi *p = mpi_from_dec("37");
+	struct mpi *g = mpi_from_dec("5");
 	if (p == NULL || g == NULL)
-		munit_error("bignum_from_dec");
+		munit_error("mpi_from_dec");
 
 	struct dh *alice = dh_new();
 	struct dh *bob   = dh_new();
@@ -30,8 +30,8 @@ test_small_dh(const MunitParameter *params, void *data)
 
 	bob->free(bob);
 	alice->free(alice);
-	bignum_free(g);
-	bignum_free(p);
+	mpi_free(g);
+	mpi_free(p);
 	return (MUNIT_OK);
 }
 
@@ -40,10 +40,10 @@ test_small_dh(const MunitParameter *params, void *data)
 static MunitResult
 test_nist_dh(const MunitParameter *params, void *data)
 {
-	struct bignum *p = bignum_from_hex(nist_p_hex);
-	struct bignum *g = bignum_from_hex(nist_g_hex);
+	struct mpi *p = mpi_from_hex(nist_p_hex);
+	struct mpi *g = mpi_from_hex(nist_g_hex);
 	if (p == NULL || g == NULL)
-		munit_error("bignum_from_hex");
+		munit_error("mpi_from_hex");
 
 	struct dh *alice = dh_new();
 	struct dh *bob   = dh_new();
@@ -59,8 +59,8 @@ test_nist_dh(const MunitParameter *params, void *data)
 
 	bob->free(bob);
 	alice->free(alice);
-	bignum_free(g);
-	bignum_free(p);
+	mpi_free(g);
+	mpi_free(p);
 	return (MUNIT_OK);
 }
 
@@ -68,10 +68,10 @@ test_nist_dh(const MunitParameter *params, void *data)
 static MunitResult
 test_message(const MunitParameter *params, void *data)
 {
-	struct bignum *p = bignum_from_hex(nist_p_hex);
-	struct bignum *g = bignum_from_hex(nist_g_hex);
+	struct mpi *p = mpi_from_hex(nist_p_hex);
+	struct mpi *g = mpi_from_hex(nist_g_hex);
 	if (p == NULL || g == NULL)
-		munit_error("bignum_from_hex");
+		munit_error("mpi_from_hex");
 
 	struct dh *alice = dh_new();
 	struct dh *bob   = dh_new();
@@ -92,8 +92,8 @@ test_message(const MunitParameter *params, void *data)
 	bytes_free(message);
 	bob->free(bob);
 	alice->free(alice);
-	bignum_free(g);
-	bignum_free(p);
+	mpi_free(g);
+	mpi_free(p);
 	return (MUNIT_OK);
 }
 

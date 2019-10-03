@@ -14,12 +14,11 @@
 
 /* implementations for the struct dh function members */
 static int		 dh_exchange(struct dh *self, struct dh *bob,
-		    const struct bignum *p, const struct bignum *g);
-static int		 dh_negociate(struct dh *self,
-		    const struct bignum *p, const struct bignum *g,
-		    struct bignum **np_p, struct bignum **ng_p);
-static struct bignum	*dh_receive(struct dh *self, const struct bignum *p,
-		    const struct bignum *g, const struct bignum *A);
+		    const struct mpi *p, const struct mpi *g);
+static int		 dh_negociate(struct dh *self, const struct mpi *p,
+		    const struct mpi *g, struct mpi **np_p, struct mpi **ng_p);
+static struct mpi	*dh_receive(struct dh *self, const struct mpi *p,
+		    const struct mpi *g, const struct mpi *A);
 static int		 dh_challenge(const struct dh *self,
 		    const struct dh *to, const struct bytes *msg);
 static struct bytes	*dh_echo(const struct dh *self,
@@ -48,7 +47,7 @@ dh_new(void)
 
 
 struct bytes *
-dh_secret_to_aes128_key(const struct bignum *s)
+dh_secret_to_aes128_key(const struct mpi *s)
 {
 	struct bytes *sbytes = NULL, *shash = NULL, *key = NULL;
 	int success = 0;
@@ -56,7 +55,7 @@ dh_secret_to_aes128_key(const struct bignum *s)
 	if (s == NULL)
 		goto cleanup;
 
-	sbytes = bignum_to_bytes_be(s);
+	sbytes = mpi_to_bytes_be(s);
 	shash = sha1_hash(sbytes);
 	key = bytes_slice(shash, 0, aes_128_keylength());
 	if (key == NULL)
@@ -76,11 +75,11 @@ cleanup:
 
 
 static int
-dh_exchange(struct dh *self, struct dh *bob, const struct bignum *p,
-		    const struct bignum *g)
+dh_exchange(struct dh *self, struct dh *bob, const struct mpi *p,
+		    const struct mpi *g)
 {
-	struct bignum *np = NULL, *ng = NULL;
-	struct bignum *a = NULL, *A = NULL, *B = NULL, *s = NULL;
+	struct mpi *np = NULL, *ng = NULL;
+	struct mpi *a = NULL, *A = NULL, *B = NULL, *s = NULL;
 	int success = 0;
 
 	/* sanity checks */
@@ -98,15 +97,15 @@ dh_exchange(struct dh *self, struct dh *bob, const struct bignum *p,
 	 */
 
 	/* generate Alice's private number a */
-	a = bignum_rand(np);
+	a = mpi_rand_range_from_one_to(np);
 	/* compute Alice's public number A */
-	A = bignum_mod_exp(ng, a, np);
+	A = mpi_mod_exp(ng, a, np);
 	/* send the DH parameters to Bob, he'll answer with his own public
 	   number B */
 	B = bob->receive(bob, np, ng, A);
 	/* compute the shared secret using Bob's public number B and Alice's
 	   private number a */
-	s = bignum_mod_exp(B, a, np);
+	s = mpi_mod_exp(B, a, np);
 
 	/* reset associated data for Alice */
 	bytes_free(self->key);
@@ -118,21 +117,21 @@ dh_exchange(struct dh *self, struct dh *bob, const struct bignum *p,
 	success = 1;
 	/* FALLTHROUGH */
 cleanup:
-	bignum_free(s);
-	bignum_free(B);
-	bignum_free(A);
-	bignum_free(a);
-	bignum_free(ng);
-	bignum_free(np);
+	mpi_free(s);
+	mpi_free(B);
+	mpi_free(A);
+	mpi_free(a);
+	mpi_free(ng);
+	mpi_free(np);
 	return (success ? 0 : -1);
 }
 
 
 static int
-dh_negociate(struct dh *self, const struct bignum *p, const struct bignum *g,
-		    struct bignum **np_p, struct bignum **ng_p)
+dh_negociate(struct dh *self, const struct mpi *p, const struct mpi *g,
+		    struct mpi **np_p, struct mpi **ng_p)
 {
-	struct bignum *np = NULL, *ng = NULL;
+	struct mpi *np = NULL, *ng = NULL;
 	int success = 0;
 
 	/* sanity checks */
@@ -144,8 +143,8 @@ dh_negociate(struct dh *self, const struct bignum *p, const struct bignum *g,
 		goto cleanup;
 
 	/* no checks at all, just accept the proposed p and g */
-	np = bignum_dup(p);
-	ng = bignum_dup(g);
+	np = mpi_dup(p);
+	ng = mpi_dup(g);
 	if (np == NULL || ng == NULL)
 		goto cleanup;
 
@@ -158,17 +157,17 @@ dh_negociate(struct dh *self, const struct bignum *p, const struct bignum *g,
 
 	/* FALLTHROUGH */
 cleanup:
-	bignum_free(ng);
-	bignum_free(np);
+	mpi_free(ng);
+	mpi_free(np);
 	return (success ? 0 : -1);
 }
 
 
-static struct bignum *
-dh_receive(struct dh *self, const struct bignum *p, const struct bignum *g,
-		    const struct bignum *A)
+static struct mpi *
+dh_receive(struct dh *self, const struct mpi *p, const struct mpi *g,
+		    const struct mpi *A)
 {
-	struct bignum *b = NULL, *s = NULL, *B = NULL;
+	struct mpi *b = NULL, *s = NULL, *B = NULL;
 	int success = 0;
 
 	/* sanity checks */
@@ -176,12 +175,12 @@ dh_receive(struct dh *self, const struct bignum *p, const struct bignum *g,
 		goto cleanup;
 
 	/* generate Bob's private number b */
-	b = bignum_rand(p);
+	b = mpi_rand_range_from_one_to(p);
 	/* compute the shared secret using Alice's public number A and Bob's
 	   private number b */
-	s = bignum_mod_exp(A, b, p);
+	s = mpi_mod_exp(A, b, p);
 	/* compute Bob's public number B to be sent back to Alice */
-	B = bignum_mod_exp(g, b, p);
+	B = mpi_mod_exp(g, b, p);
 	if (B == NULL)
 		goto cleanup;
 
@@ -195,10 +194,10 @@ dh_receive(struct dh *self, const struct bignum *p, const struct bignum *g,
 	success = 1;
 	/* FALLTHROUGH */
 cleanup:
-	bignum_free(s);
-	bignum_free(b);
+	mpi_free(s);
+	mpi_free(b);
 	if (!success) {
-		bignum_free(B);
+		mpi_free(B);
 		B = NULL;
 	}
 	return (B);

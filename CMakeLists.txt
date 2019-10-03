@@ -23,7 +23,8 @@ link_directories(${OPENSSL_LIBRARIES})
 # Our cryptopals library.
 set(SRCS
     ${PROJECT_SOURCE_DIR}/src/bytes.c
-    ${PROJECT_SOURCE_DIR}/src/bignum.c
+    ${PROJECT_SOURCE_DIR}/src/mpi0.c
+    ${PROJECT_SOURCE_DIR}/src/mpi.c
     ${PROJECT_SOURCE_DIR}/src/xor.c
     ${PROJECT_SOURCE_DIR}/src/break_plaintext.c
     ${PROJECT_SOURCE_DIR}/src/break_single_byte_xor.c
@@ -106,7 +107,7 @@ add_library(munit ${PROJECT_SOURCE_DIR}/munit/munit.c)
 # Test stuff.
 set(TEST_SRCS
     ${PROJECT_SOURCE_DIR}/tests/test_bytes.c
-    ${PROJECT_SOURCE_DIR}/tests/test_bignum.c
+    ${PROJECT_SOURCE_DIR}/tests/test_mpi.c
     ${PROJECT_SOURCE_DIR}/tests/test_xor.c
     ${PROJECT_SOURCE_DIR}/tests/test_break_plaintext.c
     ${PROJECT_SOURCE_DIR}/tests/test_break_single_byte_xor.c

@@ -18,16 +18,16 @@
 
 /* local struct srp_server method members implementations */
 static int	srp_local_server_start(struct srp_server *server,
-		    const struct bytes *I, const struct bignum *A,
-		    struct bytes **salt_p, struct bignum **B_p);
+		    const struct bytes *I, const struct mpi *A,
+		    struct bytes **salt_p, struct mpi **B_p);
 static int	srp_local_server_finalize(struct srp_server *server,
 		    const struct bytes *token);
 static void	srp_local_server_free(struct srp_server *server);
 
 /* remote struct srp_server method members implementations */
 static int	srp_remote_server_start(struct srp_server *server,
-		    const struct bytes *I, const struct bignum *A,
-		    struct bytes **salt_p, struct bignum **B_p);
+		    const struct bytes *I, const struct mpi *A,
+		    struct bytes **salt_p, struct mpi **B_p);
 static int	srp_remote_server_finalize(struct srp_server *server,
 		    const struct bytes *token);
 static void	srp_remote_server_free(struct srp_server *server);
@@ -39,12 +39,12 @@ static void	srp_client_free(struct srp_client *client);
 
 
 int
-srp_parameters(struct bignum **N_p, struct bignum **g_p, struct bignum **k_p)
+srp_parameters(struct mpi **N_p, struct mpi **g_p, struct mpi **k_p)
 {
-	struct bignum *N = NULL, *g = NULL, *k = NULL;
+	struct mpi *N = NULL, *g = NULL, *k = NULL;
 	int success = 0;
 
-	N = bignum_from_hex(
+	N = mpi_from_hex(
 		"ffffffffffffffffc90fdaa22168c234c4c6628b80dc1cd129024"
 		"e088a67cc74020bbea63b139b22514a08798e3404ddef9519b3cd"
 		"3a431b302b0a6df25f14374fe1356d6d51c245e485b576625e7ec"
@@ -53,8 +53,8 @@ srp_parameters(struct bignum **N_p, struct bignum **g_p, struct bignum **k_p)
 		"c55d39a69163fa8fd24cf5f83655d23dca3ad961c62f356208552"
 		"bb9ed529077096966d670c354e4abc9804f1746c08ca237327fff"
 		"fffffffffffff");
-	g = bignum_from_hex("2");
-	k = bignum_from_hex("3");
+	g = mpi_from_hex("2");
+	k = mpi_from_hex("3");
 
 	if (N == NULL || g == NULL || k == NULL)
 		goto cleanup;
@@ -75,9 +75,9 @@ srp_parameters(struct bignum **N_p, struct bignum **g_p, struct bignum **k_p)
 	}
 	/* FALLTHROUGH */
 cleanup:
-	bignum_free(k);
-	bignum_free(g);
-	bignum_free(N);
+	mpi_free(k);
+	mpi_free(g);
+	mpi_free(N);
 	return (success ? 0 : -1);
 }
 
@@ -201,15 +201,15 @@ cleanup:
 
 
 static int
-srp_local_server_start(struct srp_server *server,
-		    const struct bytes *I, const struct bignum *A,
-		    struct bytes **salt_p, struct bignum **B_p)
+srp_local_server_start(struct srp_server *server, const struct bytes *I,
+		    const struct mpi *A, struct bytes **salt_p,
+		    struct mpi **B_p)
 {
-	struct bignum *N = NULL, *g = NULL, *k = NULL;
+	struct mpi *N = NULL, *g = NULL, *k = NULL;
 	struct bytes *salt = NULL;
-	struct bignum *x = NULL, *v = NULL;
-	struct bignum *b = NULL, *B = NULL;
-	struct bignum *u = NULL, *S = NULL;
+	struct mpi *x = NULL, *v = NULL;
+	struct mpi *b = NULL, *B = NULL;
+	struct mpi *u = NULL, *S = NULL;
 	struct bytes *Sb = NULL, *K = NULL;
 	struct bytes *token = NULL;
 	int success = 0;
@@ -238,41 +238,41 @@ srp_local_server_start(struct srp_server *server,
 
 	/* Generate string xH=SHA256(salt|password) */
 	/* Convert xH to integer x somehow */
-	x = srp_bignum_from_sha256_bytes(salt, srvinfo->P);
+	x = srp_mpi_from_sha256_bytes(salt, srvinfo->P);
 	if (x == NULL)
 		goto cleanup;
 
 	/* Generate v=g**x % N */
-	v = bignum_mod_exp(g, x, N);
+	v = mpi_mod_exp(g, x, N);
 	if (v == NULL)
 		goto cleanup;
 
 	/* B=kv + g**b % N */
-	b = bignum_rand(N);
-	struct bignum *kv = bignum_mod_mul(k, v, N);
-	struct bignum *g_pow_b = bignum_mod_exp(g, b, N);
-	B = bignum_mod_add(kv, g_pow_b, N);
-	bignum_free(g_pow_b);
-	bignum_free(kv);
+	b = mpi_rand_range_from_one_to(N);
+	struct mpi *kv = mpi_mod_mul(k, v, N);
+	struct mpi *g_pow_b = mpi_mod_exp(g, b, N);
+	B = mpi_mod_add(kv, g_pow_b, N);
+	mpi_free(g_pow_b);
+	mpi_free(kv);
 	if (B == NULL)
 		goto cleanup;
 
 	/* Compute string uH = SHA256(A|B), u = integer of uH */
-	u = srp_bignum_from_sha256_bignums(A, B);
+	u = srp_mpi_from_sha256_mpis(A, B);
 	if (u == NULL)
 		goto cleanup;
 
 	/* Generate S = (A * v**u) ** b % N */
-	struct bignum *v_pow_u = bignum_mod_exp(v, u, N);
-	struct bignum *A_times_v_pow_u = bignum_mod_mul(A, v_pow_u, N);
-	S = bignum_mod_exp(A_times_v_pow_u, b, N);
-	bignum_free(A_times_v_pow_u);
-	bignum_free(v_pow_u);
+	struct mpi *v_pow_u = mpi_mod_exp(v, u, N);
+	struct mpi *A_times_v_pow_u = mpi_mod_mul(A, v_pow_u, N);
+	S = mpi_mod_exp(A_times_v_pow_u, b, N);
+	mpi_free(A_times_v_pow_u);
+	mpi_free(v_pow_u);
 	if (S == NULL)
 		goto cleanup;
 
 	/* Generate K = SHA256(S) */
-	Sb = bignum_to_bytes_be(S);
+	Sb = mpi_to_bytes_be(S);
 	K  = sha256_hash(Sb);
 	if (K == NULL)
 		goto cleanup;
@@ -303,16 +303,16 @@ cleanup:
 	bytes_free(token);
 	bytes_free(K);
 	bytes_free(Sb);
-	bignum_free(S);
-	bignum_free(u);
-	bignum_free(B);
-	bignum_free(b);
-	bignum_free(v);
-	bignum_free(x);
+	mpi_free(S);
+	mpi_free(u);
+	mpi_free(B);
+	mpi_free(b);
+	mpi_free(v);
+	mpi_free(x);
 	bytes_free(salt);
-	bignum_free(k);
-	bignum_free(g);
-	bignum_free(N);
+	mpi_free(k);
+	mpi_free(g);
+	mpi_free(N);
 	return (success ? 0 : -1);
 }
 
@@ -368,9 +368,9 @@ srp_local_server_free(struct srp_server *server)
 
 
 static int
-srp_remote_server_start(struct srp_server *server,
-		    const struct bytes *I, const struct bignum *A,
-		    struct bytes **salt_p, struct bignum **B_p)
+srp_remote_server_start(struct srp_server *server, const struct bytes *I,
+		    const struct mpi *A, struct bytes **salt_p,
+		    struct mpi **B_p)
 {
 	struct addrinfo hints;
 	struct addrinfo *res0 = NULL, *res = NULL;
@@ -383,7 +383,7 @@ srp_remote_server_start(struct srp_server *server,
 	   something that is at least twice this number and we should be ok. */
 	char rsp[1024] = { 0 };
 	struct bytes *salt = NULL;
-	struct bignum *B = NULL;
+	struct mpi *B = NULL;
 	int success = 0;
 
 	/* sanity checks */
@@ -428,7 +428,7 @@ srp_remote_server_start(struct srp_server *server,
 	/* C->S: Send I, A=g**a % N (a la Diffie Hellman) */
 
 	hexI = bytes_to_str(I);
-	hexA = bignum_to_hex(A);
+	hexA = mpi_to_hex(A);
 	if (hexI == NULL || hexA == NULL)
 		goto cleanup;
 	msglen = asprintf(&msg, "%s,%s", hexI, hexA);
@@ -448,7 +448,7 @@ srp_remote_server_start(struct srp_server *server,
 	/* overwrite the comma with NUL, the next char is the first of B */
 	*comma = '\0';
 	salt = bytes_from_hex(rsp);
-	B = bignum_from_hex(comma + 1);
+	B = mpi_from_hex(comma + 1);
 	if (salt == NULL || B == NULL)
 		goto cleanup;
 
@@ -466,7 +466,7 @@ srp_remote_server_start(struct srp_server *server,
 	/* FALLTHROUGH */
 cleanup:
 	bytes_free(salt);
-	bignum_free(B);
+	mpi_free(B);
 	freezero(msg, msg == NULL ? 0 : strlen(msg));
 	freezero(hexA, hexA == NULL ? 0 : strlen(hexA));
 	freezero(hexI, hexI == NULL ? 0 : strlen(hexI));
@@ -544,9 +544,9 @@ srp_remote_server_free(struct srp_server *server)
 static int
 srp_client_authenticate(struct srp_client *client, struct srp_server *server)
 {
-	struct bignum *N = NULL, *g = NULL, *k = NULL;
-	struct bignum *a = NULL, *A = NULL, *B = NULL;
-	struct bignum *u = NULL, *x = NULL, *S = NULL;
+	struct mpi *N = NULL, *g = NULL, *k = NULL;
+	struct mpi *a = NULL, *A = NULL, *B = NULL;
+	struct mpi *u = NULL, *x = NULL, *S = NULL;
 	struct bytes *salt = NULL;
 	struct bytes *Sb = NULL, *K = NULL, *token = NULL;
 	int success = 0;
@@ -561,37 +561,37 @@ srp_client_authenticate(struct srp_client *client, struct srp_server *server)
 	const struct srp_client_opaque *clientinfo = client->opaque;
 
 	/* Send I, A=g**a % N (a la Diffie Hellman) */
-	a = bignum_rand(N);
-	A = bignum_mod_exp(g, a, N);
+	a = mpi_rand_range_from_one_to(N);
+	A = mpi_mod_exp(g, a, N);
 	if (server->start(server, clientinfo->I, A, &salt, &B) != 0)
 		goto cleanup;
 
 	/* Compute string uH = SHA256(A|B), u = integer of uH */
-	u = srp_bignum_from_sha256_bignums(A, B);
+	u = srp_mpi_from_sha256_mpis(A, B);
 	if (u == NULL)
 		goto cleanup;
 
 	/* Generate string xH=SHA256(salt|password) */
 	/* Convert xH to integer x somehow */
-	x = srp_bignum_from_sha256_bytes(salt, clientinfo->P);
+	x = srp_mpi_from_sha256_bytes(salt, clientinfo->P);
 
 	/* Generate S = (B - k * g**x)**(a + u * x) % N */
-	struct bignum *g_pow_x = bignum_mod_exp(g, x, N);
-	struct bignum *k_times_g_pow_x = bignum_mod_mul(k, g_pow_x, N);
-	struct bignum *lhs = bignum_sub(B, k_times_g_pow_x);
-	struct bignum *u_times_x = bignum_mod_mul(u, x, N);
-	struct bignum *rhs = bignum_mod_add(a, u_times_x, N);
-	S = bignum_mod_exp(lhs, rhs, N);
-	bignum_free(rhs);
-	bignum_free(u_times_x);
-	bignum_free(lhs);
-	bignum_free(k_times_g_pow_x);
-	bignum_free(g_pow_x);
+	struct mpi *g_pow_x = mpi_mod_exp(g, x, N);
+	struct mpi *k_times_g_pow_x = mpi_mod_mul(k, g_pow_x, N);
+	struct mpi *lhs = mpi_sub(B, k_times_g_pow_x);
+	struct mpi *u_times_x = mpi_mod_mul(u, x, N);
+	struct mpi *rhs = mpi_mod_add(a, u_times_x, N);
+	S = mpi_mod_exp(lhs, rhs, N);
+	mpi_free(rhs);
+	mpi_free(u_times_x);
+	mpi_free(lhs);
+	mpi_free(k_times_g_pow_x);
+	mpi_free(g_pow_x);
 	if (S == NULL)
 		goto cleanup;
 
 	/* Generate K = SHA256(S) */
-	Sb = bignum_to_bytes_be(S);
+	Sb = mpi_to_bytes_be(S);
 	K  = sha256_hash(Sb);
 	if (K == NULL)
 		goto cleanup;
@@ -613,16 +613,16 @@ cleanup:
 	bytes_free(token);
 	bytes_free(K);
 	bytes_free(Sb);
-	bignum_free(S);
-	bignum_free(x);
-	bignum_free(u);
+	mpi_free(S);
+	mpi_free(x);
+	mpi_free(u);
 	bytes_free(salt);
-	bignum_free(B);
-	bignum_free(A);
-	bignum_free(a);
-	bignum_free(k);
-	bignum_free(g);
-	bignum_free(N);
+	mpi_free(B);
+	mpi_free(A);
+	mpi_free(a);
+	mpi_free(k);
+	mpi_free(g);
+	mpi_free(N);
 	return (success ? 0 : -1);
 }
 
@@ -644,15 +644,15 @@ srp_client_free(struct srp_client *client)
 }
 
 
-struct bignum *
-srp_bignum_from_sha256_bytes(const struct bytes *lhs, const struct bytes *rhs)
+struct mpi *
+srp_mpi_from_sha256_bytes(const struct bytes *lhs, const struct bytes *rhs)
 {
 	struct bytes *lhs_rhs = NULL, *hash = NULL;
-	struct bignum *num = NULL;
+	struct mpi *num = NULL;
 
 	lhs_rhs = bytes_joined(2, lhs, rhs);
 	hash = sha256_hash(lhs_rhs);
-	num = bignum_from_bytes_be(hash);
+	num = mpi_from_bytes_be(hash);
 
 	bytes_free(hash);
 	bytes_free(lhs_rhs);
@@ -660,13 +660,12 @@ srp_bignum_from_sha256_bytes(const struct bytes *lhs, const struct bytes *rhs)
 }
 
 
-struct bignum *
-srp_bignum_from_sha256_bignums(const struct bignum *lhs,
-		    const struct bignum *rhs)
+struct mpi *
+srp_mpi_from_sha256_mpis(const struct mpi *lhs, const struct mpi *rhs)
 {
-	struct bytes *blhs = bignum_to_bytes_be(lhs);
-	struct bytes *brhs = bignum_to_bytes_be(rhs);
-	struct bignum *num = srp_bignum_from_sha256_bytes(blhs, brhs);
+	struct bytes *blhs = mpi_to_bytes_be(lhs);
+	struct bytes *brhs = mpi_to_bytes_be(rhs);
+	struct mpi *num = srp_mpi_from_sha256_bytes(blhs, brhs);
 
 	bytes_free(blhs);
 	bytes_free(brhs);

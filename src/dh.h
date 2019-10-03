@@ -6,7 +6,7 @@
  * Diffie–Hellman–Merkle key exchange stuff.
  */
 #include "bytes.h"
-#include "bignum.h"
+#include "mpi.h"
 
 
 /*
@@ -33,7 +33,7 @@ struct dh {
 	 * Returns 0 on success, -1 on error.
 	 */
 	int	(*exchange)(struct dh *self, struct dh *bob,
-			    const struct bignum *p, const struct bignum *g);
+			    const struct mpi *p, const struct mpi *g);
 
 	/*
 	 * Negotiate the public p and g parameters.
@@ -44,14 +44,14 @@ struct dh {
 	 *
 	 * Returns 0 on success, -1 on failure. On success, np_p and np_g point
 	 * to the negotiated p, respectively g, DH parameters and must be passed
-	 * to bignum_free() by the caller (alice).
+	 * to mpi_free() by the caller (alice).
 	 *
 	 * NOTE: This is intentionally a "naive" negotiation mechanism to allow
 	 * the MITM attacks we're trying. For a practical example, see RFC 4419.
 	 */
-	int	(*negociate)(struct dh *self,
-			    const struct bignum *p, const struct bignum *g,
-			    struct bignum **np_p, struct bignum **np_g);
+	int	(*negociate)(struct dh *self, const struct mpi *p,
+			    const struct mpi *g, struct mpi **np_p,
+			    struct mpi **np_g);
 
 	/*
 	 * Receive a DH exchange initiated by alice. Here self (bob) will
@@ -61,8 +61,8 @@ struct dh {
 	 * Returns bob's public number allowing the caller (alice) to compute
 	 * the shared secret on success, NULL on failure.
 	 */
-	struct bignum	*(*receive)(struct dh *self, const struct bignum *p,
-			    const struct bignum *g, const struct bignum *A);
+	struct mpi	*(*receive)(struct dh *self, const struct mpi *p,
+			    const struct mpi *g, const struct mpi *A);
 
 	/*
 	 * Ask alice to encrypt the provided msg with its key, send the encrypted
@@ -103,7 +103,7 @@ struct dh {
 struct dh	*dh_new(void);
 
 /*
- * Derive an AES 128 key from a bignum secret number.
+ * Derive an AES 128 key from a mpi secret number.
  *
  * The secret number is first hashed using SHA-1. Then, the first 16 bytes of
  * the hash are used as the AES 128 key.
@@ -111,6 +111,6 @@ struct dh	*dh_new(void);
  * Returns a bytes buffer that can be used as an AES 128 key on success, or NULL
  * on failure.
  */
-struct bytes	*dh_secret_to_aes128_key(const struct bignum *s);
+struct bytes	*dh_secret_to_aes128_key(const struct mpi *s);
 
 #endif /* ndef DH_H */

@@ -12,11 +12,10 @@
 
 
 /* implementations for the struct dh function members */
-static int		 dh_mitm_negociate(struct dh *self,
-		    const struct bignum *p, const struct bignum *g,
-		    struct bignum **np_p, struct bignum **ng_p);
-static struct bignum	*dh_mitm_receive(struct dh *self, const struct bignum *p,
-		    const struct bignum *g, const struct bignum *A);
+static int		 dh_mitm_negociate(struct dh *self, const struct mpi *p,
+		    const struct mpi *g, struct mpi **np_p, struct mpi **ng_p);
+static struct mpi	*dh_mitm_receive(struct dh *self, const struct mpi *p,
+		    const struct mpi *g, const struct mpi *A);
 static struct bytes	*dh_mitm_echo(const struct dh *self,
 		    const struct bytes *iv_ct);
 static void		 dh_mitm_free(struct dh *self);
@@ -55,12 +54,11 @@ dh_mitm_new(enum dh_mitm_type type, struct dh *bob)
 
 
 static int
-dh_mitm_negociate(struct dh *self,
-		    const struct bignum *p, const struct bignum *g,
-		    struct bignum **np_p, struct bignum **ng_p)
+dh_mitm_negociate(struct dh *self, const struct mpi *p, const struct mpi *g,
+		    struct mpi **np_p, struct mpi **ng_p)
 {
 	struct dh_mitm_opaque *dhinfo = NULL;
-	struct bignum *spoofed_g = NULL, *np = NULL, *ng = NULL;
+	struct mpi *spoofed_g = NULL, *np = NULL, *ng = NULL;
 	int success = 0;
 
 	/* sanity checks */
@@ -79,19 +77,19 @@ dh_mitm_negociate(struct dh *self,
 	case DH_MITM_P_AS_A:
 		/* simply pass the negociation parameters to bob, this attack is
 		   about the public numbers at the exchange step. */
-		spoofed_g = bignum_dup(g);
+		spoofed_g = mpi_dup(g);
 		break;
 	case DH_MITM_1_AS_G:
 		/* g = 1 */
-		spoofed_g = bignum_one();
+		spoofed_g = mpi_one();
 		break;
 	case DH_MITM_P_AS_G:
 		/* g = p */
-		spoofed_g = bignum_dup(p);
+		spoofed_g = mpi_dup(p);
 		break;
 	case DH_MITM_P_MINUS_1_AS_G:
 		/* g = p - 1 */
-		spoofed_g = bignum_sub_one(p);
+		spoofed_g = mpi_subn(p, 1);
 		break;
 	}
 
@@ -102,7 +100,7 @@ dh_mitm_negociate(struct dh *self,
 		goto cleanup;
 
 	/* check that bob accepted our g value */
-	if (bignum_cmp(spoofed_g, ng) != 0)
+	if (mpi_cmp(spoofed_g, ng) != 0)
 		goto cleanup;
 
 	success = 1;
@@ -115,19 +113,19 @@ dh_mitm_negociate(struct dh *self,
 
 	/* FALLTHROUGH */
 cleanup:
-	bignum_free(spoofed_g);
-	bignum_free(ng);
-	bignum_free(np);
+	mpi_free(spoofed_g);
+	mpi_free(ng);
+	mpi_free(np);
 	return (success ? 0 : -1);
 }
 
 
-static struct bignum *
-dh_mitm_receive(struct dh *self, const struct bignum *p, const struct bignum *g,
-		    const struct bignum *A)
+static struct mpi *
+dh_mitm_receive(struct dh *self, const struct mpi *p, const struct mpi *g,
+		    const struct mpi *A)
 {
 	struct dh_mitm_opaque *dhinfo = NULL;
-	struct bignum *p_minus_one = NULL, *s = NULL, *B = NULL;
+	struct mpi *p_minus_one = NULL, *s = NULL, *B = NULL;
 	int success = 0;
 
 	/* sanity checks */
@@ -144,51 +142,51 @@ dh_mitm_receive(struct dh *self, const struct bignum *p, const struct bignum *g,
 		B = bob->receive(bob, p, g, p);
 		if (B == NULL)
 			goto cleanup;
-		bignum_free(B);
+		mpi_free(B);
 		/* we'll send back p to alice as bob's public number */
-		B = bignum_dup(p);
+		B = mpi_dup(p);
 		if (B == NULL)
 			goto cleanup;
 		/* The private shared number is zero */
-		s = bignum_zero();
+		s = mpi_zero();
 		break;
 	case DH_MITM_1_AS_G:
 		/* ensure that g = 1 */
-		if (bignum_is_one(g) != 0)
+		if (mpi_test_one(g) != 0)
 			goto cleanup;
 		/* forward the parameters to bob */
 		B = bob->receive(bob, p, g, A);
 		if (B == NULL)
 			goto cleanup;
 		/* The private shared number is one */
-		s = bignum_one();
+		s = mpi_one();
 		break;
 	case DH_MITM_P_AS_G:
 		/* ensure that g = p */
-		if (bignum_cmp(g, p) != 0)
+		if (mpi_cmp(g, p) != 0)
 			goto cleanup;
 		/* forward the parameters to bob */
 		B = bob->receive(bob, p, g, A);
 		if (B == NULL)
 			goto cleanup;
 		/* The private shared number is zero */
-		s = bignum_zero();
+		s = mpi_zero();
 		break;
 	case DH_MITM_P_MINUS_1_AS_G:
-		p_minus_one = bignum_sub_one(p);
+		p_minus_one = mpi_subn(p, 1);
 		/* ensure that g = p - 1 */
-		if (bignum_cmp(g, p_minus_one) != 0)
+		if (mpi_cmp(g, p_minus_one) != 0)
 			goto cleanup;
 		/* forward the parameters to bob */
 		B = bob->receive(bob, p, g, A);
 		if (B == NULL)
 			goto cleanup;
 		/* The private shared number is either p - 1 or 1 */
-		if (bignum_cmp(A, p_minus_one) == 0 &&
-			    bignum_cmp(B, p_minus_one) == 0) {
-			s = bignum_dup(p_minus_one);
+		if (mpi_cmp(A, p_minus_one) == 0 &&
+			    mpi_cmp(B, p_minus_one) == 0) {
+			s = mpi_dup(p_minus_one);
 		} else {
-			s = bignum_one();
+			s = mpi_one();
 		}
 		break;
 	}
@@ -200,8 +198,8 @@ dh_mitm_receive(struct dh *self, const struct bignum *p, const struct bignum *g,
 	success = 1;
 	/* FALLTHROUGH */
 cleanup:
-	bignum_free(s);
-	bignum_free(p_minus_one);
+	mpi_free(s);
+	mpi_free(p_minus_one);
 	return (success ? B : NULL);
 }
 

@@ -8,7 +8,7 @@
 
 /* stuff from other test files */
 extern MunitTest test_bytes_suite_tests[];
-extern MunitTest test_bignum_suite_tests[];
+extern MunitTest test_mpi_suite_tests[];
 extern MunitTest test_cookie_suite_tests[];
 extern MunitTest test_xor_suite_tests[];
 extern MunitTest test_break_plaintext_suite_tests[];
@@ -38,7 +38,7 @@ extern MunitTest test_break_ssrp_suite_tests[];
 
 static MunitSuite all_test_suites[] = {
 	{ "bytes/",      test_bytes_suite_tests,                   NULL, 1, MUNIT_SUITE_OPTION_NONE },
-	{ "bignum/",     test_bignum_suite_tests,                  NULL, 1, MUNIT_SUITE_OPTION_NONE },
+	{ "mpi/",        test_mpi_suite_tests,                     NULL, 1, MUNIT_SUITE_OPTION_NONE },
 	{ "cookie/",     test_cookie_suite_tests,                  NULL, 1, MUNIT_SUITE_OPTION_NONE },
 	{ "xor/",        test_xor_suite_tests,                     NULL, 1, MUNIT_SUITE_OPTION_NONE },
 	{ "pt/",         test_break_plaintext_suite_tests,         NULL, 1, MUNIT_SUITE_OPTION_NONE },

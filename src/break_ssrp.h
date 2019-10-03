@@ -7,7 +7,7 @@
  * challenges.
  */
 #include "bytes.h"
-#include "bignum.h"
+#include "mpi.h"
 #include "ssrp.h"
 
 
@@ -15,9 +15,9 @@
  * opaque struct used by server created by ssrp_local_mitm_server_new().
  */
 struct ssrp_local_mitm_server_opaque {
-	struct bignum *N, *g;
+	struct mpi *N, *g;
 	struct bytes *salt, *token;
-	struct bignum *A, *b, *B, *u;
+	struct mpi *A, *b, *B, *u;
 };
 
 

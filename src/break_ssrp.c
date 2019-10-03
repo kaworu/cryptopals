@@ -16,9 +16,8 @@
 
 /* local struct ssrp_server method members implementations */
 static int	ssrp_local_mitm_server_start(struct ssrp_server *server,
-		    const struct bytes *I, const struct bignum *A,
-		    struct bytes **salt_p, struct bignum **B_p,
-		    struct bignum **u_p);
+		    const struct bytes *I, const struct mpi *A,
+		    struct bytes **salt_p, struct mpi **B_p, struct mpi **u_p);
 static int	ssrp_local_mitm_server_finalize(struct ssrp_server *server,
 		    const struct bytes *token);
 static void	ssrp_local_mitm_server_free(struct ssrp_server *server);
@@ -88,17 +87,16 @@ cleanup:
 
 
 static int
-ssrp_local_mitm_server_start(struct ssrp_server *server,
-		    const struct bytes *I, const struct bignum *A,
-		    struct bytes **salt_p, struct bignum **B_p,
-		    struct bignum **u_p)
+ssrp_local_mitm_server_start(struct ssrp_server *server, const struct bytes *I,
+		    const struct mpi *A, struct bytes **salt_p,
+		    struct mpi **B_p, struct mpi **u_p)
 {
-	struct bignum *N = NULL, *g = NULL;
+	struct mpi *N = NULL, *g = NULL;
 	struct bytes *salt = NULL;
-	struct bignum *B = NULL, *b = NULL, *u = NULL;
+	struct mpi *B = NULL, *b = NULL, *u = NULL;
 	/* server copy */
 	struct bytes *salt_s = NULL;
-	struct bignum *A_s = NULL, *B_s = NULL, *u_s = NULL;
+	struct mpi *A_s = NULL, *B_s = NULL, *u_s = NULL;
 
 	int success = 0;
 
@@ -122,53 +120,47 @@ ssrp_local_mitm_server_start(struct ssrp_server *server,
 		goto cleanup;
 
 	/* B=g**b % N */
-	b = bignum_rand(N);
-	B = bignum_mod_exp(g, b, N);
+	b = mpi_rand_range_from_one_to(N);
+	B = mpi_mod_exp(g, b, N);
 	if (B == NULL)
 		goto cleanup;
 
 	/* u = 128 bit random number */
 	struct bytes *uH = bytes_randomized(16);
-	u = bignum_from_bytes_be(uH);
+	u = mpi_from_bytes_be(uH);
 	bytes_free(uH);
 	if (u == NULL)
 		goto cleanup;
 
-	A_s = bignum_dup(A);
-	if (A_s == NULL)
-		goto cleanup;
+	A_s    = mpi_dup(A);
 	salt_s = bytes_dup(salt);
-	if (salt_s == NULL)
-		goto cleanup;
-	B_s = bignum_dup(B);
-	if (B_s == NULL)
-		goto cleanup;
-	u_s = bignum_dup(u);
-	if (u_s == NULL)
+	B_s    = mpi_dup(B);
+	u_s    = mpi_dup(u);
+	if (A_s == NULL || salt_s == NULL || B_s == NULL || u_s == NULL)
 		goto cleanup;
 
 	success = 1;
 
 	/* copy N, g, A, B, b, salt, and u into the server info for later use */
-	bignum_free(srvinfo->N);
+	mpi_free(srvinfo->N);
 	srvinfo->N = N;
 	N = NULL;
-	bignum_free(srvinfo->g);
+	mpi_free(srvinfo->g);
 	srvinfo->g = g;
 	g = NULL;
-	bignum_free(srvinfo->A);
+	mpi_free(srvinfo->A);
 	srvinfo->A = A_s;
 	A_s = NULL;
 	bytes_free(srvinfo->salt);
 	srvinfo->salt = salt_s;
 	salt_s = NULL;
-	bignum_free(srvinfo->B);
+	mpi_free(srvinfo->B);
 	srvinfo->B = B_s;
 	B_s = NULL;
-	bignum_free(srvinfo->b);
+	mpi_free(srvinfo->b);
 	srvinfo->b = b;
 	b = NULL;
-	bignum_free(srvinfo->u);
+	mpi_free(srvinfo->u);
 	srvinfo->u = u_s;
 	u_s = NULL;
 
@@ -182,16 +174,16 @@ ssrp_local_mitm_server_start(struct ssrp_server *server,
 
 	/* FALLTHROUGH */
 cleanup:
-	bignum_free(u_s);
-	bignum_free(B_s);
+	mpi_free(u_s);
+	mpi_free(B_s);
 	bytes_free(salt_s);
-	bignum_free(A_s);
-	bignum_free(u);
-	bignum_free(B);
-	bignum_free(b);
+	mpi_free(A_s);
+	mpi_free(u);
+	mpi_free(B);
+	mpi_free(b);
 	bytes_free(salt);
-	bignum_free(g);
-	bignum_free(N);
+	mpi_free(g);
+	mpi_free(N);
 	return (success ? 0 : -1);
 }
 
@@ -226,14 +218,14 @@ ssrp_local_mitm_server_free(struct ssrp_server *server)
 
 	if (server->opaque != NULL) {
 		struct ssrp_local_mitm_server_opaque *srvinfo = server->opaque;
-		bignum_free(srvinfo->N);
-		bignum_free(srvinfo->g);
+		mpi_free(srvinfo->N);
+		mpi_free(srvinfo->g);
 		bytes_free(srvinfo->salt);
 		bytes_free(srvinfo->token);
-		bignum_free(srvinfo->A);
-		bignum_free(srvinfo->B);
-		bignum_free(srvinfo->b);
-		bignum_free(srvinfo->u);
+		mpi_free(srvinfo->A);
+		mpi_free(srvinfo->B);
+		mpi_free(srvinfo->b);
+		mpi_free(srvinfo->u);
 		freezero(srvinfo, sizeof(struct ssrp_local_mitm_server_opaque));
 	}
 	freezero(server, sizeof(struct ssrp_server));
@@ -245,7 +237,7 @@ ssrp_local_mitm_test_password(const struct ssrp_server *server,
 		    const char *guess)
 {
 	struct bytes *password = NULL;
-	struct bignum *x = NULL, *v = NULL, *S = NULL;
+	struct mpi *x = NULL, *v = NULL, *S = NULL;
 	struct bytes *Sb = NULL, *K = NULL;
 	struct bytes *token = NULL;
 	int success = 0, match = 0;
@@ -258,12 +250,12 @@ ssrp_local_mitm_test_password(const struct ssrp_server *server,
 
 	const struct ssrp_local_mitm_server_opaque *srvinfo = server->opaque;
 	const struct bytes *salt =srvinfo->salt;
-	const struct bignum *N =srvinfo->N;
-	const struct bignum *g =srvinfo->g;
-	const struct bignum *A =srvinfo->A;
-	const struct bignum *B =srvinfo->B;
-	const struct bignum *b =srvinfo->b;
-	const struct bignum *u =srvinfo->u;
+	const struct mpi *N =srvinfo->N;
+	const struct mpi *g =srvinfo->g;
+	const struct mpi *A =srvinfo->A;
+	const struct mpi *B =srvinfo->B;
+	const struct mpi *b =srvinfo->b;
+	const struct mpi *u =srvinfo->u;
 
 	/* more sanity checks */
 	if (salt == NULL || srvinfo->token == NULL)
@@ -280,26 +272,26 @@ ssrp_local_mitm_test_password(const struct ssrp_server *server,
 
 	/* Generate string xH=SHA256(salt|password) */
 	/* Convert xH to integer x somehow */
-	x = srp_bignum_from_sha256_bytes(salt, password);
+	x = srp_mpi_from_sha256_bytes(salt, password);
 	if (x == NULL)
 		goto cleanup;
 
 	/* Generate v=g**x % N */
-	v = bignum_mod_exp(g, x, N);
+	v = mpi_mod_exp(g, x, N);
 	if (v == NULL)
 		goto cleanup;
 
 	/* Generate S = (A * v**u) ** b % N */
-	struct bignum *v_pow_u = bignum_mod_exp(v, u, N);
-	struct bignum *A_times_v_pow_u = bignum_mod_mul(A, v_pow_u, N);
-	S = bignum_mod_exp(A_times_v_pow_u, b, N);
-	bignum_free(A_times_v_pow_u);
-	bignum_free(v_pow_u);
+	struct mpi *v_pow_u = mpi_mod_exp(v, u, N);
+	struct mpi *A_times_v_pow_u = mpi_mod_mul(A, v_pow_u, N);
+	S = mpi_mod_exp(A_times_v_pow_u, b, N);
+	mpi_free(A_times_v_pow_u);
+	mpi_free(v_pow_u);
 	if (S == NULL)
 		goto cleanup;
 
 	/* Generate K = SHA256(S) */
-	Sb = bignum_to_bytes_be(S);
+	Sb = mpi_to_bytes_be(S);
 	K  = sha256_hash(Sb);
 	if (K == NULL)
 		goto cleanup;
@@ -317,9 +309,9 @@ cleanup:
 	bytes_free(token);
 	bytes_free(K);
 	bytes_free(Sb);
-	bignum_free(S);
-	bignum_free(v);
-	bignum_free(x);
+	mpi_free(S);
+	mpi_free(v);
+	mpi_free(x);
 	bytes_free(password);
 	if (!success)
 		return -1;
