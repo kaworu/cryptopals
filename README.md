@@ -20,3 +20,19 @@ lazy -- just check the Travis-CI build output.
 That's it. It's only a bunch of functions in a lib wrapped by tests using the
 data from the challenges. It's cool though, hopefully well commented and using
 the [µnit Testing Framework](https://nemequ.github.io/munit/).
+
+## coverage?
+
+```sh
+% BUILD_TYPE=COVERAGE make
+% ./build/testrunner --no-fork --log-visible debug --show-stderr \
+    --param srp_server ./python/srp_server.py \
+    --param mac_server ./python/hmac_padding_oracle.py \
+    --param mac_filepath ./README.md
+% lcov --directory build/CMakeFiles/cryptopals.dir/src \
+    --base-directory build/CMakeFiles/cryptopals.dir/src \
+    --gcov-tool $PWD/llvm-gcov.sh \
+    --capture \
+    -o cov.info
+% genhtml cov.info -o output
+```
