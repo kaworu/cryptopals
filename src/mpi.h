@@ -280,6 +280,14 @@ struct mpi	*mpi_mod_mul(const struct mpi *a, const struct mpi *b,
 		    const struct mpi *mod);
 
 /*
+ * Compute and returns the result of base ** exp.
+ *
+ * Returns a pointer to a newly allocated mpi struct that should passed to
+ * mpi_free(), or NULL on failure.
+ */
+struct mpi	*mpi_exp(const struct mpi *base, const struct mpi *exp);
+
+/*
  * Compute and returns the result of (base ** exp) % mod.
  *
  * Returns a pointer to a newly allocated mpi struct that should passed to

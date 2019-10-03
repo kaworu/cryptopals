@@ -522,6 +522,40 @@ cleanup:
 
 
 struct mpi *
+mpi_exp(const struct mpi *base, const struct mpi *exp)
+{
+	struct mpi *n = NULL;
+	BN_CTX *ctx = NULL;
+	int success = 0;
+
+	/* sanity checks */
+	if (base == NULL || exp == NULL)
+		goto cleanup;
+
+	n = mpi_zero();
+	if (n == NULL)
+		goto cleanup;
+
+	ctx = BN_CTX_new();
+	if (ctx == NULL)
+		goto cleanup;
+
+	if (BN_exp(n->bn, base->bn, exp->bn, ctx) == 0)
+		goto cleanup;
+
+	success = 1;
+	/* FALLTHROUGH */
+cleanup:
+	BN_CTX_free(ctx);
+	if (!success) {
+		mpi_free(n);
+		n = NULL;
+	}
+	return n;
+}
+
+
+struct mpi *
 mpi_mod_exp(const struct mpi *base, const struct mpi *exp,
 		    const struct mpi *mod)
 {

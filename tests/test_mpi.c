@@ -690,6 +690,7 @@ MunitTest test_mpi_suite_tests[] = {
 	{ "mpi_subn_mut",        test_mpi_skip,  NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "mpi_mul",            test_mpi_mul,              NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "mpi_mod_mul",        test_mpi_mod_mul,          NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "mpi_exp",        test_mpi_skip,          NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "mpi_mod_exp",        test_mpi_mod_exp,          NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "mpi_mod_sqr_mut",        test_mpi_skip,  NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "mpi_to_dec",         test_mpi_to_dec,           NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
