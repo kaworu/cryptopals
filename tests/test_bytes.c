@@ -966,11 +966,11 @@ test_bytes_to_uint32_le(const MunitParameter *params, void *data)
 	uint32_t *words = bytes_to_uint32_le(buf, &count);
 	munit_assert_not_null(words);
 	munit_assert_size(count, ==, expected_count);
-	munit_assert_memory_equal(len, words, expected);
+	munit_assert_int(memcmp(words, expected, sizeof(expected)), ==, 0);
 	free(words);
 	words = bytes_to_uint32_le(buf, NULL);
 	munit_assert_not_null(words);
-	munit_assert_memory_equal(len, words, expected);
+	munit_assert_int(memcmp(words, expected, sizeof(expected)), ==, 0);
 	free(words);
 
 	/* when NULL is given */
@@ -1008,11 +1008,11 @@ test_bytes_to_uint32_be(const MunitParameter *params, void *data)
 	uint32_t *words = bytes_to_uint32_be(buf, &count);
 	munit_assert_not_null(words);
 	munit_assert_size(count, ==, expected_count);
-	munit_assert_memory_equal(len, words, expected);
+	munit_assert_int(memcmp(words, expected, sizeof(expected)), ==, 0);
 	free(words);
 	words = bytes_to_uint32_be(buf, NULL);
 	munit_assert_not_null(words);
-	munit_assert_memory_equal(len, words, expected);
+	munit_assert_int(memcmp(words, expected, sizeof(expected)), ==, 0);
 	free(words);
 
 	/* when NULL is given */
