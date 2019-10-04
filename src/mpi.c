@@ -288,6 +288,36 @@ cleanup:
 }
 
 
+struct mpi *
+mpi_mul(const struct mpi *a, const struct mpi *b)
+{
+	struct mpi *r = NULL;
+	int success = 0;
+
+	/* sanity checks */
+	if (a == NULL || b == NULL)
+		goto cleanup;
+
+	r = mpi_dup(a);
+	if (r == NULL)
+		goto cleanup;
+
+	if (mpi_mul_mut(r, b) != 0)
+		goto cleanup;
+
+	success = 1;
+	/* FALLTHROUGH */
+cleanup:
+	if (!success) {
+		mpi_free(r);
+		r = NULL;
+	}
+	return r;
+}
+
+
+
+
 static int
 miller_rabin_test(const struct mpi *n, size_t t)
 {

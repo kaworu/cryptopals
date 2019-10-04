@@ -364,6 +364,18 @@ mpi_modn(const struct mpi *a, const uint64_t n)
 
 
 int
+mpi_lshift1_mut(struct mpi *n)
+{
+	/* sanity check */
+	if (n == NULL)
+		return -1;
+
+	const int success = BN_lshift1(n->bn, n->bn);
+	return (success ? 0 : -1);
+}
+
+
+int
 mpi_rshift1_mut(struct mpi *n)
 {
 	/* sanity check */
@@ -457,10 +469,9 @@ mpi_subn_mut(struct mpi *a, uint64_t n)
 }
 
 
-struct mpi *
-mpi_mul(const struct mpi *a, const struct mpi *b)
+int
+mpi_mul_mut(struct mpi *a, const struct mpi *b)
 {
-	struct mpi *result = NULL;
 	BN_CTX *ctx = NULL;
 	int success = 0;
 
@@ -472,22 +483,14 @@ mpi_mul(const struct mpi *a, const struct mpi *b)
 	if (ctx == NULL)
 		goto cleanup;
 
-	result = mpi_zero();
-	if (result == NULL)
-		goto cleanup;
-
-	if (BN_mul(result->bn, a->bn, b->bn, ctx) == 0)
+	if (BN_mul(a->bn, a->bn, b->bn, ctx) == 0)
 		goto cleanup;
 
 	success = 1;
 	/* FALLTHROUGH */
 cleanup:
 	BN_CTX_free(ctx);
-	if (!success) {
-		mpi_free(result);
-		result = NULL;
-	}
-	return (result);
+	return (success ? 0 : -1);
 }
 
 

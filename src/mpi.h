@@ -195,6 +195,13 @@ int	mpi_test_probably_prime(const struct mpi *n);
 uint64_t	mpi_modn(const struct mpi *a, const uint64_t n);
 
 /*
+ * left shift n from one bit.
+ *
+ * Returns 0 on success, -1 on failure.
+ */
+int	mpi_lshift1_mut(struct mpi *n);
+
+/*
  * right shift n from one bit.
  *
  * Returns 0 on success, -1 on failure.
@@ -277,6 +284,13 @@ int	mpi_subn_mut(struct mpi *a, const uint64_t n);
  * mpi_free(), or NULL on failure.
  */
 struct mpi	*mpi_mul(const struct mpi *a, const struct mpi *b);
+
+/*
+ * Multiply a by b.
+ *
+ * Returns 0 on success, -1 on failure.
+ */
+int	mpi_mul_mut(struct mpi *a, const struct mpi *b);
 
 /*
  * Compute and returns the non-negative result of (a * b) % mod.
