@@ -165,6 +165,16 @@ cleanup:
 	return n;
 }
 
+int
+mpi_test_even(const struct mpi *n)
+{
+	if (n == NULL)
+		return 1;
+
+	const int is_even = (mpi_test_odd(n) != 0);
+	return (is_even ? 0 : 1);
+}
+
 
 struct mpi *
 mpi_add(const struct mpi *a, const struct mpi *b)

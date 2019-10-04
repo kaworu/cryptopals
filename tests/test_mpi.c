@@ -491,6 +491,26 @@ test_mpi_test_odd(const MunitParameter *params, void *data)
 
 
 static MunitResult
+test_mpi_test_even(const MunitParameter *params, void *data)
+{
+	for (size_t i = 0; i < 128; i++) {
+		const int xi = munit_rand_int_range(INT_MIN, INT_MAX);
+		const int is_even = (xi % 2 == 0);
+		struct mpi *x = my_mpi_from_int(xi);
+		if (x == NULL)
+			munit_error("my_mpi_from_int");
+		munit_assert_int(mpi_test_even(x), ==, (is_even ? 0 : 1));
+		mpi_free(x);
+	}
+
+	/* when NULL is given */
+	munit_assert_int(mpi_test_odd(NULL), ==, 1);
+
+	return (MUNIT_OK);
+}
+
+
+static MunitResult
 test_mpi_sign(const MunitParameter *params, void *data)
 {
 	for (size_t i = 0; i < 128; i++) {
@@ -1336,6 +1356,7 @@ MunitTest test_mpi_suite_tests[] = {
 	{ "mpi_test_zero",      test_mpi_test_zero,      srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "mpi_test_one",       test_mpi_test_one,       srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "mpi_test_odd",       test_mpi_test_odd,       srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "mpi_test_even",      test_mpi_test_even,      srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "mpi_sign",           test_mpi_sign,           srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "mpi_test_probably_prime", test_mpi_test_probably_prime, srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "mpi_modn",        test_mpi_modn,        srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },

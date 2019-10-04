@@ -166,6 +166,13 @@ int	mpi_test_one(const struct mpi *n);
 int	mpi_test_odd(const struct mpi *n);
 
 /*
+ * Test if n is even.
+ *
+ * Returns 0 if n is even, 1 (odd or NULL).
+ */
+int	mpi_test_even(const struct mpi *n);
+
+/*
  * Test if n is negative.
  *
  * Returns -1 if n is negative, 0 if n is NULL or zero, 1 otherwise.
