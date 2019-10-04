@@ -326,6 +326,15 @@ struct mpi	*mpi_mod_exp(const struct mpi *base,
 int	mpi_mod_sqr_mut(struct mpi *n, const struct mpi *mod);
 
 /*
+ * Given x and y, computes a, b and v such that ax + by = v where v is the
+ * greatest common divisor between x and y.
+ *
+ * Returns 0 on success, -1 on failure.
+ */
+int	mpi_egcd(const struct mpi *x, const struct mpi *y, struct mpi **a_p,
+		    struct mpi **b_p, struct mpi **v_p);
+
+/*
  * Create a decimal representation of n.
  *
  * Returns a pointer to a newly allocated NUL-terminated string that should

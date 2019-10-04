@@ -1251,6 +1251,46 @@ test_mpi_mod_sqr_mut(const MunitParameter *params, void *data)
 
 
 static MunitResult
+test_mpi_egcd(const MunitParameter *params, void *data)
+{
+	/* Example from the Handbook of Applied Cryptography §14.62 */
+	struct mpi *x = mpi_from_dec("693");
+	struct mpi *y = mpi_from_dec("609");
+	struct mpi *ev = mpi_from_dec("21");
+	struct mpi *ea = mpi_from_dec("-181");
+	struct mpi *eb = mpi_from_dec("206");
+
+	if (x == NULL || y == NULL || ev == NULL || ea == NULL || eb == NULL)
+		munit_error("mpi_from_dec");
+
+	struct mpi *v = NULL, *a = NULL, *b = NULL;
+	const int ret = mpi_egcd(x, y, &a, &b, &v);
+	munit_assert_int(ret, ==, 0);
+	munit_assert_not_null(v);
+	munit_assert_int(mpi_cmp(v, ev), ==, 0);
+	munit_assert_not_null(a);
+	munit_assert_int(mpi_cmp(a, ea), ==, 0);
+	munit_assert_not_null(b);
+	munit_assert_int(mpi_cmp(b, eb), ==, 0);
+
+	/* when NULL is given */
+	munit_assert_int(mpi_egcd(x,    NULL, NULL, NULL, NULL), ==, -1);
+	munit_assert_int(mpi_egcd(NULL,    y, NULL, NULL, NULL), ==, -1);
+	munit_assert_int(mpi_egcd(NULL, NULL, NULL, NULL, NULL), ==, -1);
+
+	mpi_free(b);
+	mpi_free(a);
+	mpi_free(v);
+	mpi_free(eb);
+	mpi_free(ea);
+	mpi_free(ev);
+	mpi_free(y);
+	mpi_free(x);
+	return (MUNIT_OK);
+}
+
+
+static MunitResult
 test_mpi_to_bytes_be(const MunitParameter *params, void *data)
 {
 	for (size_t i = 1; i < 100; i++) {
@@ -1437,6 +1477,7 @@ MunitTest test_mpi_suite_tests[] = {
 	{ "mpi_exp",         test_mpi_exp,         srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "mpi_mod_exp",     test_mpi_mod_exp,     srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "mpi_mod_sqr_mut", test_mpi_mod_sqr_mut, srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "mpi_egcd",        test_mpi_egcd,        NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "mpi_to_dec",      test_mpi_to_dec,      srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "mpi_to_hex",      test_mpi_to_hex,      srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "mpi_to_bytes",    test_mpi_to_bytes_be, srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },

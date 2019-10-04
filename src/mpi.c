@@ -316,6 +316,156 @@ cleanup:
 }
 
 
+/*
+ * Binary extended gcd algorithm, see the Handbook of Applied Cryptography
+ * §14.4.3.
+ */
+int
+mpi_egcd(const struct mpi *cx, const struct mpi *cy, struct mpi **a_p,
+		    struct mpi **b_p, struct mpi **v_p)
+{
+	int success = 0;
+	struct mpi *g = NULL, *x = NULL, *y = NULL;
+	struct mpi *u = NULL, *v = NULL;
+	struct mpi *A = NULL, *B = NULL, *C = NULL, *D = NULL;
+
+	/* sanity checks */
+	if (cx == NULL || cy == NULL)
+		goto cleanup;
+
+	x = mpi_dup(cx);
+	y = mpi_dup(cy);
+	g = mpi_one();
+	if (x == NULL || y == NULL || g == NULL)
+		goto cleanup;
+
+	while (mpi_test_even(x) == 0 && mpi_test_even(y) == 0) {
+		/* x = x / 2 */
+		if (mpi_rshift1_mut(x) != 0)
+			goto cleanup;
+		/* y = y / 2 */
+		if (mpi_rshift1_mut(y) != 0)
+			goto cleanup;
+		/* g = 2 * g */
+		if (mpi_lshift1_mut(g) != 0)
+			goto cleanup;
+	}
+
+	u = mpi_dup(x);
+	v = mpi_dup(y);
+	A = mpi_one();
+	B = mpi_zero();
+	C = mpi_zero();
+	D = mpi_one();
+	if (u == NULL || v == NULL)
+		goto cleanup;
+	if (A == NULL || B == NULL || C == NULL || D == NULL)
+		goto cleanup;
+
+	do {
+		while (mpi_test_even(u) == 0) {
+			/* u = u / 2 */
+			if (mpi_rshift1_mut(u) != 0)
+				goto cleanup;
+			if (mpi_test_even(A) == 0 && mpi_test_even(B) == 0) {
+				/* A = A / 2 */
+				if (mpi_rshift1_mut(A) != 0)
+					goto cleanup;
+				/* B = B / 2 */
+				if (mpi_rshift1_mut(B) != 0)
+					goto cleanup;
+			} else {
+				/* A = (A + y) / 2 */
+				if (mpi_add_mut(A, y) != 0)
+					goto cleanup;
+				if (mpi_rshift1_mut(A) != 0)
+					goto cleanup;
+				/* B = (B - x) / 2 */
+				if (mpi_sub_mut(B, x) != 0)
+					goto cleanup;
+				if (mpi_rshift1_mut(B) != 0)
+					goto cleanup;
+			}
+		}
+		while (mpi_test_even(v) == 0) {
+			/* v = v / 2 */
+			if (mpi_rshift1_mut(v) != 0)
+				goto cleanup;
+			if (mpi_test_even(C) == 0 && mpi_test_even(D) == 0) {
+				/* C = C / 2 */
+				if (mpi_rshift1_mut(C) != 0)
+					goto cleanup;
+				/* D = D / 2 */
+				if (mpi_rshift1_mut(D) != 0)
+					goto cleanup;
+			} else {
+				/* C = (C + y) / 2 */
+				if (mpi_add_mut(C, y) != 0)
+					goto cleanup;
+				if (mpi_rshift1_mut(C) != 0)
+					goto cleanup;
+				/* D = (D - x) / 2 */
+				if (mpi_sub_mut(D, x) != 0)
+					goto cleanup;
+				if (mpi_rshift1_mut(D) != 0)
+					goto cleanup;
+			}
+		}
+		if (mpi_cmp(u, v) >= 0) {
+			/* u = u - v */
+			if (mpi_sub_mut(u, v) != 0)
+				goto cleanup;
+			/* A = A - C */
+			if (mpi_sub_mut(A, C) != 0)
+				goto cleanup;
+			/* B = B - D */
+			if (mpi_sub_mut(B, D) != 0)
+				goto cleanup;
+		} else {
+			/* v = v - u */
+			if (mpi_sub_mut(v, u) != 0)
+				goto cleanup;
+			/* C = C - A */
+			if (mpi_sub_mut(C, A) != 0)
+				goto cleanup;
+			/* D = D - B */
+			if (mpi_sub_mut(D, B) != 0)
+				goto cleanup;
+		}
+	} while (mpi_test_zero(u) != 0);
+
+	/* v = v * g */
+	if (mpi_mul_mut(v, g) != 0)
+		goto cleanup;
+
+	success = 1;
+
+	if (a_p != NULL) {
+		*a_p = C;
+		C = NULL;
+	}
+	if (b_p != NULL) {
+		*b_p = D;
+		D = NULL;
+	}
+	if (v_p != NULL) {
+		*v_p = v;
+		v = NULL;
+	}
+
+	/* FALLTHROUGH */
+cleanup:
+	mpi_free(D);
+	mpi_free(C);
+	mpi_free(B);
+	mpi_free(A);
+	mpi_free(v);
+	mpi_free(u);
+	mpi_free(g);
+	mpi_free(y);
+	mpi_free(x);
+	return (success ? 0 : -1);
+}
 
 
 static int
