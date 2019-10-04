@@ -468,6 +468,44 @@ cleanup:
 }
 
 
+/*
+ * Multiplicative inverse, see the Handbook of Applied Cryptography §14.64.
+ */
+struct mpi *
+mpi_mod_inv(const struct mpi *a, const struct mpi *m)
+{
+	struct mpi *inv = NULL, *gcd = NULL;
+	int success = 0;
+
+	if (a == NULL || m == NULL)
+		goto cleanup;
+
+	/* set x = m, y = a */
+	if (mpi_egcd(m, a, NULL, &inv, &gcd) != 0)
+		goto cleanup;
+
+	/* if gcd(a, m) != 1 then a is not invertible modulo m */
+	if (mpi_test_one(gcd) != 0)
+		goto cleanup;
+
+	/* If the inverse is negative, add m to it */
+	if (mpi_sign(inv) < 0) {
+		if (mpi_add_mut(inv, m) != 0)
+			goto cleanup;
+	}
+
+	success = 1;
+	/* FALLTHROUGH */
+cleanup:
+	mpi_free(gcd);
+	if (!success) {
+		mpi_free(inv);
+		inv = NULL;
+	}
+	return inv;
+}
+
+
 static int
 miller_rabin_test(const struct mpi *n, size_t t)
 {

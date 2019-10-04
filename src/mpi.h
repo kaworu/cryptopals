@@ -335,6 +335,15 @@ int	mpi_egcd(const struct mpi *x, const struct mpi *y, struct mpi **a_p,
 		    struct mpi **b_p, struct mpi **v_p);
 
 /*
+ * Compute and returns the multiplicative inverse of a modulo m.
+ *
+ * Returns a pointer to a newly allocated mpi struct that should passed to
+ * mpi_free(). Returns NULL if any argument is NULL, malloc(3) failed, or a is
+ * not invertible modulo m (i.e. gcd(a, b) != 1).
+ */
+struct mpi	*mpi_mod_inv(const struct mpi *a, const struct mpi *m);
+
+/*
  * Create a decimal representation of n.
  *
  * Returns a pointer to a newly allocated NUL-terminated string that should

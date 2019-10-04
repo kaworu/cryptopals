@@ -1291,6 +1291,35 @@ test_mpi_egcd(const MunitParameter *params, void *data)
 
 
 static MunitResult
+test_mpi_mod_inv(const MunitParameter *params, void *data)
+{
+	/* Example from the Handbook of Applied Cryptography §14.65 */
+	struct mpi *m = mpi_from_dec("383");
+	struct mpi *a = mpi_from_dec("271");
+	struct mpi *einv = mpi_from_dec("106");
+	if (m == NULL || a == NULL || einv == NULL)
+		munit_error("mpi_from_dec");
+
+	struct mpi *inv = mpi_mod_inv(a, m);
+	munit_assert_not_null(inv);
+	munit_assert_int(mpi_cmp(inv, einv), ==, 0);
+
+	/* when a is not invertible modulo m */
+	munit_assert_null(mpi_mod_inv(a, a));
+	/* when NULL is given */
+	munit_assert_null(mpi_mod_inv(a, NULL));
+	munit_assert_null(mpi_mod_inv(NULL, m));
+	munit_assert_null(mpi_mod_inv(NULL, NULL));
+
+	mpi_free(inv);
+	mpi_free(einv);
+	mpi_free(a);
+	mpi_free(m);
+	return (MUNIT_OK);
+}
+
+
+static MunitResult
 test_mpi_to_bytes_be(const MunitParameter *params, void *data)
 {
 	for (size_t i = 1; i < 100; i++) {
@@ -1478,6 +1507,7 @@ MunitTest test_mpi_suite_tests[] = {
 	{ "mpi_mod_exp",     test_mpi_mod_exp,     srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "mpi_mod_sqr_mut", test_mpi_mod_sqr_mut, srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "mpi_egcd",        test_mpi_egcd,        NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "mpi_mod_inv",     test_mpi_mod_inv,     NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "mpi_to_dec",      test_mpi_to_dec,      srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "mpi_to_hex",      test_mpi_to_hex,      srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "mpi_to_bytes",    test_mpi_to_bytes_be, srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
