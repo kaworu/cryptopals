@@ -82,6 +82,10 @@ cleanup:
 }
 
 
+/*
+ * Random search for a prime using the Miller–Rabin primality test,
+ * see the Handbook of Applied Cryptography §4.44.
+ */
 struct mpi *
 mpi_probable_prime(const size_t bits)
 {
@@ -164,6 +168,7 @@ cleanup:
 	}
 	return n;
 }
+
 
 int
 mpi_test_even(const struct mpi *n)
@@ -317,8 +322,8 @@ cleanup:
 
 
 /*
- * Binary extended gcd algorithm, see the Handbook of Applied Cryptography
- * §14.4.3.
+ * Binary extended gcd algorithm,
+ * see the Handbook of Applied Cryptography §14.4.3.
  */
 int
 mpi_egcd(const struct mpi *cx, const struct mpi *cy, struct mpi **a_p,
@@ -469,7 +474,8 @@ cleanup:
 
 
 /*
- * Multiplicative inverse, see the Handbook of Applied Cryptography §14.64.
+ * Multiplicative inverse,
+ * see the Handbook of Applied Cryptography §14.64.
  */
 struct mpi *
 mpi_mod_inv(const struct mpi *a, const struct mpi *m)
@@ -506,6 +512,10 @@ cleanup:
 }
 
 
+/*
+ * Miller-Rabin probabilistic primality test,
+ * see the Handbook of Applied Cryptography §4.24.
+ */
 static int
 miller_rabin_test(const struct mpi *n, size_t t)
 {

@@ -118,8 +118,8 @@ int	mpi_setn(struct mpi *a, const uint64_t n);
 /*
  * Returns a probable prime number of the given length in bits.
  *
- * Random search for a prime using the Miller–Rabin primality test, see the
- * Handbook of Applied Cryptography §4.44.
+ * Random search for a prime using the Miller–Rabin primality test,
+ * see the Handbook of Applied Cryptography §4.44.
  *
  * XXX: OpenSSL represent bits as int and we require the first two bits to be 1.
  * Thus, bits must satisfy 2 <= bits <= INT_MAX.
