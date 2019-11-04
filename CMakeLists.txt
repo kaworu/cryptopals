@@ -42,6 +42,7 @@ set(SRCS
     ${PROJECT_SOURCE_DIR}/src/dh.c
     ${PROJECT_SOURCE_DIR}/src/srp.c
     ${PROJECT_SOURCE_DIR}/src/ssrp.c
+    ${PROJECT_SOURCE_DIR}/src/rsa.c
     ${PROJECT_SOURCE_DIR}/src/break_ecb.c
     ${PROJECT_SOURCE_DIR}/src/break_cbc.c
     ${PROJECT_SOURCE_DIR}/src/break_ctr.c
@@ -125,6 +126,7 @@ set(TEST_SRCS
     ${PROJECT_SOURCE_DIR}/tests/test_dh.c
     ${PROJECT_SOURCE_DIR}/tests/test_srp.c
     ${PROJECT_SOURCE_DIR}/tests/test_ssrp.c
+    ${PROJECT_SOURCE_DIR}/tests/test_rsa.c
     ${PROJECT_SOURCE_DIR}/tests/test_break_ecb.c
     ${PROJECT_SOURCE_DIR}/tests/test_break_cbc.c
     ${PROJECT_SOURCE_DIR}/tests/test_break_ctr.c

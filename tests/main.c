@@ -27,6 +27,7 @@ extern MunitTest test_mac_suite_tests[];
 extern MunitTest test_dh_suite_tests[];
 extern MunitTest test_srp_suite_tests[];
 extern MunitTest test_ssrp_suite_tests[];
+extern MunitTest test_rsa_suite_tests[];
 extern MunitTest test_break_ecb_suite_tests[];
 extern MunitTest test_break_cbc_suite_tests[];
 extern MunitTest test_break_ctr_suite_tests[];
@@ -57,6 +58,7 @@ static MunitSuite all_test_suites[] = {
 	{ "dh/",         test_dh_suite_tests,                      NULL, 1, MUNIT_SUITE_OPTION_NONE },
 	{ "srp/",        test_srp_suite_tests,                     NULL, 1, MUNIT_SUITE_OPTION_NONE },
 	{ "ssrp/",       test_ssrp_suite_tests,                    NULL, 1, MUNIT_SUITE_OPTION_NONE },
+	{ "rsa/",        test_rsa_suite_tests,                     NULL, 1, MUNIT_SUITE_OPTION_NONE },
 	{ "break-ecb/",  test_break_ecb_suite_tests,               NULL, 1, MUNIT_SUITE_OPTION_NONE },
 	{ "break-cbc/",  test_break_cbc_suite_tests,               NULL, 1, MUNIT_SUITE_OPTION_NONE },
 	{ "break-ctr/",  test_break_ctr_suite_tests,               NULL, 1, MUNIT_SUITE_OPTION_NONE },
