@@ -119,8 +119,8 @@ struct bytes	*bytes_randomized(size_t len);
 struct bytes	*bytes_dup(const struct bytes *src);
 
 /*
- * Returns 0 if the two given bytes structs are not NULL and have the same
- * length and data, 1 otherwise.
+ * Returns 0 if the two given bytes structs are not NULL, have the same
+ * length, and hold the same data. Returns 1 otherwise.
  *
  * NOTE: bytes_bcmp() does *not* run in constant time, see
  * bytes_timingsafe_bcmp().
