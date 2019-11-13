@@ -8,20 +8,22 @@ design*. So, don't use it.
 ## Building
 
 Start by `git submodule init && git submodule update`. Then, simply `make`.
-Oh, you'll need [Cmake](https://cmake.org/) (sorry) and a C11 compiler.
+You'll need [Cmake](https://cmake.org/) (sorry) and a C11 compiler.
 
 ## ...and?
 
-Type `make test`, sit back and enjoy the show. Alternatively -- if you're super
-lazy -- just check the Travis-CI build output.
+Type `make test`, sit back and enjoy the show. Alternatively, just check the
+[Travis-CI build output](https://travis-ci.org/kAworu/cryptopals).
 
 ## ...aaaand?
 
-That's it. It's only a bunch of functions in a lib wrapped by tests using the
-data from the challenges. It's cool though, hopefully well commented and using
-the [µnit Testing Framework](https://nemequ.github.io/munit/).
+That's it. It's a bunch of functions in a lib wrapped by tests using the data
+from the challenges. It's should be easy to discover though, hopefully well
+commented and using the [µnit Testing Framework](https://nemequ.github.io/munit/).
 
 ## coverage?
+
+Before I get a coverage banner you can
 
 ```sh
 % BUILD_TYPE=COVERAGE make
