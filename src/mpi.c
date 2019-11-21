@@ -133,12 +133,12 @@ retry:
 		/* trial division stage */
 		for (size_t i = 0; i < (sizeof(primes) / sizeof(*primes)); i++) {
 			const unsigned int d = primes[i];
-			switch (mpi_modn(n, d)) {
+			switch (mpi_modi(n, d)) {
 			case UINT64_MAX:
 				goto cleanup;
 				/* NOTREACHED */
 			case 0: /* d is a divisor of n */
-				if (mpi_testn(n, d) == 0) {
+				if (mpi_testi(n, d) == 0) {
 					/* n is actually the prime number */
 					success = 1;
 					goto cleanup;
@@ -210,20 +210,20 @@ cleanup:
 
 
 struct mpi *
-mpi_addn(const struct mpi *a, const uint64_t n)
+mpi_addi(const struct mpi *n, const uint64_t i)
 {
 	struct mpi *r = NULL;
 	int success = 0;
 
 	/* sanity check */
-	if (a == NULL)
+	if (n == NULL)
 		goto cleanup;
 
-	r = mpi_dup(a);
+	r = mpi_dup(n);
 	if (r == NULL)
 		goto cleanup;
 
-	if (mpi_addn_mut(r, n) != 0)
+	if (mpi_addi_mut(r, i) != 0)
 		goto cleanup;
 
 	success = 1;
@@ -266,20 +266,20 @@ cleanup:
 
 
 struct mpi *
-mpi_subn(const struct mpi *a, const uint64_t n)
+mpi_subi(const struct mpi *n, const uint64_t i)
 {
 	struct mpi *r = NULL;
 	int success = 0;
 
 	/* sanity check */
-	if (a == NULL)
+	if (n == NULL)
 		goto cleanup;
 
-	r = mpi_dup(a);
+	r = mpi_dup(n);
 	if (r == NULL)
 		goto cleanup;
 
-	if (mpi_subn_mut(r, n) != 0)
+	if (mpi_subi_mut(r, i) != 0)
 		goto cleanup;
 
 	success = 1;
@@ -322,20 +322,20 @@ cleanup:
 
 
 struct mpi *
-mpi_muln(const struct mpi *a, uint64_t n)
+mpi_muli(const struct mpi *n, uint64_t i)
 {
 	struct mpi *r = NULL;
 	int success = 0;
 
 	/* sanity check */
-	if (a == NULL)
+	if (n == NULL)
 		goto cleanup;
 
-	r = mpi_dup(a);
+	r = mpi_dup(n);
 	if (r == NULL)
 		goto cleanup;
 
-	if (mpi_muln_mut(r, n) != 0)
+	if (mpi_muli_mut(r, i) != 0)
 		goto cleanup;
 
 	success = 1;
@@ -378,20 +378,20 @@ cleanup:
 
 
 struct mpi *
-mpi_divn(const struct mpi *a, uint64_t n)
+mpi_divi(const struct mpi *n, uint64_t i)
 {
 	struct mpi *r = NULL;
 	int success = 0;
 
 	/* sanity check */
-	if (a == NULL)
+	if (n == NULL)
 		goto cleanup;
 
-	r = mpi_dup(a);
+	r = mpi_dup(n);
 	if (r == NULL)
 		goto cleanup;
 
-	if (mpi_divn_mut(r, n) != 0)
+	if (mpi_divi_mut(r, i) != 0)
 		goto cleanup;
 
 	success = 1;
@@ -410,26 +410,26 @@ cleanup:
  * BN_div(), it can't seems to handle negative numbers correctly.
  */
 int
-mpi_divn_mut(struct mpi *a, uint64_t n)
+mpi_divi_mut(struct mpi *n, uint64_t i)
 {
-	struct mpi *nn = NULL;
+	struct mpi *bigi = NULL;
 	int success = 0;
 
 	/* sanity check */
-	if (a == NULL)
+	if (n == NULL)
 		return -1;
 
-	nn = mpi_zero();
-	if (mpi_setn(nn, n) != 0)
+	bigi = mpi_zero();
+	if (mpi_seti(bigi, i) != 0)
 		goto cleanup;
 
-	if (mpi_div_mut(a, nn) != 0)
+	if (mpi_div_mut(n, bigi) != 0)
 		goto cleanup;
 
 	success = 1;
 	/* FALLTHROUGH */
 cleanup:
-	mpi_free(nn);
+	mpi_free(bigi);
 	return (success ? 0 : -1);
 }
 
@@ -498,11 +498,11 @@ mpi_cbrt(const struct mpi *n)
 			goto cleanup;
 		if (mpi_cmp(a, d) <= 0)
 			break;
-		if (mpi_muln_mut(a, 2) != 0)
+		if (mpi_muli_mut(a, 2) != 0)
 			goto cleanup;
 		if (mpi_add_mut(a, d) != 0)
 			goto cleanup;
-		if (mpi_divn_mut(a, 3) != 0)
+		if (mpi_divi_mut(a, 3) != 0)
 			goto cleanup;
 		mpi_free(d);
 	}
@@ -731,7 +731,7 @@ miller_rabin_test(const struct mpi *n, size_t t)
 	/* 1 and 2 */
 	if (mpi_test_one(n) == 0)
 		goto composite;
-	if (mpi_testn(n, 2) == 0)
+	if (mpi_testi(n, 2) == 0)
 		goto prime;
 
 	/* even means not prime */
@@ -740,11 +740,11 @@ miller_rabin_test(const struct mpi *n, size_t t)
 
 	/* write n - 1 = 2**s * r such that r is odd */
 	s = mpi_zero();
-	r = mpi_subn(n, 1);
+	r = mpi_subi(n, 1);
 	/* s = 0, r = n - 1 */
 	do {
 		/* s = s + 1 */
-		if (mpi_addn_mut(s, 1) != 0)
+		if (mpi_addi_mut(s, 1) != 0)
 			goto cleanup;
 		/* r = r / 2 */
 		if (mpi_rshift1_mut(r) != 0)
@@ -753,7 +753,7 @@ miller_rabin_test(const struct mpi *n, size_t t)
 
 	/* setup 2, (n - 1), and j for the witness loop */
 	two = mpi_from_hex("2");
-	n_1 = mpi_subn(n, 1);
+	n_1 = mpi_subi(n, 1);
 	j   = mpi_zero();
 	while (t--) {
 		/* Choose a random integer a such as 2 <= a < n - 1 */
@@ -767,13 +767,13 @@ miller_rabin_test(const struct mpi *n, size_t t)
 		if (mpi_test_one(y) == 0 || mpi_cmp(y, n_1) == 0)
 			goto next_round;
 
-		if (mpi_setn(j, 1) != 0)
+		if (mpi_seti(j, 1) != 0)
 			goto cleanup;
 		while (mpi_cmp(j, s) < 0 && mpi_cmp(y, n_1) != 0) {
 			if (mpi_mod_sqr_mut(y, n) != 0)
 				goto cleanup;
 			/* j = j + 1 */
-			if (mpi_addn_mut(j, 1) != 0)
+			if (mpi_addi_mut(j, 1) != 0)
 				goto cleanup;
 		}
 

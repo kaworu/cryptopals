@@ -244,25 +244,14 @@ mpi_dup(const struct mpi *n)
 
 
 int
-mpi_setn(struct mpi *a, const uint64_t n)
+mpi_seti(struct mpi *n, const uint64_t i)
 {
 	/* sanity check */
-	if (a == NULL)
+	if (n == NULL)
 		return -1;
 
-	const int success = BN_set_word(a->bn, n);
+	const int success = BN_set_word(n->bn, i);
 	return (success ? 0 : -1);
-}
-
-
-int
-mpi_cmp(const struct mpi *a, const struct mpi *b)
-{
-	/* sanity checks */
-	if (a == NULL || b == NULL)
-		return (INT_MIN);
-
-	return (BN_cmp(a->bn, b->bn));
 }
 
 
@@ -278,12 +267,35 @@ mpi_num_bits(const struct mpi *n)
 
 
 int
-mpi_testn(const struct mpi *a, const uint64_t n)
+mpi_sign(const struct mpi *n)
 {
-	if (a == NULL)
+	if (n == NULL || mpi_test_zero(n) == 0)
+		return 0;
+	else if (BN_is_negative(n->bn))
+		return -1;
+	else
+		return 1;
+}
+
+
+int
+mpi_cmp(const struct mpi *a, const struct mpi *b)
+{
+	/* sanity checks */
+	if (a == NULL || b == NULL)
+		return (INT_MIN);
+
+	return (BN_cmp(a->bn, b->bn));
+}
+
+
+int
+mpi_testi(const struct mpi *n, const uint64_t i)
+{
+	if (n == NULL)
 		return 1;
 
-	const int is_word = BN_is_word(a->bn, n);
+	const int is_word = BN_is_word(n->bn, i);
 	return (is_word ? 0 : 1);
 }
 
@@ -322,18 +334,6 @@ mpi_test_odd(const struct mpi *n)
 
 
 int
-mpi_sign(const struct mpi *n)
-{
-	if (n == NULL || mpi_test_zero(n) == 0)
-		return 0;
-	else if (BN_is_negative(n->bn))
-		return -1;
-	else
-		return 1;
-}
-
-
-int
 mpi_test_probably_prime(const struct mpi *n)
 {
 	BN_CTX *ctx = NULL;
@@ -364,13 +364,13 @@ cleanup:
 
 
 uint64_t
-mpi_modn(const struct mpi *a, const uint64_t n)
+mpi_modi(const struct mpi *n, const uint64_t i)
 {
 	/* sanity check */
-	if (a == NULL)
+	if (n == NULL)
 		return UINT64_MAX;
 
-	return BN_mod_word(a->bn, n);
+	return BN_mod_word(n->bn, i);
 }
 
 
@@ -435,26 +435,26 @@ mpi_add_mut(struct mpi *a, const struct mpi *b)
 
 
 int
-mpi_addn_mut(struct mpi *a, uint64_t n)
+mpi_addi_mut(struct mpi *n, uint64_t i)
 {
 	/* sanity check */
-	if (a == NULL)
+	if (n == NULL)
 		return -1;
 
-	const int success = BN_add_word(a->bn, n);
+	const int success = BN_add_word(n->bn, i);
 	return (success ? 0 : -1);
 }
 
 
 struct mpi *
-mpi_mod_add(const struct mpi *a, const struct mpi *b, const struct mpi *mod)
+mpi_mod_add(const struct mpi *a, const struct mpi *b, const struct mpi *m)
 {
 	struct mpi *result = NULL;
 	BN_CTX *ctx = NULL;
 	int success = 0;
 
 	/* sanity checks */
-	if (a == NULL || b == NULL || mod == NULL)
+	if (a == NULL || b == NULL || m == NULL)
 		goto cleanup;
 
 	ctx = BN_CTX_new();
@@ -465,7 +465,7 @@ mpi_mod_add(const struct mpi *a, const struct mpi *b, const struct mpi *mod)
 	if (result == NULL)
 		goto cleanup;
 
-	if (BN_mod_add(result->bn, a->bn, b->bn, mod->bn, ctx) == 0)
+	if (BN_mod_add(result->bn, a->bn, b->bn, m->bn, ctx) == 0)
 		goto cleanup;
 
 	success = 1;
@@ -493,13 +493,13 @@ mpi_sub_mut(struct mpi *a, const struct mpi *b)
 
 
 int
-mpi_subn_mut(struct mpi *a, uint64_t n)
+mpi_subi_mut(struct mpi *n, uint64_t i)
 {
 	/* sanity check */
-	if (a == NULL)
+	if (n == NULL)
 		return -1;
 
-	const int success = BN_sub_word(a->bn, n);
+	const int success = BN_sub_word(n->bn, i);
 	return (success ? 0 : -1);
 }
 
@@ -530,26 +530,26 @@ cleanup:
 
 
 int
-mpi_muln_mut(struct mpi *a, uint64_t n)
+mpi_muli_mut(struct mpi *n, uint64_t i)
 {
 	/* sanity check */
-	if (a == NULL)
+	if (n == NULL)
 		return -1;
 
-	const int success = BN_mul_word(a->bn, n);
+	const int success = BN_mul_word(n->bn, i);
 	return (success ? 0 : -1);
 }
 
 
 struct mpi *
-mpi_mod_mul(const struct mpi *a, const struct mpi *b, const struct mpi *mod)
+mpi_mod_mul(const struct mpi *a, const struct mpi *b, const struct mpi *m)
 {
 	struct mpi *result = NULL;
 	BN_CTX *ctx = NULL;
 	int success = 0;
 
 	/* sanity checks */
-	if (a == NULL || b == NULL || mod == NULL)
+	if (a == NULL || b == NULL || m == NULL)
 		goto cleanup;
 
 	ctx = BN_CTX_new();
@@ -560,7 +560,7 @@ mpi_mod_mul(const struct mpi *a, const struct mpi *b, const struct mpi *mod)
 	if (result == NULL)
 		goto cleanup;
 
-	if (BN_mod_mul(result->bn, a->bn, b->bn, mod->bn, ctx) == 0)
+	if (BN_mod_mul(result->bn, a->bn, b->bn, m->bn, ctx) == 0)
 		goto cleanup;
 
 	success = 1;
@@ -660,15 +660,14 @@ cleanup:
 
 
 struct mpi *
-mpi_mod_exp(const struct mpi *base, const struct mpi *exp,
-		    const struct mpi *mod)
+mpi_mod_exp(const struct mpi *base, const struct mpi *exp, const struct mpi *m)
 {
 	struct mpi *n = NULL;
 	BN_CTX *ctx = NULL;
 	int success = 0;
 
 	/* sanity checks */
-	if (base == NULL || exp == NULL || mod == NULL)
+	if (base == NULL || exp == NULL || m == NULL)
 		goto cleanup;
 
 	n = mpi_zero();
@@ -679,7 +678,7 @@ mpi_mod_exp(const struct mpi *base, const struct mpi *exp,
 	if (ctx == NULL)
 		goto cleanup;
 
-	if (BN_mod_exp(n->bn, base->bn, exp->bn, mod->bn, ctx) == 0)
+	if (BN_mod_exp(n->bn, base->bn, exp->bn, m->bn, ctx) == 0)
 		goto cleanup;
 
 	success = 1;
@@ -695,20 +694,20 @@ cleanup:
 
 
 int
-mpi_mod_sqr_mut(struct mpi *n, const struct mpi *mod)
+mpi_mod_sqr_mut(struct mpi *n, const struct mpi *m)
 {
 	BN_CTX *ctx = NULL;
 	int success = 0;
 
 	/* sanity checks */
-	if (n == NULL || mod == NULL)
+	if (n == NULL || m == NULL)
 		goto cleanup;
 
 	ctx = BN_CTX_new();
 	if (ctx == NULL)
 		goto cleanup;
 
-	if (BN_mod_sqr(n->bn, n->bn, mod->bn, ctx) == 0)
+	if (BN_mod_sqr(n->bn, n->bn, m->bn, ctx) == 0)
 		goto cleanup;
 
 	success = 1;

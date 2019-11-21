@@ -89,7 +89,7 @@ dh_mitm_negociate(struct dh *self, const struct mpi *p, const struct mpi *g,
 		break;
 	case DH_MITM_P_MINUS_1_AS_G:
 		/* g = p - 1 */
-		spoofed_g = mpi_subn(p, 1);
+		spoofed_g = mpi_subi(p, 1);
 		break;
 	}
 
@@ -173,7 +173,7 @@ dh_mitm_receive(struct dh *self, const struct mpi *p, const struct mpi *g,
 		s = mpi_zero();
 		break;
 	case DH_MITM_P_MINUS_1_AS_G:
-		p_minus_one = mpi_subn(p, 1);
+		p_minus_one = mpi_subi(p, 1);
 		/* ensure that g = p - 1 */
 		if (mpi_cmp(g, p_minus_one) != 0)
 			goto cleanup;

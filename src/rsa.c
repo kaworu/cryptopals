@@ -49,8 +49,8 @@ rsa_keygen(const size_t bits, struct rsa_privkey **privk_p,
 		/* generate p and q */
 		p = mpi_probable_prime(bits / 2);
 		q = mpi_probable_prime(bits / 2);
-		p_1 = mpi_subn(p, 1);
-		q_1 = mpi_subn(q, 1);
+		p_1 = mpi_subi(p, 1);
+		q_1 = mpi_subi(q, 1);
 		if (p == NULL || q == NULL || p_1 == NULL || q_1 == NULL)
 			goto cleanup;
 		/*
@@ -58,7 +58,7 @@ rsa_keygen(const size_t bits, struct rsa_privkey **privk_p,
 		 * nor q - 1 be divisible by 3.
 		 * See the Handbook of Applied Cryptography, Note 8.9 (ii).
 		 */
-	} while (mpi_modn(p_1, 3) == 0 || mpi_modn(q_1, 3) == 0);
+	} while (mpi_modi(p_1, 3) == 0 || mpi_modi(q_1, 3) == 0);
 
 	/* compute the private decryption exponent d */
 	phi = mpi_mul(p_1, q_1);
