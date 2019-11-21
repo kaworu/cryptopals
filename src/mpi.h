@@ -138,6 +138,11 @@ struct mpi	*mpi_probable_prime(const size_t bits);
 int	mpi_cmp(const struct mpi *a, const struct mpi *b);
 
 /*
+ * Returns the number of significant bits in n, or -1 on failure.
+ */
+int	mpi_num_bits(const struct mpi *n);
+
+/*
  * Compare a to n.
  *
  * Returns 0 if they are equals, 1 otherwise (including when n is NULL).
@@ -195,11 +200,25 @@ int	mpi_test_probably_prime(const struct mpi *n);
 uint64_t	mpi_modn(const struct mpi *a, const uint64_t n);
 
 /*
+ * left shift n from i bits.
+ *
+ * Returns 0 on success, -1 on failure.
+ */
+int	mpi_lshifti_mut(struct mpi *n, uint64_t i);
+
+/*
  * left shift n from one bit.
  *
  * Returns 0 on success, -1 on failure.
  */
 int	mpi_lshift1_mut(struct mpi *n);
+
+/*
+ * right shift n from i bits.
+ *
+ * Returns 0 on success, -1 on failure.
+ */
+int	mpi_rshifti_mut(struct mpi *n, uint64_t i);
 
 /*
  * right shift n from one bit.
@@ -293,6 +312,21 @@ struct mpi	*mpi_mul(const struct mpi *a, const struct mpi *b);
 int	mpi_mul_mut(struct mpi *a, const struct mpi *b);
 
 /*
+ * Compute and returns the result of a * n.
+ *
+ * Returns a pointer to a newly allocated mpi struct that should passed to
+ * mpi_free(), or NULL on failure.
+ */
+struct mpi	*mpi_muln(const struct mpi *a, uint64_t n);
+
+/*
+ * Multiply a by n.
+ *
+ * Returns 0 on success, -1 on failure.
+ */
+int	mpi_muln_mut(struct mpi *a, uint64_t n);
+
+/*
  * Compute and returns the non-negative result of (a * b) % mod.
  *
  * Returns a pointer to a newly allocated mpi struct that should passed to
@@ -300,6 +334,51 @@ int	mpi_mul_mut(struct mpi *a, const struct mpi *b);
  */
 struct mpi	*mpi_mod_mul(const struct mpi *a, const struct mpi *b,
 		    const struct mpi *mod);
+
+/*
+ * Compute and returns the result of a / b.
+ *
+ * Returns a pointer to a newly allocated mpi struct that should passed to
+ * mpi_free(), or NULL on failure.
+ */
+struct mpi	*mpi_div(const struct mpi *a, const struct mpi *b);
+
+/*
+ * Divide a by b.
+ *
+ * Returns 0 on success, -1 on failure.
+ */
+int	mpi_div_mut(struct mpi *a, const struct mpi *b);
+
+/*
+ * Compute and returns the result of a / n.
+ *
+ * Returns a pointer to a newly allocated mpi struct that should passed to
+ * mpi_free(), or NULL on failure.
+ */
+struct mpi	*mpi_divn(const struct mpi *a, uint64_t n);
+
+/*
+ * Divide a by n.
+ *
+ * Returns 0 on success, -1 on failure.
+ */
+int	mpi_divn_mut(struct mpi *a, uint64_t n);
+
+/*
+ * n = n ** 2
+ *
+ * Returns 0 on success, -1 on failure.
+ */
+int	mpi_sqr_mut(struct mpi *n);
+
+/*
+ * Compute and returns the result of n ** 2.
+ *
+ * Returns a pointer to a newly allocated mpi struct that should passed to
+ * mpi_free(). Returns NULL if n is NULL or malloc(3) failed.
+ */
+struct mpi	*mpi_sqr(const struct mpi *n);
 
 /*
  * Compute and returns the result of base ** exp.
@@ -324,6 +403,11 @@ struct mpi	*mpi_mod_exp(const struct mpi *base,
  * Returns 0 on success, -1 on failure.
  */
 int	mpi_mod_sqr_mut(struct mpi *n, const struct mpi *mod);
+
+/*
+ * Returns the cube-root of a given non-negative number n or NULL on failure.
+ */
+struct mpi	*mpi_cbrt(const struct mpi *n);
 
 /*
  * Given x and y, computes a, b and v such that ax + by = v where v is the

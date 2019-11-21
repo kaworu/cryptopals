@@ -321,6 +321,204 @@ cleanup:
 }
 
 
+struct mpi *
+mpi_muln(const struct mpi *a, uint64_t n)
+{
+	struct mpi *r = NULL;
+	int success = 0;
+
+	/* sanity check */
+	if (a == NULL)
+		goto cleanup;
+
+	r = mpi_dup(a);
+	if (r == NULL)
+		goto cleanup;
+
+	if (mpi_muln_mut(r, n) != 0)
+		goto cleanup;
+
+	success = 1;
+	/* FALLTHROUGH */
+cleanup:
+	if (!success) {
+		mpi_free(r);
+		r = NULL;
+	}
+	return r;
+}
+
+
+struct mpi *
+mpi_div(const struct mpi *a, const struct mpi *b)
+{
+	struct mpi *r = NULL;
+	int success = 0;
+
+	/* sanity checks */
+	if (a == NULL || b == NULL)
+		goto cleanup;
+
+	r = mpi_dup(a);
+	if (r == NULL)
+		goto cleanup;
+
+	if (mpi_div_mut(r, b) != 0)
+		goto cleanup;
+
+	success = 1;
+	/* FALLTHROUGH */
+cleanup:
+	if (!success) {
+		mpi_free(r);
+		r = NULL;
+	}
+	return r;
+}
+
+
+struct mpi *
+mpi_divn(const struct mpi *a, uint64_t n)
+{
+	struct mpi *r = NULL;
+	int success = 0;
+
+	/* sanity check */
+	if (a == NULL)
+		goto cleanup;
+
+	r = mpi_dup(a);
+	if (r == NULL)
+		goto cleanup;
+
+	if (mpi_divn_mut(r, n) != 0)
+		goto cleanup;
+
+	success = 1;
+	/* FALLTHROUGH */
+cleanup:
+	if (!success) {
+		mpi_free(r);
+		r = NULL;
+	}
+	return r;
+}
+
+
+/*
+ * XXX: this function is not implemented over BN_div_word() because, unlike
+ * BN_div(), it can't seems to handle negative numbers correctly.
+ */
+int
+mpi_divn_mut(struct mpi *a, uint64_t n)
+{
+	struct mpi *nn = NULL;
+	int success = 0;
+
+	/* sanity check */
+	if (a == NULL)
+		return -1;
+
+	nn = mpi_zero();
+	if (mpi_setn(nn, n) != 0)
+		goto cleanup;
+
+	if (mpi_div_mut(a, nn) != 0)
+		goto cleanup;
+
+	success = 1;
+	/* FALLTHROUGH */
+cleanup:
+	mpi_free(nn);
+	return (success ? 0 : -1);
+}
+
+
+struct mpi *
+mpi_sqr(const struct mpi *n)
+{
+	struct mpi *r = NULL;
+	int success = 0;
+
+	/* sanity checks */
+	if (n == NULL)
+		goto cleanup;
+
+	r = mpi_dup(n);
+	if (r == NULL)
+		goto cleanup;
+
+	if (mpi_sqr_mut(r) != 0)
+		goto cleanup;
+
+	success = 1;
+	/* FALLTHROUGH */
+cleanup:
+	if (!success) {
+		mpi_free(r);
+		r = NULL;
+	}
+	return r;
+}
+
+
+/*
+ * Newton's method implementation based on
+ * https://stackoverflow.com/a/35276426/7936137
+ */
+struct mpi *
+mpi_cbrt(const struct mpi *n)
+{
+	struct mpi *a = NULL, *d = NULL;
+	int success = 0;
+
+	if (n == NULL || mpi_sign(n) <= 0)
+		goto cleanup;
+
+	/*
+	 * Compute our initial guess a as the first power of two that exceeds
+	 * the cube root of n.
+	 */
+	const int nbits = mpi_num_bits(n);
+	if (nbits == -1)
+		goto cleanup;
+	const unsigned shift = (unsigned)nbits / 3 + 1;
+	a = mpi_one();
+	if (a == NULL)
+		goto cleanup;
+	if (mpi_lshifti_mut(a, shift) != 0)
+		goto cleanup;
+
+	for (;;) {
+		struct mpi *a2 = NULL;
+		a2 = mpi_sqr(a);
+		d = mpi_div(n, a2);
+		mpi_free(a2);
+		if (d == NULL)
+			goto cleanup;
+		if (mpi_cmp(a, d) <= 0)
+			break;
+		if (mpi_muln_mut(a, 2) != 0)
+			goto cleanup;
+		if (mpi_add_mut(a, d) != 0)
+			goto cleanup;
+		if (mpi_divn_mut(a, 3) != 0)
+			goto cleanup;
+		mpi_free(d);
+	}
+
+	/* FALLTHROUGH */
+	success = 1;
+cleanup:
+	mpi_free(d);
+	if (!success) {
+		mpi_free(a);
+		a = NULL;
+	}
+	return a;
+}
+
+
 /*
  * Binary extended gcd algorithm,
  * see the Handbook of Applied Cryptography §14.4.3.

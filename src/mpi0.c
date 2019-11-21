@@ -267,6 +267,17 @@ mpi_cmp(const struct mpi *a, const struct mpi *b)
 
 
 int
+mpi_num_bits(const struct mpi *n)
+{
+	/* sanity check */
+	if (n == NULL)
+		return -1;
+	const int count = BN_num_bits(n->bn);
+	return count;
+}
+
+
+int
 mpi_testn(const struct mpi *a, const uint64_t n)
 {
 	if (a == NULL)
@@ -364,6 +375,18 @@ mpi_modn(const struct mpi *a, const uint64_t n)
 
 
 int
+mpi_lshifti_mut(struct mpi *n, uint64_t i)
+{
+	/* sanity check */
+	if (n == NULL || i > INT_MAX)
+		return -1;
+
+	const int success = BN_lshift(n->bn, n->bn, (int)i);
+	return (success ? 0 : -1);
+}
+
+
+int
 mpi_lshift1_mut(struct mpi *n)
 {
 	/* sanity check */
@@ -371,6 +394,18 @@ mpi_lshift1_mut(struct mpi *n)
 		return -1;
 
 	const int success = BN_lshift1(n->bn, n->bn);
+	return (success ? 0 : -1);
+}
+
+
+int
+mpi_rshifti_mut(struct mpi *n, uint64_t i)
+{
+	/* sanity check */
+	if (n == NULL || i > INT_MAX)
+		return -1;
+
+	const int success = BN_rshift(n->bn, n->bn, (int)i);
 	return (success ? 0 : -1);
 }
 
@@ -494,6 +529,18 @@ cleanup:
 }
 
 
+int
+mpi_muln_mut(struct mpi *a, uint64_t n)
+{
+	/* sanity check */
+	if (a == NULL)
+		return -1;
+
+	const int success = BN_mul_word(a->bn, n);
+	return (success ? 0 : -1);
+}
+
+
 struct mpi *
 mpi_mod_mul(const struct mpi *a, const struct mpi *b, const struct mpi *mod)
 {
@@ -525,6 +572,56 @@ cleanup:
 		result = NULL;
 	}
 	return (result);
+}
+
+
+int
+mpi_div_mut(struct mpi *a, const struct mpi *b)
+{
+	BN_CTX *ctx = NULL;
+	int success = 0;
+
+	/* sanity checks */
+	if (a == NULL || b == NULL)
+		goto cleanup;
+
+	ctx = BN_CTX_new();
+	if (ctx == NULL)
+		goto cleanup;
+
+	if (BN_div(a->bn, /* rem */NULL, a->bn, b->bn, ctx) == 0)
+		goto cleanup;
+
+	success = 1;
+	/* FALLTHROUGH */
+cleanup:
+	BN_CTX_free(ctx);
+	return (success ? 0 : -1);
+}
+
+
+int
+mpi_sqr_mut(struct mpi *n)
+{
+	BN_CTX *ctx = NULL;
+	int success = 0;
+
+	/* sanity checks */
+	if (n == NULL)
+		goto cleanup;
+
+	ctx = BN_CTX_new();
+	if (ctx == NULL)
+		goto cleanup;
+
+	if (BN_sqr(n->bn, n->bn, ctx) == 0)
+		goto cleanup;
+
+	success = 1;
+	/* FALLTHROUGH */
+cleanup:
+	BN_CTX_free(ctx);
+	return (success ? 0 : -1);
 }
 
 
