@@ -366,19 +366,19 @@ struct mpi	*mpi_divn(const struct mpi *a, uint64_t n);
 int	mpi_divn_mut(struct mpi *a, uint64_t n);
 
 /*
- * n = n ** 2
- *
- * Returns 0 on success, -1 on failure.
- */
-int	mpi_sqr_mut(struct mpi *n);
-
-/*
  * Compute and returns the result of n ** 2.
  *
  * Returns a pointer to a newly allocated mpi struct that should passed to
  * mpi_free(). Returns NULL if n is NULL or malloc(3) failed.
  */
 struct mpi	*mpi_sqr(const struct mpi *n);
+
+/*
+ * n = n ** 2
+ *
+ * Returns 0 on success, -1 on failure.
+ */
+int	mpi_sqr_mut(struct mpi *n);
 
 /*
  * Compute and returns the result of base ** exp.
