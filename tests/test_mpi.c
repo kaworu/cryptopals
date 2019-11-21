@@ -93,8 +93,7 @@ test_mpi_from_hex_and_dec(const MunitParameter *params, void *data)
 		char *expected;
 	} vectors[] = {
 		{ .input = "0",     .expected = "0"     },
-		/* https://github.com/openssl/openssl/commit/01c09f9fde5793e0b3712d602b02e2aed4908e8d */
-		/*{ .input =  "-0",   .expected = "0"     },*/
+		{ .input =  "-0",   .expected = "0"     },
 		{ .input = "1",     .expected = "1"     },
 		{ .input = "-1",    .expected = "-1"    },
 		{ .input = "F",     .expected = "15"    },
@@ -1377,8 +1376,7 @@ test_mpi_to_dec(const MunitParameter *params, void *data)
 		char *expected;
 	} vectors[] = {
 		{ .input = "0",     .expected = "0"     },
-		/* https://github.com/openssl/openssl/commit/01c09f9fde5793e0b3712d602b02e2aed4908e8d */
-		/*{ .input =  "-0",   .expected = "0"     },*/
+		{ .input =  "-0",   .expected = "0"     },
 		{ .input = "1",     .expected = "1"     },
 		{ .input = "-1",    .expected = "-1"    },
 		{ .input = "F",     .expected = "15"    },
@@ -1417,8 +1415,7 @@ test_mpi_to_hex(const MunitParameter *params, void *data)
 		char *expected;
 	} vectors[] = {
 		{ .input = "0",     .expected = "0"    },
-		/* https://github.com/openssl/openssl/commit/01c09f9fde5793e0b3712d602b02e2aed4908e8d */
-		/*{ .input =  "-0",   .expected = "0"    },*/
+		{ .input =  "-0",   .expected = "0"    },
 		{ .input = "1",     .expected = "1"    },
 		{ .input = "-1",    .expected = "-1"   },
 		{ .input = "15",    .expected = "F"    },
