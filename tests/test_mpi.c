@@ -705,7 +705,6 @@ test_mpi_add(const MunitParameter *params, void *data)
 	for (size_t i = 0; i < 128; i++) {
 		const int ai = munit_rand_int_range(INT_MIN / 2, INT_MAX / 2);
 		const int bi = munit_rand_int_range(INT_MIN / 2, INT_MAX / 2);
-
 		const int ri = ai + bi;
 
 		struct mpi *a = my_mpi_from_int(ai);
@@ -743,7 +742,6 @@ test_mpi_add_mut(const MunitParameter *params, void *data)
 	for (size_t i = 0; i < 128; i++) {
 		const int ai = munit_rand_int_range(INT_MIN / 2, INT_MAX / 2);
 		const int bi = munit_rand_int_range(INT_MIN / 2, INT_MAX / 2);
-
 		const int ri = ai + bi;
 
 		struct mpi *a = my_mpi_from_int(ai);
@@ -780,7 +778,6 @@ test_mpi_addn(const MunitParameter *params, void *data)
 	for (size_t i = 0; i < 128; i++) {
 		const int ai = munit_rand_int_range(INT_MIN / 2, INT_MAX / 2);
 		const int bi = munit_rand_int_range(0, INT_MAX / 2);
-
 		const int ri = ai + bi;
 
 		struct mpi *a = my_mpi_from_int(ai);
@@ -810,7 +807,6 @@ test_mpi_addn_mut(const MunitParameter *params, void *data)
 	for (size_t i = 0; i < 128; i++) {
 		const int ai = munit_rand_int_range(INT_MIN / 2, INT_MAX / 2);
 		const int bi = munit_rand_int_range(0, INT_MAX / 2);
-
 		const int ri = ai + bi;
 
 		struct mpi *a = my_mpi_from_int(ai);
@@ -840,7 +836,6 @@ test_mpi_mod_add(const MunitParameter *params, void *data)
 		const int ai = munit_rand_int_range(INT_MIN / 2, INT_MAX / 2);
 		const int bi = munit_rand_int_range(INT_MIN / 2, INT_MAX / 2);
 		const int mi = munit_rand_int_range(2, 16);
-
 		int ri = (ai + bi) % mi;
 		if (ri < 0)
 			ri += mi;
@@ -1020,8 +1015,7 @@ test_mpi_mul(const MunitParameter *params, void *data)
 	for (size_t i = 0; i < 128; i++) {
 		const int ai = munit_rand_int_range(-256, 256);
 		const int bi = munit_rand_int_range(-256, 256);
-
-		int ri = (ai * bi);
+		const int ri = (ai * bi);
 
 		struct mpi *a = my_mpi_from_int(ai);
 		struct mpi *b = my_mpi_from_int(bi);
@@ -1058,7 +1052,7 @@ test_mpi_mul_mut(const MunitParameter *params, void *data)
 	for (size_t i = 0; i < 128; i++) {
 		const int ai = munit_rand_int_range(-256, 256);
 		const int bi = munit_rand_int_range(-256, 256);
-		int ri = (ai * bi);
+		const int ri = (ai * bi);
 
 		struct mpi *a = my_mpi_from_int(ai);
 		struct mpi *b = my_mpi_from_int(bi);
@@ -1096,7 +1090,6 @@ test_mpi_mod_mul(const MunitParameter *params, void *data)
 		const int ai = munit_rand_int_range(-256, 256);
 		const int bi = munit_rand_int_range(-256, 256);
 		const int mi = munit_rand_int_range(2, 16);
-
 		int ri = (ai * bi) % mi;
 		if (ri < 0)
 			ri += mi;
