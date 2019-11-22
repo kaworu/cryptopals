@@ -655,6 +655,46 @@ test_mpi_test_probably_prime(const MunitParameter *params, void *data)
 
 
 static MunitResult
+test_mpi_mod_mut(const MunitParameter *params, void *data)
+{
+	for (size_t i = 0; i < 128; i++) {
+		const int ai  = munit_rand_int_range(0, INT_MAX);
+		const int mi  = munit_rand_int_range(0, INT_MAX);
+		const int ri = ai % mi;
+		struct mpi *a = my_mpi_from_int(ai);
+		struct mpi *m = my_mpi_from_int(mi);
+		struct mpi *r = my_mpi_from_int(ri);
+		if (a == NULL || m == NULL || r == NULL)
+			munit_error("my_mpi_from_int");
+
+		const int ret = mpi_mod_mut(a, m);
+		munit_assert_int(ret, ==, 0);
+		munit_assert_int(mpi_cmp(a, r), ==, 0);
+
+		mpi_free(r);
+		mpi_free(m);
+		mpi_free(a);
+	}
+
+	struct mpi *one = mpi_one();
+	if (one == NULL)
+		munit_error("mpi_one");
+	struct mpi *zero = mpi_zero();
+	if (zero == NULL)
+		munit_error("mpi_zero");
+	/* when zero is given as mod */
+	munit_assert_int(mpi_mod_mut(one, zero), ==, -1);
+	/* when NULL is given */
+	munit_assert_int(mpi_mod_mut(one, NULL), ==, -1);
+	munit_assert_int(mpi_mod_mut(NULL, one), ==, -1);
+
+	mpi_free(zero);
+	mpi_free(one);
+	return (MUNIT_OK);
+}
+
+
+static MunitResult
 test_mpi_modi(const MunitParameter *params, void *data)
 {
 	for (size_t i = 0; i < 128; i++) {
@@ -1892,6 +1932,7 @@ MunitTest test_mpi_suite_tests[] = {
 	{ "mpi_test_odd",       test_mpi_test_odd,       srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "mpi_test_even",      test_mpi_test_even,      srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "mpi_test_probably_prime", test_mpi_test_probably_prime, srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{ "mpi_mod_mut",     test_mpi_mod_mut,     srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "mpi_modi",        test_mpi_modi,        srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "mpi_lshifti_mut", test_mpi_lshifti_mut, srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{ "mpi_lshift1_mut", test_mpi_lshift1_mut, srand_reset, NULL, MUNIT_TEST_OPTION_NONE, NULL },

@@ -363,6 +363,33 @@ cleanup:
 }
 
 
+int
+mpi_mod_mut(struct mpi *n, const struct mpi *m)
+{
+	BN_CTX *ctx = NULL;
+	int success = 0;
+
+	/* sanity checks */
+	if (n == NULL || m == NULL)
+		goto cleanup;
+	if (mpi_sign(m) <= 0)
+		goto cleanup;
+
+	ctx = BN_CTX_new();
+	if (ctx == NULL)
+		goto cleanup;
+
+	if (BN_mod(n->bn, n->bn, m->bn, ctx) == 0)
+		goto cleanup;
+
+	success = 1;
+	/* FALLTHROUGH */
+cleanup:
+	BN_CTX_free(ctx);
+	return (success ? 0 : -1);
+}
+
+
 uint64_t
 mpi_modi(const struct mpi *n, const uint64_t i)
 {

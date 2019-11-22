@@ -193,6 +193,13 @@ int	mpi_test_even(const struct mpi *n);
 int	mpi_test_probably_prime(const struct mpi *n);
 
 /*
+ * n = n % m
+ *
+ * Returns 0 on success, -1 on failure.
+ */
+int	mpi_mod_mut(struct mpi *n, const struct mpi *m);
+
+/*
  * Compute and returns the result of n % i.
  *
  * Returns UINT64_MAX if n is NULL, n % i otherwise.
