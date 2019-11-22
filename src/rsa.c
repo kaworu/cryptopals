@@ -10,15 +10,6 @@
 #include "mpi.h"
 
 
-struct rsa_privkey {
-	struct mpi *d, *n;
-};
-
-struct rsa_pubkey {
-	struct mpi *e, *n;
-};
-
-
 /*
  * Key generation for RSA public-key encryption,
  * see the Handbook of Applied Cryptography §8.1.

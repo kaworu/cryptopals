@@ -42,7 +42,7 @@ test_rsa_encrypt(const MunitParameter *params, void *data)
 	if (rsa_keygen(1024, &privk, &pubk) != 0)
 		munit_error("rsa_keygen");
 
-	struct bytes *plaintext  = bytes_from_str("The Other Side of the Wind");
+	struct bytes *plaintext  = bytes_from_str("The Magic Words are Squeamish Ossifrage");
 	struct bytes *ciphertext = rsa_encrypt(plaintext, pubk);
 	munit_assert_not_null(ciphertext);
 	struct bytes *decrypted  = rsa_decrypt(ciphertext, privk);

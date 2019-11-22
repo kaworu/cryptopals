@@ -12,12 +12,16 @@
 /*
  * a RSA private key that can be used for decryption.
  */
-struct rsa_privkey;
+struct rsa_privkey {
+	struct mpi *d, *n;
+};
 
 /*
  * a RSA public key that can be used for encryption.
  */
-struct rsa_pubkey;
+struct rsa_pubkey {
+	struct mpi *e, *n;
+};
 
 
 /*
