@@ -11,4 +11,4 @@ addons:
             - cmake
 
 sudo: required
-dist: trusty
+dist: bionic
