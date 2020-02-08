@@ -1,7 +1,10 @@
 language: c
+dist: bionic
+sudo: required
 
 compiler:
     - clang
+    - gcc
 
 script: make test
 
@@ -10,5 +13,3 @@ addons:
         packages:
             - cmake
 
-sudo: required
-dist: bionic
