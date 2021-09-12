@@ -1,0 +1,22 @@
+on: [push, pull_request]
+
+name: Build and test
+jobs:
+  test:
+    name: Build and test with ${{ matrix.compiler.name }}
+    strategy:
+      matrix:
+        compiler:
+          - { name: gcc,   CC: gcc-10   }
+          - { name: clang, CC: clang-12 }
+    runs-on: ubuntu-latest
+    steps:
+    - name: Install ${{ matrix.compiler.name }}
+      run: |
+        sudo apt-get update && sudo apt-get install ${{ matrix.compiler.CC }}
+    - name: Checkout code
+      uses: actions/checkout@v2
+    - name: Compile and run tests
+      run: make test
+      env:
+        CC: ${{ matrix.compiler.CC }}
