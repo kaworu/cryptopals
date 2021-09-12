@@ -14,7 +14,7 @@ testrunner: build
 	cd build && cmake -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DCMAKE_VERBOSE_MAKEFILE=YES .. && make
 
 build:
-	test -d build || mkdir build
+	mkdir build
 
 clean:
 	rm -rf build

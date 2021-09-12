@@ -312,7 +312,7 @@ bytes_from_base64(const char *s)
 			goto cleanup;
 		}
 		/* pointer to the first byte of the current unit */
-		uint8_t * const p = buf->data + (i * 3);
+		uint8_t *const p = buf->data + (i * 3);
 		/* first byte: all six bits from the first character followed by
 		   the leading two bits from the second character */
 		p[0] = (c0 << 2) | (c1 >> 4);
