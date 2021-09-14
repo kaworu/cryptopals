@@ -18,6 +18,11 @@ jobs:
       uses: actions/checkout@v2
       with:
         submodules: true
+    - name: Show versions
+      run: |
+        make --version
+        cmake --version
+        ${{ matrix.compiler.CC }} --version
     - name: Compile and run tests
       run: make test
       env:
